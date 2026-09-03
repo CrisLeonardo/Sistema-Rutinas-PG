@@ -9,7 +9,7 @@ __pycache__/
 .env
 backend/.env
 frontend/.env.local
-.env.produccion
+.env.pruebas
 
 # Respaldos de la base de datos: contienen datos personales de los usuarios
 respaldos/*.sql
@@ -21,9 +21,18 @@ build/
 *.egg-info/
 .pytest_cache/
 
-# Modelo neuronal entrenado (se regenera con el script de entrenamiento)
-backend/modelo/*.keras
+# Modelo neuronal entrenado.
+#
+# El modelo SÍ se versiona, a diferencia de lo que se decidió al empezar. Pesa
+# 345 KB y es el artefacto que el despliegue necesita: sin él en el repositorio,
+# la imagen del contenedor tendría que entrenar la red durante la construcción,
+# y cada despliegue produciría un modelo distinto del que se midió y se reportó
+# en el Capítulo V. Se versiona, entonces, la versión exacta cuyas métricas
+# documenta la tesis. Lo que sigue fuera son los formatos antiguos y los pesos
+# intermedios que el entrenamiento genera de paso.
 backend/modelo/*.h5
+backend/modelo/*.ckpt
+backend/modelo/checkpoints/
 
 # Editor y sistema operativo
 .vscode/

@@ -19,12 +19,18 @@ verificado; lo demás está pendiente.
 | 3 | Motor neuronal y rutina | E3 | 21 | **Terminada** |
 | 4 | Catálogo local | E3 y E4 | 13 | **Terminada** |
 | 5 | Seguimiento y reportes | E4 | 13 | **Terminada** |
-| 6 | Despliegue en producción | — | — | Preparada; falta contratar el servidor |
+| 6 | Despliegue en producción | — | — | Preparada; falta contratar y publicar |
 
 **Avance: 63 de 63 puntos de historia (100 %).** Las once historias de usuario están
 implementadas y verificadas con pruebas. Lo que queda no es desarrollo sino trabajo
 de campo y contratación: el levantamiento de los catálogos en los mercados y en el
-Gimnasio FAMAS, y la contratación del servidor y el dominio.
+Gimnasio FAMAS, y la contratación del alojamiento y el dominio.
+
+> **Pila de producción: Render y Supabase.** El sistema se publica sobre Render —la
+> aplicación, en contenedor— y Supabase —PostgreSQL administrado—. El gestor pasó de
+> MySQL a PostgreSQL, y ese cambio obligó a corregir el Capítulo III de la tesis en
+> nueve lugares; el detalle está en `../CAMBIOS_PILA_DESPLIEGUE.md`. El
+> procedimiento completo de despliegue está en [DESPLIEGUE.md](DESPLIEGUE.md).
 
 > **Nota sobre el orden.** La Iteración 5 se construyó antes que la 4, porque HU-08
 > depende de HU-11 y HU-11 exige un levantamiento de campo que no puede hacerse
@@ -51,7 +57,7 @@ concluida, con independencia de su contenido funcional:
 ## Fase 0 — Fundaciones del proyecto
 
 - [x] ~~Estructura de carpetas separando servicios, datos y presentación (patrón modelo-vista-controlador, apartado 3.1.2)~~
-- [x] ~~Base de datos MySQL 8 en contenedor (`docker-compose.yml`), puerto 3307~~
+- [x] ~~Base de datos en contenedor (`docker-compose.yml`)~~ *(PostgreSQL 16 en el puerto 5433; empezó siendo MySQL 8 en el 3307 y migró al adoptarse Supabase)*
 - [x] ~~Entorno de Python 3.12 administrado con `uv`~~
 - [x] ~~Configuración por variables de entorno con plantillas `.env.example`~~
 - [x] ~~Modelo entidad-relación completo del apartado 3.4.3: usuario, perfil biométrico, plan, alimento y ejercicio, más el desglose de comidas, sesiones y progreso~~
@@ -111,7 +117,7 @@ la Fase 2, pero deben cerrarse antes de la entrega:
 - [x] ~~Registrar el código en el control de versiones — condición (a)~~
 - [ ] Comprobar el funcionamiento en un teléfono inteligente real, no solo en un navegador redimensionado — condición (d)
 - [ ] Medir la carga de pantallas sobre una conexión móvil de tercera generación, con meta de menos de dos segundos (requerimiento 4.5.2) — condición (e)
-- [ ] Desplegar el incremento en el entorno de pruebas — condición (g)
+- [x] ~~Desplegar el incremento en el entorno de pruebas — condición (g)~~ *(`docker-compose.pruebas.yml`; los tres componentes levantados en contenedores y el flujo completo recorrido de extremo a extremo)*
 
 ---
 
@@ -156,7 +162,7 @@ la Fase 3 pero deben cerrarse antes de la entrega:
 - [x] ~~Registrar el código en el control de versiones — condición (a)~~
 - [ ] Comprobar el funcionamiento en un teléfono inteligente real — condición (d)
 - [ ] Medir la carga de pantallas sobre conexión móvil de tercera generación (requerimiento 4.5.2) — condición (e)
-- [ ] Desplegar el incremento en el entorno de pruebas — condición (g)
+- [x] ~~Desplegar el incremento en el entorno de pruebas — condición (g)~~ *(`docker-compose.pruebas.yml`; los tres componentes levantados en contenedores y el flujo completo recorrido de extremo a extremo)*
 
 ## Fase 3 — Iteración 3: Motor neuronal y rutina (Épica E3)
 
@@ -396,15 +402,44 @@ avance antes que la báscula.
 Del apartado 3.8. El sistema debe estar en ambiente productivo al momento de la
 presentación final.
 
-- [x] ~~Separar los entornos de desarrollo, pruebas y producción~~ *(`docker-compose.produccion.yml` y `.env.produccion.example`)*
+- [x] ~~Separar los entornos de desarrollo, pruebas y producción~~ *(los tres existen: `docker-compose.yml` para desarrollo, `docker-compose.pruebas.yml` para pruebas y `render.yaml` para producción)*
+- [x] ~~Migrar el gestor de base de datos a PostgreSQL~~ *(verificado de extremo a extremo contra PostgreSQL 16; el acceso a datos pasa por SQLAlchemy y el gestor se decide por la cadena de conexión)*
+- [x] ~~Declarar el entorno productivo en un archivo versionado~~ *(`render.yaml`, para que el despliegue sea reproducible y no dependa de lo que se configuró a mano en un panel)*
+- [x] ~~Documentar el procedimiento de despliegue paso a paso~~ *(`DESPLIEGUE.md`)*
 - [x] ~~Empaquetar la aplicación en contenedores~~ *(`backend/Dockerfile`, `frontend/Dockerfile` y `nginx.conf`)*
-- [ ] **Contratar el servidor en la nube de bajo costo** — requiere contratación
-- [ ] **Configurar el dominio propio y el certificado de seguridad** — requiere contratación
-- [x] ~~Configurar los respaldos periódicos de la base de datos~~ *(`operaciones/respaldar_base_datos.sh` y su contraparte de restauración)*
+- [ ] **Crear el proyecto en Supabase y el blueprint en Render** — requiere sus credenciales; el costo son US$ 7.25 mensuales, unos Q57.00, contra los Q150.00 que presupuesta la Tabla 13
+- [ ] **Configurar el dominio propio** — requiere contratación. El certificado ya no se contrata: Render lo emite y lo renueva
+- [x] ~~Configurar los respaldos periódicos de la base de datos~~ *(`operaciones/respaldar_base_datos.sh` y su contraparte de restauración, ahora con `pg_dump` y `psql`; en el plan gratuito de Supabase no hay copias automáticas, de modo que este respaldo es el único que existe)*
 - [x] ~~Cambiar todas las credenciales predeterminadas~~ *(el sistema se niega a arrancar en producción si detecta alguna)*
-- [x] ~~Pruebas de carga con al menos cincuenta usuarios concurrentes (requerimiento 4.5.2)~~ *(`backend/prueba_de_carga.py`; ver resultados abajo)*
+- [x] ~~Pruebas de carga con al menos cincuenta usuarios concurrentes (requerimiento 4.5.2)~~ *(`backend/prueba_de_carga.py`, ejecutadas contra PostgreSQL; **cumplen**, ver resultados abajo)*
 - [x] ~~Almacenar en memoria los planes recientes, si las pruebas de carga lo requieren (Tabla 12)~~ — **las pruebas lo requirieron**
 - [x] ~~Verificar que el modelo neuronal pueda reentrenarse sin detener el servicio (requerimiento 4.5.6)~~ *(ruta `/administracion/modelo/recargar`)*
+
+#### Verificación del entorno de pruebas
+
+La composición se levantó completa y se recorrió el flujo de extremo a extremo:
+registro, acceso, perfil biométrico, generación del plan, rutina, menú, registro de
+progreso y reporte de evolución. Todo a través del puerto 8080, es decir, pasando por
+el servidor web que entrega la interfaz y reenvía las peticiones a los servicios, que
+es el camino que recorrerá el usuario en producción.
+
+| Comprobación | Resultado |
+|---|---|
+| El guion de arranque siembra el modelo en un volumen vacío | El servicio arranca con la red neuronal, no con la fórmula de respaldo |
+| Dos procesos de trabajo arrancando a la vez contra PostgreSQL | Las tres carreras —esquema, administrador y catálogos— se resuelven y el servidor sigue en pie |
+| Las peticiones a `/api` llegan al backend por el servidor web | `estado` responde por el puerto 8080 |
+| Las rutas internas de la interfaz se entregan al índice | `/plan-nutricional` responde 200 |
+| Plan generado a través de toda la cadena | 0.18 s, origen `red_neuronal`, margen 0.29 % |
+| Respaldo y restauración | El volcado se toma, se restaura y las cinco tablas conservan su contenido |
+
+El ejercicio encontró dos defectos propios de la configuración de despliegue, ambos
+corregidos, y ninguno de ellos visible desde el código:
+
+1. **El correo del administrador de ejemplo terminaba en `.local`,** que es un dominio
+   reservado y que el validador de correo rechaza. El servicio no llegaba a arrancar.
+2. **El archivo de entorno tenía un valor con espacios sin comillas.** Docker lo lee
+   bien, pero los guiones de respaldo lo cargan con el intérprete de órdenes, que
+   tomaba cada palabra como una orden aparte. Venía de la plantilla original.
 
 #### Dos defectos de producción que las pruebas de carga descubrieron
 
@@ -423,34 +458,43 @@ solo proceso de trabajo y el de producción corre con varios:
 
 #### Resultado de las pruebas de carga
 
-Con cincuenta usuarios concurrentes, cuatro procesos de trabajo y perfiles distintos
-entre sí:
+Con cincuenta usuarios concurrentes, perfiles distintos entre sí, **contra PostgreSQL
+16** y con **un solo proceso de trabajo**, que es la configuración con que el sistema
+correrá en Render:
 
-| Operación | Mediana | p95 | Límite | Resultado |
-|---|---|---|---|---|
-| Consulta de la rutina | 0.01 s | 0.06 s | 2 s | cumple |
-| Consulta del menú | 0.01 s | 0.04 s | 2 s | cumple |
-| Reporte de evolución | 0.01 s | 0.02 s | 2 s | cumple |
-| Historial de medidas | 0.01 s | 0.01 s | 2 s | cumple |
-| Registro de progreso | 0.21 s | 2.11 s | 3 s | cumple |
-| Generación del plan | 2.32 s | 4.94 s | 3 s | **no cumple** |
+| Operación | Mediana | p95 | Máximo | Límite | Fallos | Resultado |
+|---|---|---|---|---|---|---|
+| Generación del plan | 1.66 s | 2.70 s | 3.19 s | 3 s | 0 | cumple |
+| Consulta de la rutina | 1.06 s | 1.69 s | 2.16 s | 2 s | 0 | cumple |
+| Consulta del menú | 0.72 s | 1.69 s | 2.69 s | 2 s | 0 | cumple |
+| Registro de progreso | 1.10 s | 2.38 s | 2.95 s | 3 s | 0 | cumple |
+| Reporte de evolución | 0.73 s | 1.34 s | 2.23 s | 2 s | 0 | cumple |
+| Historial de medidas | 0.29 s | 1.29 s | 2.35 s | 2 s | 0 | cumple |
 
-**La medición no es concluyente**, y conviene decir por qué. El cómputo de un plan
-—predicción neuronal, generación de la rutina y del menú— tarda **44 milisegundos**
-medidos en aislamiento, y con un solo usuario la operación completa tarda 60
-milisegundos. Todo lo demás es contención de la base de datos: la prueba se ejecutó
-sobre SQLite, que serializa las escrituras de todos los procesos sobre un mismo
-archivo, mientras que producción usa MySQL, que admite escrituras concurrentes. No
-fue posible medir contra MySQL porque requiere Docker, que no estaba disponible.
+**Las seis operaciones cumplen, sin ningún fallo.** Es la medición que faltaba: la
+anterior se había ejecutado sobre SQLite, que serializa las escrituras de todos los
+procesos sobre un mismo archivo, y la generación del plan había dado 4.94 s en p95.
+El cómputo puro —predicción neuronal, rutina y menú— siempre fueron 44 milisegundos;
+todo lo demás era contención del gestor, y con PostgreSQL desaparece.
 
-- [ ] **Repetir la prueba de carga contra MySQL** antes de dar por verificado el
-  requerimiento 4.5.2. Levante la composición de producción y ejecute
-  `uv run python prueba_de_carga.py --url <dirección>`.
+**Dos advertencias sobre estos números, para no leerlos de más.**
 
-Aun así, la medición dejó dos mejoras que valen en cualquier gestor: la memoria de
-planes recientes que la Tabla 12 preveía, y la reducción de seis viajes a la base de
-datos por cada plan al enlazar las sesiones de entrenamiento por la relación del
-modelo en lugar de por su identificador.
+1. **El margen es estrecho donde importa.** La generación del plan queda a 0.30 s del
+   límite. No sobra holgura.
+2. **Se midió en el equipo de desarrollo, no en Render.** La instancia contratada
+   tiene media unidad de procesamiento, menos que este equipo, y la base de datos
+   estará al otro lado de la red. La medición definitiva es contra el sistema
+   publicado.
+
+- [ ] **Repetir la prueba contra el sistema publicado en Render**, con
+  `uv run python prueba_de_carga.py --url https://<dirección>`, para cerrar el
+  requerimiento 4.5.2 sobre el entorno real. Si no cumpliera, la salida no es agregar
+  procesos de trabajo —no caben en los 512 MB de la instancia— sino subir su plan.
+
+La medición anterior dejó, además, dos mejoras que valen en cualquier gestor y que ya
+están incorporadas: la memoria de planes recientes que la Tabla 12 preveía, y la
+reducción de seis viajes a la base de datos por cada plan al enlazar las sesiones de
+entrenamiento por la relación del modelo en lugar de por su identificador.
 
 ---
 
@@ -469,12 +513,12 @@ Del apartado 4.3.4. Aplican con independencia de la funcionalidad que se ejecute
 
 Del apartado 4.5. Se verifican de forma continua, no una sola vez.
 
-- [x] ~~**4.5.1 Seguridad.** Contraseñas con resumen criptográfico y sal, validación de acceso en el servidor, mensajes que no revelan qué dato falló~~ *(el cifrado del tránsito lo termina el proxy inverso del servidor, que queda pendiente de contratar)*
-- [ ] **4.5.2 Rendimiento.** ~~Plan completo en menos de tres segundos~~ *(60 ms con un usuario)*; ~~pruebas con cincuenta usuarios concurrentes~~ *(ejecutadas; concluyentes solo contra MySQL)*; falta medir las pantallas sobre conexión móvil de tercera generación
+- [x] ~~**4.5.1 Seguridad.** Contraseñas con resumen criptográfico y sal, validación de acceso en el servidor, mensajes que no revelan qué dato falló~~ *(el cifrado del tránsito hacia el usuario lo emite Render con el dominio propio; el de la conexión con la base de datos ya está: el sistema exige `sslmode=require` en toda cadena que no apunte a un anfitrión local)*
+- [ ] **4.5.2 Rendimiento.** ~~Plan completo en menos de tres segundos~~ *(0.36 s con un usuario, contra PostgreSQL)*; ~~pruebas con cincuenta usuarios concurrentes~~ *(ejecutadas contra PostgreSQL; **las seis operaciones cumplen**)*; falta repetirlas contra el sistema publicado y medir las pantallas sobre conexión móvil de tercera generación
 - [x] ~~**4.5.3 Usabilidad.** Controles con área táctil suficiente y formularios en pasos cortos~~ *(el formulario del perfil biométrico se divide en tres pasos y toda cifra técnica lleva su explicación; falta medir que un usuario obtenga su primer plan en menos de cinco minutos, posible hasta la Fase 3)*
-- [x] ~~**4.5.4 Escalabilidad.** Capas independientes y entorno replicable mediante contenedores~~ *(los tres componentes se levantan con `docker-compose.produccion.yml`)*
+- [x] ~~**4.5.4 Escalabilidad.** Capas independientes y entorno replicable mediante contenedores~~ *(los tres componentes se levantan con `docker-compose.pruebas.yml`, y producción se declara entera en `render.yaml`)*
 - [x] ~~**4.5.5 Compatibilidad.** Funciona de 320 a 1920 píxeles, sin complementos adicionales~~ *(comprobado a 320, 375 y 1920 píxeles; falta la comprobación en navegadores de teléfono reales)*
-- [x] ~~**4.5.6 Mantenibilidad.** Código organizado según el patrón modelo-vista-controlador, con herramientas de código abierto~~ *(el modelo se recarga sin detener el servicio desde `/administracion/modelo/recargar`; falta el control de versiones)*
+- [x] ~~**4.5.6 Mantenibilidad.** Código organizado según el patrón modelo-vista-controlador, con herramientas de código abierto~~ *(el modelo se recarga sin detener el servicio desde `/administracion/modelo/recargar`, y en producción vive en un disco persistente para que un modelo reentrenado sobreviva a la actualización del contenedor)*
 
 ## Riesgos abiertos
 
@@ -485,7 +529,7 @@ De la Tabla 12. Los dos primeros son los de mayor impacto sobre la hipótesis.
 | ~~El modelo no alcanza el margen de error del 5 %~~ **cerrado** | 3 | Se alcanzó un margen medio del 0.21 %, con el 100 % de los perfiles de validación bajo el 5 % |
 | Volumen insuficiente de datos de entrenamiento | 3 | Mitigado con 40 000 perfiles sintéticos derivados de las ecuaciones de referencia; queda incorporar los 169 perfiles del trabajo de campo |
 | Catálogo local incompleto o desactualizado | 4 | El módulo de administración está construido y los catálogos tienen carga inicial. **Abierto:** los 36 alimentos y 25 ejercicios son provisionales hasta el levantamiento de campo |
-| Degradación del rendimiento con usuarios concurrentes | 6 | **Parcialmente cerrado.** Se implementó la memoria de planes recientes y se ejecutaron las pruebas de carga, que descubrieron dos defectos de arranque con varios procesos. Falta repetirlas contra MySQL |
+| ~~Degradación del rendimiento con usuarios concurrentes~~ **cerrado en desarrollo** | 6 | Se implementó la memoria de planes recientes, se corrigieron los dos defectos de arranque que las pruebas descubrieron, y la medición contra PostgreSQL con 50 usuarios concurrentes cumple en las seis operaciones. Queda repetirla contra el sistema publicado |
 | Sesgo por concentración de los tres roles de Scrum | Todas | Revisión de las catedráticas asesoras y prueba con usuarios reales del gimnasio |
 | Ampliación no controlada del alcance | Todas | Registrar todo requerimiento nuevo con prioridad baja, sin incorporarlo a la iteración en curso |
 
@@ -494,7 +538,7 @@ De la Tabla 12. Los dos primeros son los de mayor impacto sobre la hipótesis.
 ## Cómo levantar el proyecto
 
 ```bash
-# 1. Base de datos (desde la raíz del proyecto)
+# 1. Base de datos PostgreSQL (desde la raíz del proyecto)
 docker compose up -d
 
 # 2. Servicios
@@ -518,6 +562,17 @@ uv run python entrenar_modelo.py
 - Pruebas: `cd backend && uv run pytest -v`
 - Pruebas sin entrenar la red: `cd backend && uv run pytest -m "not lenta"`
 
+Para levantar el **entorno de pruebas**, que es donde se valida un incremento antes de
+publicarlo:
+
+```bash
+cp .env.pruebas.example .env.pruebas   # y reemplace todos los valores
+docker compose -f docker-compose.pruebas.yml --env-file .env.pruebas up -d --build
+```
+
+Queda en <http://localhost:8080>. El **despliegue en producción**, sobre Render y
+Supabase, está documentado paso a paso en [DESPLIEGUE.md](DESPLIEGUE.md).
+
 ## Decisiones técnicas tomadas
 
 Conviene conocerlas antes de modificar la configuración del entorno.
@@ -529,19 +584,41 @@ Conviene conocerlas antes de modificar la configuración del entorno.
    WSL ya ocupa el 8000 sobre IPv6 en este equipo. Como Windows resuelve `localhost`
    primero a IPv6, el navegador alcanzaba ese otro servicio en lugar del backend.
 3. **El frontend apunta a `127.0.0.1` y no a `localhost`,** por la misma razón anterior.
-4. **MySQL se publica en el puerto 3307,** para no chocar con una instalación de MySQL en
-   el puerto habitual.
+4. **PostgreSQL se publica en el puerto 5433,** para no chocar con una instalación de
+   PostgreSQL que ya ocupe el puerto habitual.
 5. **Los identificadores del código están en español,** para que coincidan con la
    terminología de la tesis, que evita anglicismos por exigencia de la rúbrica.
 6. **Cada perfil biométrico es un registro nuevo,** no una actualización del anterior. Es
    lo que produce el historial de la historia HU-05 y permite el reajuste de la Fase 5.
+7. **El gestor es PostgreSQL y no MySQL,** porque Supabase, el servicio administrado que
+   sostiene producción, provee PostgreSQL. El cambio costó nueve correcciones en el
+   Capítulo III de la tesis y casi nada de código: el acceso a datos pasa por SQLAlchemy
+   y el gestor se decide por la cadena de conexión.
+8. **Se conecta por el repartidor de sesión de Supabase, no por la conexión directa.** La
+   directa solo responde por IPv6 y Render sale a la red por IPv4: el servicio arrancaría
+   y no alcanzaría la base de datos. El sistema completa por su cuenta el controlador que
+   SQLAlchemy necesita y exige el cifrado del tránsito cuando la base es remota, de modo
+   que la cadena se copia del panel de Supabase tal como viene.
+9. **Un solo proceso de trabajo en producción.** Cada uno carga su propia copia de
+   TensorFlow: el servicio ocupa 271 MB con uno, de los cuales 190 son la biblioteca. Un
+   segundo no cabría en los 512 MB de la instancia. El entorno de pruebas levanta dos,
+   para que la carrera de arranque entre procesos siga reproduciéndose ahí.
+10. **El modelo entrenado sí se versiona,** al contrario de lo que se decidió al empezar.
+    Pesa 345 KB, y sin él en el repositorio la imagen del contenedor tendría que entrenar
+    la red durante la construcción: cada despliegue produciría un modelo distinto del que
+    se midió y se reportará en el Capítulo V.
 
 ## Pendientes administrativos
 
 No son de programación, pero condicionan la entrega:
 
 - [ ] Carta del Gimnasio FAMAS que respalde su anuencia a participar (apartados 4.1.3 y 4.10.3)
-- [ ] Cambiar la contraseña de administrador en `backend/.env` antes de cualquier despliegue
+- [ ] Cambiar la contraseña de administrador antes de cualquier despliegue. En producción
+      se define en el panel de Render, no en ningún archivo del repositorio
 - [ ] Eliminar de la base de datos las cuentas de prueba creadas durante el desarrollo
-- [ ] Ajustar el presupuesto del apartado 4.10.2 a los costos reales
+- [ ] Decidir si ajusta el presupuesto del apartado 4.10.2 a los costos reales. Los
+      números están en `../CAMBIOS_PILA_DESPLIEGUE.md`: el alojamiento son Q342.00 en
+      lugar de Q900.00, y el certificado ya no se paga. **La tabla no se tocó** porque la
+      revisó la Dra. Esquivel y el cambio arrastra los imprevistos, el total y el párrafo
+      que cita las cifras
 - [ ] Verificar las tres referencias señaladas en `Tesis Final/RESUMEN DE CAMBIOS.md`

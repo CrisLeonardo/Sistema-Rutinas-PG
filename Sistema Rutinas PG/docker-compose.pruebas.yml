@@ -1,0 +1,99 @@
+# Composicion del entorno de pruebas (apartado 3.8 de la tesis).
+#
+# El apartado 3.8 distingue tres entornos: desarrollo, donde se programa;
+# pruebas, donde se valida el comportamiento integral del incremento; y
+# produccion, donde el sistema queda disponible para los usuarios finales.
+#
+#   - Desarrollo: `docker-compose.yml` mas los servicios ejecutados a mano.
+#   - Pruebas:    este archivo.
+#   - Produccion: `render.yaml`, sobre Render y Supabase.
+#
+# Esta composicion levanta los tres componentes del sistema en contenedores,
+# igual que produccion, pero contra una base de datos propia y desechable. Es
+# donde se comprueba un incremento antes de publicarlo, que es la condicion (g)
+# de la definicion de terminado del apartado 4.8.2. Reproduce de produccion lo
+# que puede fallar al desplegar —varios procesos de trabajo, la interfaz
+# servida como archivos estaticos, la ruta relativa de los servicios— sin
+# tocar los datos reales de los usuarios del gimnasio.
+#
+#     docker compose -f docker-compose.pruebas.yml --env-file .env.pruebas up -d
+#
+# Ningun valor sensible esta escrito aqui: todos se leen del archivo de entorno,
+# que no se versiona. Antes de levantarlo, copie `.env.pruebas.example`.
+
+name: sistema-rutinas-pruebas
+
+services:
+  base_datos:
+    # La misma version mayor que ejecuta Supabase en produccion, para que un
+    # defecto propio del gestor aparezca aqui y no alla.
+    image: postgres:16-alpine
+    container_name: rutinas_postgres_pruebas
+    restart: always
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:?defina POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER:?defina POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?defina POSTGRES_PASSWORD}
+    volumes:
+      - datos_postgres_pruebas:/var/lib/postgresql/data
+      - ./respaldos:/respaldos
+    # La base de datos no publica ningun puerto al exterior: solo los servicios
+    # la alcanzan, por la red interna de la composicion.
+    expose:
+      - "5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  servicios:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: rutinas_servicios_pruebas
+    restart: always
+    depends_on:
+      base_datos:
+        condition: service_healthy
+    environment:
+      URL_BASE_DATOS: postgresql+psycopg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@base_datos:5432/${POSTGRES_DB}
+      CLAVE_SECRETA: ${CLAVE_SECRETA:?defina CLAVE_SECRETA}
+      MINUTOS_EXPIRACION_SESION: ${MINUTOS_EXPIRACION_SESION:-30}
+      ORIGENES_PERMITIDOS: ${ORIGENES_PERMITIDOS:?defina ORIGENES_PERMITIDOS}
+      ADMIN_CORREO: ${ADMIN_CORREO:?defina ADMIN_CORREO}
+      ADMIN_CONTRASENA: ${ADMIN_CONTRASENA:?defina ADMIN_CONTRASENA}
+      ADMIN_NOMBRE: ${ADMIN_NOMBRE:-Administrador del sistema}
+      ENTORNO: produccion
+      PORT: "8000"
+      # Dos procesos, para que la carrera de arranque entre ellos se reproduzca
+      # aqui. Fue con varios procesos que aparecieron los dos defectos de
+      # despliegue que las pruebas de carga descubrieron.
+      PROCESOS_DE_TRABAJO: "2"
+    volumes:
+      # El modelo entrenado vive fuera de la imagen: sobrevive a la
+      # actualizacion del contenedor y puede reentrenarse sin reconstruirla
+      # (requerimiento no funcional 4.5.6).
+      - modelo_entrenado_pruebas:/aplicacion/modelo
+    expose:
+      - "8000"
+
+  interfaz:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        # Igual que en produccion, la interfaz y los servicios comparten
+        # dominio: la ruta relativa basta y evita configurar origenes cruzados.
+        VITE_URL_API: /api/v1
+    container_name: rutinas_interfaz_pruebas
+    restart: always
+    depends_on:
+      - servicios
+    ports:
+      - "${PUERTO_PUBLICO:-8080}:80"
+
+volumes:
+  datos_postgres_pruebas:
+  modelo_entrenado_pruebas:

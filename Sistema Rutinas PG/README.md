@@ -32,11 +32,11 @@ Corresponde a la definida en el apartado 3.6 de la tesis.
 | Presentación | React, HTML5, CSS3 y Bootstrap 5 |
 | Lógica y servicios | FastAPI sobre Python, interfaz REST con formato JSON |
 | Inteligencia artificial | Python, TensorFlow 2.21 y Keras 3.15 |
-| Persistencia | MySQL 8 |
+| Persistencia | PostgreSQL 16, administrado por Supabase en producción |
 
 ## Requisitos previos
 
-- Docker, para levantar la base de datos MySQL.
+- Docker, para levantar la base de datos PostgreSQL.
 - [uv](https://docs.astral.sh/uv/), que administra el entorno de Python.
 - Node.js 20 o superior.
 
@@ -54,8 +54,10 @@ Desde la raíz del proyecto:
 docker compose up -d
 ```
 
-MySQL queda disponible en el puerto **3307** del equipo, para no interferir con
-otra instalación de MySQL que pudiera existir en el puerto habitual.
+PostgreSQL queda disponible en el puerto **5433** del equipo, para no interferir
+con otra instalación de PostgreSQL que pudiera existir en el puerto habitual. Es
+la misma versión mayor que ejecuta Supabase en producción, de modo que un defecto
+propio del gestor aparezca aquí y no allá.
 
 ### 2. Servicios (backend)
 
@@ -103,7 +105,7 @@ en lugar del backend. Por la misma razón, el archivo `.env` del frontend apunta
 
 Las pruebas funcionales verifican uno a uno los criterios de aceptación de la
 Tabla 10 del Capítulo IV. Se ejecutan sobre una base de datos temporal, por lo
-que no requieren que MySQL esté levantado.
+que no requieren que PostgreSQL esté levantado.
 
 ```bash
 cd backend
@@ -176,7 +178,11 @@ dos vías se produjo.
 
 ```
 Sistema Rutinas PG/
-├── docker-compose.yml           Base de datos MySQL
+├── docker-compose.yml           Base de datos PostgreSQL (desarrollo)
+├── docker-compose.pruebas.yml   Los tres componentes en contenedores (pruebas)
+├── render.yaml                  Entorno productivo declarado (Render y Supabase)
+├── DESPLIEGUE.md                Procedimiento de despliegue paso a paso
+├── operaciones/                 Respaldo y restauración de la base de datos
 ├── backend/
 │   ├── app/
 │   │   ├── main.py              Punto de entrada de la aplicación
@@ -186,8 +192,9 @@ Sistema Rutinas PG/
 │   │   ├── motor/               Fórmulas de referencia y red neuronal (E3)
 │   │   ├── servicios/           Reglas de negocio
 │   │   └── api/                 Controladores de la interfaz REST
-│   ├── modelo/                  Modelo entrenado (no se versiona)
+│   ├── modelo/                  Modelo entrenado (se versiona: lo necesita el despliegue)
 │   ├── entrenar_modelo.py       Script de entrenamiento de la red
+│   ├── entrada.sh               Arranque del contenedor: siembra el modelo y fija el puerto
 │   └── tests/                   Pruebas de los criterios de aceptación
 └── frontend/
     └── src/
@@ -316,15 +323,38 @@ pantallas de 320 píxeles.
 
 ## Despliegue en producción
 
+El sistema se publica sobre **Render** —la aplicación, en contenedor— y **Supabase**
+—PostgreSQL administrado—. El procedimiento completo, paso a paso, está en
+**[DESPLIEGUE.md](DESPLIEGUE.md)**; aquí solo va el resumen.
+
 El apartado 3.8 exige separar los entornos, empaquetar en contenedores, configurar
-respaldos y cambiar todas las credenciales. La composición de producción es
-independiente de la de desarrollo, de modo que una prueba no pueda tocar los datos
-reales de los usuarios del gimnasio.
+respaldos y cambiar todas las credenciales. Los tres entornos son:
+
+| Entorno | Dónde se declara | Para qué |
+|---|---|---|
+| Desarrollo | `docker-compose.yml` y los servicios ejecutados a mano | Programar |
+| Pruebas | `docker-compose.pruebas.yml` | Validar un incremento antes de publicarlo, que es la condición (g) de la definición de terminado |
+| Producción | `render.yaml` | El sistema en uso |
+
+Producción queda declarada entera en un archivo versionado, de modo que el despliegue
+sea reproducible y no dependa de recordar qué se configuró a mano en un panel.
+
+### El entorno de pruebas
+
+Levanta los tres componentes en contenedores, igual que producción, contra una base
+de datos propia y desechable:
 
 ```bash
-cp .env.produccion.example .env.produccion   # y reemplace TODOS los valores
-docker compose -f docker-compose.produccion.yml --env-file .env.produccion up -d --build
+cp .env.pruebas.example .env.pruebas
 ```
+
+Reemplace todos los valores y levante la composición:
+
+```bash
+docker compose -f docker-compose.pruebas.yml --env-file .env.pruebas up -d --build
+```
+
+Queda en <http://localhost:8080>.
 
 El sistema **se niega a arrancar en producción** si detecta que alguna credencial
 conserva su valor de ejemplo. Un despliegue con la contraseña escrita en el
@@ -334,21 +364,43 @@ administrador.
 ### Respaldos
 
 ```bash
-./operaciones/respaldar_base_datos.sh                    # volcado comprimido
+./operaciones/respaldar_base_datos.sh
+```
+
+Sin variables, respalda el entorno de pruebas. Para producción, la cadena de conexión
+entra por el entorno, de modo que la credencial no queda escrita en ningún archivo:
+
+```bash
+URL_RESPALDO="<cadena de Supabase>" ./operaciones/respaldar_base_datos.sh
+```
+
+Para restaurar:
+
+```bash
 ./operaciones/restaurar_base_datos.sh respaldos/<archivo>.sql.gz
 ```
 
-El primero está pensado para el planificador del servidor (`0 2 * * *`) y retira los
-volcados que superan el periodo de retención. El segundo existe porque un respaldo que
-nunca se ha restaurado no es un respaldo, es un archivo: conviene probarlo.
+El primero está pensado para el planificador de tareas (`0 2 * * *`) y retira los
+volcados que superan el periodo de retención. **El plan gratuito de Supabase no
+conserva copias automáticas,** de modo que este respaldo no es una precaución
+adicional sino la única que existe sobre los datos de producción. El segundo script
+existe porque un respaldo que nunca se ha restaurado no es un respaldo, es un
+archivo: conviene probarlo.
 
 ### Reentrenar sin detener el servicio
 
 El requerimiento 4.5.6 pide que el modelo pueda reentrenarse sin interrumpir el
-servicio. El modelo vive en un volumen, fuera de la imagen:
+servicio. El modelo vive en un disco persistente, fuera de la imagen del contenedor:
 
 ```bash
-docker exec rutinas_servicios python entrenar_modelo.py
+cd backend
+uv run python entrenar_modelo.py
+```
+
+Envíe el modelo nuevo al repositorio, espere a que Render publique, y póngalo en
+operación sin detener el servicio:
+
+```bash
 curl -X POST https://sudominio.gt/api/v1/administracion/modelo/recargar -H "Authorization: Bearer <token de administrador>"
 ```
 
@@ -364,6 +416,9 @@ simultáneas satura la función de cifrado de contraseñas y daría un número q
 describe ningún escenario real— y después somete al sistema a las operaciones de uso
 con todos los usuarios a la vez.
 
-**La medición solo es concluyente contra MySQL.** SQLite serializa las escrituras de
-todos los procesos sobre un mismo archivo; MySQL las admite en paralelo. Ejecútela
-contra la composición de producción antes de dar por verificado el requerimiento 4.5.2.
+**La medición solo es concluyente contra el gestor de producción.** SQLite serializa
+las escrituras de todos los procesos sobre un mismo archivo; PostgreSQL las admite en
+paralelo. Ejecutada contra PostgreSQL con cincuenta usuarios concurrentes y un solo
+proceso de trabajo, las seis operaciones cumplen sus límites sin ningún fallo. Queda
+repetirla contra el sistema ya publicado, que corre en una instancia más modesta y con
+la base de datos al otro lado de la red.

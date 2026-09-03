@@ -60,7 +60,7 @@ def fixture_cliente(fabrica_sesiones):
     aplicacion.dependency_overrides[obtener_sesion] = sesion_de_prueba
     # El cliente se construye sin gestor de contexto a proposito: asi no se
     # ejecuta el ciclo de vida de la aplicacion y las pruebas no dependen de
-    # que MySQL este levantado.
+    # que PostgreSQL este levantado.
     try:
         yield TestClient(aplicacion)
     finally:

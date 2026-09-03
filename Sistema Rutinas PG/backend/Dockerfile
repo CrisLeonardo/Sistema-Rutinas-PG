@@ -35,12 +35,18 @@ ENV PATH="/aplicacion/.venv/bin:$PATH" \
     PYTHONDONTWRITEBYTECODE=1
 
 COPY --chown=rutinas:rutinas app ./app
-COPY --chown=rutinas:rutinas entrenar_modelo.py ./
+COPY --chown=rutinas:rutinas entrenar_modelo.py entrada.sh ./
+RUN chmod +x /aplicacion/entrada.sh
 
-# El modelo entrenado se monta como volumen y no se copia en la imagen: pesa,
-# cambia con cada reentrenamiento y debe sobrevivir a la actualizacion del
-# contenedor, que es lo que permite reentrenar sin detener el servicio
-# (requerimiento no funcional 4.5.6).
+# El modelo entrenado viaja en la imagen, pero en un directorio aparte del que
+# el servicio lee. El directorio de lectura se monta como volumen —en Render,
+# un disco persistente— para que un modelo reentrenado sobreviva a la
+# actualizacion del contenedor, que es lo que permite reentrenar sin detener el
+# servicio (requerimiento no funcional 4.5.6). El guion de arranque copia el
+# modelo de la imagen al volumen solo cuando este ultimo esta vacio, de modo
+# que el primer despliegue arranque ya con la red neuronal y no con la formula
+# de respaldo.
+COPY --chown=rutinas:rutinas modelo ./modelo_inicial
 RUN mkdir -p /aplicacion/modelo && chown rutinas:rutinas /aplicacion/modelo
 
 USER rutinas
@@ -49,7 +55,12 @@ EXPOSE 8000
 
 # El sondeo de salud permite al orquestador reiniciar el contenedor cuando el
 # servicio deja de responder, en lugar de dejarlo caido sin que nadie lo note.
-HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
-    CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/v1/estado')"
+# Render hace ademas su propia comprobacion sobre la ruta declarada en
+# `render.yaml`.
+HEALTHCHECK --interval=30s --timeout=5s --start-period=90s --retries=3 \
+    CMD python -c "import os,urllib.request; urllib.request.urlopen('http://127.0.0.1:'+os.environ.get('PORT','8000')+'/api/v1/estado')"
 
-CMD ["uvicorn", "app.main:aplicacion", "--host", "0.0.0.0", "--port", "8000", "--workers", "2"]
+# El arranque pasa por un guion y no por un CMD directo porque el puerto y el
+# numero de procesos los decide el entorno: Render asigna el puerto por la
+# variable PORT y la memoria de la instancia limita cuantos procesos caben.
+CMD ["/aplicacion/entrada.sh"]

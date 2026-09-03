@@ -1,23 +1,30 @@
+# Base de datos del entorno de desarrollo.
+#
+# Se usa PostgreSQL 16 y no otra version porque es la que ejecuta Supabase, el
+# servicio administrado sobre el que corre produccion (apartado 3.4.1). Que el
+# desarrollo y la produccion compartan gestor y version mayor evita la clase de
+# defecto que solo aparece al desplegar.
 services:
   base_datos:
-    image: mysql:8.4
-    container_name: rutinas_mysql
+    image: postgres:16-alpine
+    container_name: rutinas_postgres
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rutinas_root}
-      MYSQL_DATABASE: ${MYSQL_DATABASE:-sistema_rutinas}
-      MYSQL_USER: ${MYSQL_USER:-rutinas}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-rutinas_pass}
+      POSTGRES_DB: ${POSTGRES_DB:-sistema_rutinas}
+      POSTGRES_USER: ${POSTGRES_USER:-rutinas}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-rutinas_pass}
     ports:
-      - "3307:3306"
+      # Se publica en el 5433 y no en el 5432 para no chocar con una
+      # instalacion de PostgreSQL que ya ocupe el puerto habitual.
+      - "5433:5432"
     volumes:
-      - datos_mysql:/var/lib/mysql
+      - datos_postgres:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-p${MYSQL_ROOT_PASSWORD:-rutinas_root}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-rutinas} -d ${POSTGRES_DB:-sistema_rutinas}"]
       interval: 10s
       timeout: 5s
       retries: 10
-      start_period: 30s
+      start_period: 20s
 
 volumes:
-  datos_mysql:
+  datos_postgres:

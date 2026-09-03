@@ -15,11 +15,11 @@ uso —generar el plan, consultar la rutina y el menu, registrar el avance y ver
 reporte— con todos los usuarios a la vez, que es lo que el requerimiento describe.
 
 **Sobre la base de datos.** La medicion es valida solo contra el gestor que se
-usara en produccion. MySQL admite escrituras concurrentes; SQLite las serializa
+usara en produccion. PostgreSQL admite escrituras concurrentes; SQLite las serializa
 y, con cincuenta usuarios simultaneos, devuelve errores de bloqueo que no
 provienen del sistema sino del gestor. Antes de dar por verificado el
-requerimiento, ejecute esta prueba contra el entorno de la composicion de
-produccion.
+requerimiento, ejecute esta prueba contra el entorno de pruebas, que levanta
+PostgreSQL en contenedor, o contra el sistema ya publicado en Render.
 
 Se escribe con `httpx`, que ya es dependencia de las pruebas, para no incorporar
 una herramienta de carga solo para esto.

@@ -8,7 +8,7 @@ servicio en produccion, y que el modelo pueda recargarse sin detenerlo.
 import pytest
 
 from app.nucleo import arranque
-from app.nucleo.configuracion import Configuracion
+from app.nucleo.configuracion import Configuracion, normalizar_url_base_datos
 from tests.conftest import encabezado
 
 RUTA_ESTADO = "/api/v1/administracion/estado"
@@ -91,6 +91,102 @@ def test_el_entorno_productivo_se_reconoce_por_su_nombre(entorno, esperado):
 
 
 # --------------------------------------------------------------------------
+# Cadena de conexion del proveedor administrado (apartado 3.4.1)
+# --------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "entregada",
+    [
+        "postgresql://usuario:clave@aws-0-us-east-2.pooler.supabase.com:5432/postgres",
+        "postgres://usuario:clave@aws-0-us-east-2.pooler.supabase.com:5432/postgres",
+    ],
+)
+def test_la_cadena_de_supabase_se_acepta_tal_como_la_entrega_el_panel(entregada):
+    """Quien despliega copia y pega; no tiene por que conocer SQLAlchemy.
+
+    Supabase publica la cadena sin declarar el controlador, y SQLAlchemy
+    interpreta esa ausencia como una peticion de psycopg2, que no esta
+    instalado. El sistema completa el controlador por su cuenta.
+    """
+    normalizada = normalizar_url_base_datos(entregada)
+
+    assert normalizada.startswith("postgresql+psycopg://")
+
+
+def test_la_conexion_remota_exige_cifrado_del_transito():
+    """Entre el servicio y la base viajan las medidas biometricas (4.5.1)."""
+    normalizada = normalizar_url_base_datos(
+        "postgresql://usuario:clave@aws-0-us-east-2.pooler.supabase.com:5432/postgres"
+    )
+
+    assert "sslmode=require" in normalizada
+
+
+def test_el_cifrado_declarado_por_quien_despliega_se_respeta():
+    """Si alguien eligio otro modo, el sistema no lo contradice en silencio."""
+    normalizada = normalizar_url_base_datos(
+        "postgresql://usuario:clave@servidor.remoto:5432/postgres?sslmode=verify-full"
+    )
+
+    assert "sslmode=verify-full" in normalizada
+    assert "sslmode=require" not in normalizada
+
+
+@pytest.mark.parametrize(
+    "anfitrion", ["localhost", "127.0.0.1", "base_datos"]
+)
+def test_la_base_de_datos_local_no_exige_cifrado(anfitrion):
+    """En desarrollo la base no sale a la red; exigir cifrado solo estorbaria."""
+    normalizada = normalizar_url_base_datos(
+        f"postgresql://rutinas:rutinas_pass@{anfitrion}:5433/sistema_rutinas"
+    )
+
+    assert "sslmode" not in normalizada
+
+
+def test_la_configuracion_normaliza_la_cadena_que_recibe():
+    """La normalizacion se aplica al leer el entorno, no solo si se invoca."""
+    configuracion = Configuracion(
+        url_base_datos="postgres://usuario:clave@servidor.remoto:5432/postgres",
+        _env_file=None,
+    )
+
+    assert configuracion.url_base_datos.startswith("postgresql+psycopg://")
+
+
+# --------------------------------------------------------------------------
+# Origenes autorizados de la interfaz
+# --------------------------------------------------------------------------
+
+
+def test_un_origen_sin_protocolo_se_completa():
+    """Render entrega la direccion de un servicio como anfitrion a secas.
+
+    El control de origenes cruzados compara la cadena completa: sin completar
+    el protocolo, un origen legitimo quedaria rechazado sin explicacion.
+    """
+    configuracion = Configuracion(
+        origenes_permitidos="rutinas-interfaz.onrender.com", _env_file=None
+    )
+
+    assert configuracion.lista_origenes == ["https://rutinas-interfaz.onrender.com"]
+
+
+def test_los_origenes_con_protocolo_no_se_alteran():
+    """El entorno de desarrollo usa http, y debe seguir funcionando."""
+    configuracion = Configuracion(
+        origenes_permitidos="http://localhost:5173, https://sudominio.gt",
+        _env_file=None,
+    )
+
+    assert configuracion.lista_origenes == [
+        "http://localhost:5173",
+        "https://sudominio.gt",
+    ]
+
+
+# --------------------------------------------------------------------------
 # Inicializacion con varios procesos de trabajo
 # --------------------------------------------------------------------------
 
@@ -99,7 +195,8 @@ def test_el_esquema_se_verifica_como_completo(fabrica_sesiones, monkeypatch):
     """Tras crear el esquema no debe faltar ninguna tabla del modelo.
 
     Se apunta al motor del fixture y no al del sistema, que en desarrollo
-    apunta a un MySQL que no tiene por qué estar levantado para correr pruebas.
+    apunta a un PostgreSQL que no tiene por qué estar levantado para
+    correr pruebas.
     """
     monkeypatch.setattr(arranque, "motor", fabrica_sesiones.kw["bind"])
 

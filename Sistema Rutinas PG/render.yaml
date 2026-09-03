@@ -1,0 +1,124 @@
+# Despliegue en producción (apartado 3.8 de la tesis).
+#
+# Declara el entorno productivo completo en un archivo versionado, de modo que
+# el despliegue sea reproducible y no dependa de recordar qué se configuró a
+# mano en un panel. Render lee este archivo y crea los dos servicios.
+#
+# El tercer componente, la base de datos, NO se declara aquí: es un PostgreSQL
+# administrado en Supabase, externo a Render, y su cadena de conexión entra
+# como variable de entorno. La guía paso a paso está en DESPLIEGUE.md.
+#
+# Ninguna credencial aparece en este archivo. Las marcadas con `sync: false`
+# las pide Render al crear el servicio y quedan guardadas en su panel.
+
+services:
+  # ------------------------------------------------------------------
+  # Servicios: la interfaz de programación de aplicaciones y el motor
+  # neuronal, empaquetados en el contenedor que describe backend/Dockerfile.
+  # ------------------------------------------------------------------
+  - type: web
+    name: rutinas-servicios
+    runtime: docker
+    # Ohio es la región de Render más cercana a Guatemala. La base de datos de
+    # Supabase debe crearse en la suya equivalente (us-east-2): cada consulta
+    # cruza esa distancia, y el criterio de aceptación de HU-06 concede tres
+    # segundos para el plan completo.
+    region: ohio
+    # 0.5 núcleos y 512 MB. La medición manda: el servicio ocupa 271 MB con un
+    # proceso de trabajo, de los cuales 190 son la propia biblioteca
+    # TensorFlow. Un segundo proceso no cabría, y por eso PROCESOS_DE_TRABAJO
+    # queda en uno.
+    plan: 0.5c-512mb
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    # Render consulta esta ruta antes de dirigir tráfico a una versión nueva:
+    # si el servicio no responde, la publicación se cancela y la versión
+    # anterior sigue atendiendo.
+    healthCheckPath: /api/v1/estado
+    disk:
+      # El modelo entrenado sobrevive aquí a la actualización del contenedor,
+      # que es lo que permite reentrenar la red y ponerla en operación desde
+      # /api/v1/administracion/modelo/recargar sin detener el servicio
+      # (requerimiento no funcional 4.5.6).
+      name: modelo-entrenado
+      mountPath: /aplicacion/modelo
+      sizeGB: 1
+    envVars:
+      - key: ENTORNO
+        value: produccion
+      # Cadena de conexión de Supabase. Use la del **repartidor de sesión**
+      # (Session Pooler), no la directa: la directa solo responde por IPv6 y
+      # Render sale a la red por IPv4, de modo que el servicio no alcanzaría
+      # la base de datos.
+      - key: URL_BASE_DATOS
+        sync: false
+      - key: CLAVE_SECRETA
+        # Render genera una clave aleatoria y no la muestra en ningún archivo.
+        generateValue: true
+      - key: MINUTOS_EXPIRACION_SESION
+        value: "30"
+      # Un solo proceso de trabajo, por la memoria de la instancia. Subirlo
+      # sin subir el plan deja al servicio sin memoria al arrancar.
+      - key: PROCESOS_DE_TRABAJO
+        value: "1"
+      # Con el reenvío que declara el sitio estático, el navegador ve un solo
+      # dominio y no hay petición de origen cruzado. Se declara igual para que
+      # el sistema siga funcionando si alguna vez se separan los dominios, y
+      # para admitir el dominio propio cuando se contrate.
+      #
+      # Se escribe el valor y no una referencia al otro servicio porque las
+      # referencias entre servicios solo alcanzan a los que se ejecutan, no a
+      # los sitios estáticos, y además devuelven el nombre de la red privada y
+      # no la dirección pública. Corrija este valor si Render tuvo que
+      # renombrar el sitio, y agregue el dominio propio separado por coma.
+      - key: ORIGENES_PERMITIDOS
+        value: https://rutinas-interfaz.onrender.com
+      - key: ADMIN_CORREO
+        sync: false
+      - key: ADMIN_CONTRASENA
+        sync: false
+      - key: ADMIN_NOMBRE
+        value: Administrador del sistema
+
+  # ------------------------------------------------------------------
+  # Interfaz de cliente: los archivos que produce React, servidos como
+  # contenido estático. No hay proceso de Node en producción.
+  # ------------------------------------------------------------------
+  - type: web
+    name: rutinas-interfaz
+    runtime: static
+    rootDir: frontend
+    buildCommand: npm ci && npm run build
+    staticPublishPath: ./dist
+    envVars:
+      # La dirección de los servicios se incrusta al construir. Es una ruta
+      # relativa porque el reenvío de abajo hace que interfaz y servicios
+      # compartan dominio.
+      - key: VITE_URL_API
+        value: /api/v1
+    headers:
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
+      - path: /*
+        name: X-Frame-Options
+        value: SAMEORIGIN
+      - path: /*
+        name: Referrer-Policy
+        value: strict-origin-when-cross-origin
+    routes:
+      # Las peticiones a los servicios se reenvían al otro servicio. El
+      # navegador nunca ve la dirección del backend: para él todo ocurre en un
+      # mismo dominio, que es lo que evita configurar orígenes cruzados y lo
+      # que permite que la cookie de sesión y el certificado sean uno solo.
+      #
+      # Es el mismo papel que cumple nginx en el entorno de pruebas
+      # (frontend/nginx.conf); aquí lo desempeña el servidor de Render.
+      - type: rewrite
+        source: /api/*
+        destination: https://rutinas-servicios.onrender.com/api/*
+      # La aplicación resuelve sus propias rutas: cualquier dirección que no
+      # corresponda a un archivo se entrega al índice para que React la atienda.
+      - type: rewrite
+        source: /*
+        destination: /index.html

@@ -32,13 +32,20 @@ def crear_esquema() -> None:
     crea, y entre esas dos operaciones cabe otro proceso: el que llega tarde
     recibe un error de tabla duplicada.
 
-    Ese error no describe una falla del sistema sino una carrera con final
-    correcto, de modo que se comprueba el esquema y, si quedo completo, el
-    arranque continua. Si de verdad faltan tablas, el error se propaga.
+    Con PostgreSQL la carrera tiene un segundo frente. Los campos de valores
+    controlados —el rol, el sexo, el objetivo— se declaran como tipos propios
+    del gestor, y crearlos es otra operacion sujeta a la misma carrera: el
+    proceso que pierde recibe un error de tipo duplicado antes siquiera de
+    llegar a las tablas.
+
+    Ninguno de los dos errores describe una falla del sistema, sino una carrera
+    con final correcto, de modo que se comprueba el esquema y, si quedo
+    completo, el arranque continua. Si de verdad faltan tablas, el error se
+    propaga.
     """
     try:
         Base.metadata.create_all(bind=motor)
-    except (OperationalError, ProgrammingError):
+    except (IntegrityError, OperationalError, ProgrammingError):
         faltantes = tablas_faltantes()
         if faltantes:
             bitacora.error("El esquema quedó incompleto. Faltan las tablas: %s", faltantes)
