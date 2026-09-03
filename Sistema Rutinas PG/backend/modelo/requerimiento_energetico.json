@@ -1,0 +1,86 @@
+{
+  "normalizador": {
+    "medias": [
+      107.33749375000015,
+      169.86027500000026,
+      58.90175,
+      0.50240625,
+      1.5513835937500018,
+      0.9833390625000203,
+      2.0046875,
+      3.97021875
+    ],
+    "desviaciones": [
+      52.07207825906988,
+      28.862339822844753,
+      23.893594265775615,
+      0.4999942099275053,
+      0.24843490510510408,
+      0.14346218155535845,
+      0.8174139265658269,
+      1.9997548167582024
+    ],
+    "columnas": [
+      "peso_kg",
+      "estatura_cm",
+      "edad",
+      "sexo_masculino",
+      "factor_actividad",
+      "ajuste_objetivo",
+      "nivel_experiencia",
+      "dias_entrenamiento_semana"
+    ]
+  },
+  "normalizador_salidas": {
+    "medias": [
+      2762.61565625,
+      214.74178125,
+      303.24959375,
+      76.73890625,
+      11.875821875000343
+    ],
+    "desviaciones": [
+      1221.4869205700165,
+      106.06757771264105,
+      164.17813167931342,
+      33.93212045840487,
+      3.2116048528376426
+    ],
+    "columnas": [
+      "energia_kcal",
+      "proteina_g",
+      "carbohidrato_g",
+      "grasa_g",
+      "series_semanales_por_grupo"
+    ]
+  },
+  "columnas_entrada": [
+    "peso_kg",
+    "estatura_cm",
+    "edad",
+    "sexo_masculino",
+    "factor_actividad",
+    "ajuste_objetivo",
+    "nivel_experiencia",
+    "dias_entrenamiento_semana"
+  ],
+  "columnas_salida": [
+    "energia_kcal",
+    "proteina_g",
+    "carbohidrato_g",
+    "grasa_g",
+    "series_semanales_por_grupo"
+  ],
+  "metricas": {
+    "perfiles_entrenamiento": 32000,
+    "perfiles_validacion": 8000,
+    "epocas": 400,
+    "error_absoluto_medio_kcal": 2.573403338346796,
+    "margen_error_medio": 0.0011315578523308143,
+    "margen_error_maximo": 0.02691048856647425,
+    "proporcion_bajo_el_cinco_por_ciento": 1.0,
+    "error_absoluto_medio_series": 0.021645427769515918,
+    "margen_error_medio_volumen": 0.0020159312550099948
+  },
+  "margen_error_maximo_admitido": 0.05
+}

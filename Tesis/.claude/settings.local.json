@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -c \"from PIL import Image; [print\\(f, Image.open\\(f\\).size\\) for f in ['image.png','image \\(1\\).png','image \\(2\\).png']]\")"
+    ]
+  }
+}

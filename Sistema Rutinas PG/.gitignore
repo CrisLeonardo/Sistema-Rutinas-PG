@@ -1,0 +1,32 @@
+# Entornos y dependencias
+.venv/
+venv/
+node_modules/
+__pycache__/
+*.py[cod]
+
+# Configuración local con credenciales
+.env
+backend/.env
+frontend/.env.local
+.env.produccion
+
+# Respaldos de la base de datos: contienen datos personales de los usuarios
+respaldos/*.sql
+respaldos/*.sql.gz
+
+# Artefactos de construcción y de pruebas
+dist/
+build/
+*.egg-info/
+.pytest_cache/
+
+# Modelo neuronal entrenado (se regenera con el script de entrenamiento)
+backend/modelo/*.keras
+backend/modelo/*.h5
+
+# Editor y sistema operativo
+.vscode/
+.idea/
+Thumbs.db
+desktop.ini

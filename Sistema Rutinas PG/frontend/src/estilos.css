@@ -1,0 +1,176 @@
+/*
+ * Estilos propios de la plataforma.
+ *
+ * Complementan a Bootstrap y atienden el requerimiento no funcional 4.5.3:
+ * controles con área táctil suficiente para su uso en teléfonos, dado que el
+ * 72.2 % de la población estudiada accede desde un teléfono inteligente.
+ */
+
+:root {
+  --color-principal: #14532d;
+  --color-principal-claro: #166534;
+  --color-acento: #f59e0b;
+  --color-fondo: #f4f6f5;
+}
+
+body {
+  background-color: var(--color-fondo);
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  min-width: 320px;
+}
+
+.barra-superior {
+  background-color: var(--color-principal);
+}
+
+.btn-principal {
+  background-color: var(--color-principal);
+  border-color: var(--color-principal);
+  color: #fff;
+}
+
+.btn-principal:hover,
+.btn-principal:focus {
+  background-color: var(--color-principal-claro);
+  border-color: var(--color-principal-claro);
+  color: #fff;
+}
+
+/* Área táctil mínima recomendada para uso en teléfonos. */
+.control-tactil {
+  min-height: 48px;
+}
+
+.tarjeta-formulario {
+  max-width: 480px;
+  width: 100%;
+}
+
+.marca-sistema {
+  font-weight: 600;
+  letter-spacing: 0.2px;
+}
+
+.texto-ayuda {
+  font-size: 0.875rem;
+  color: #4b5563;
+}
+
+.tabla-cuentas td,
+.tabla-cuentas th {
+  vertical-align: middle;
+}
+
+/* En pantallas angostas la tabla de cuentas se desplaza horizontalmente
+   dentro de su contenedor, sin desbordar el cuerpo del documento. */
+.contenedor-tabla {
+  overflow-x: auto;
+}
+
+/* Indicador de avance del formulario del perfil biométrico. Los formularios se
+   dividen en pasos cortos por exigencia del requerimiento 4.5.3. */
+.lista-pasos {
+  display: flex;
+  gap: 0.5rem;
+  list-style: none;
+  margin: 0 0 1rem;
+  padding: 0;
+}
+
+.paso {
+  align-items: center;
+  color: #6b7280;
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  font-size: 0.75rem;
+  gap: 0.25rem;
+  text-align: center;
+}
+
+.paso-numero {
+  align-items: center;
+  background-color: #e5e7eb;
+  border-radius: 50%;
+  color: #4b5563;
+  display: flex;
+  font-weight: 600;
+  height: 2rem;
+  justify-content: center;
+  width: 2rem;
+}
+
+.paso-activo .paso-numero,
+.paso-completo .paso-numero {
+  background-color: var(--color-principal);
+  color: #fff;
+}
+
+.paso-activo .paso-titulo {
+  color: var(--color-principal);
+  font-weight: 600;
+}
+
+/* Opciones de selección con área táctil suficiente para el uso en teléfonos. */
+.opcion-tactil {
+  min-height: 48px;
+  padding-bottom: 0.35rem;
+  padding-top: 0.35rem;
+}
+
+.opcion-tactil .form-check-input {
+  height: 1.25rem;
+  margin-top: 0.35rem;
+  width: 1.25rem;
+}
+
+/* Cifra destacada del plan nutricional. */
+.cifra-principal {
+  color: var(--color-principal);
+  font-size: 2.75rem;
+  font-weight: 700;
+  line-height: 1.1;
+  margin-bottom: 0;
+}
+
+/* Reparto visual de los macronutrientes. */
+.barra-macronutrientes {
+  border-radius: 0.5rem;
+  display: flex;
+  height: 1.25rem;
+  margin-bottom: 1rem;
+  overflow: hidden;
+  width: 100%;
+}
+
+.segmento-macronutriente {
+  height: 100%;
+}
+
+.punto-color {
+  border-radius: 50%;
+  display: inline-block;
+  height: 0.75rem;
+  margin-right: 0.5rem;
+  width: 0.75rem;
+}
+
+/* Gráficas de los reportes de evolución (historia HU-10). Se dibujan con SVG
+   propio para no requerir complementos adicionales (requerimiento 4.5.5) y
+   para que resulten legibles desde 320 píxeles de ancho. */
+.grafica {
+  display: block;
+  height: auto;
+  max-width: 100%;
+  width: 100%;
+}
+
+.grafica-cuadricula {
+  stroke: #d1d5db;
+  stroke-width: 1;
+}
+
+.grafica-texto {
+  fill: #4b5563;
+  font-size: 9px;
+}
