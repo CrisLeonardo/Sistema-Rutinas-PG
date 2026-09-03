@@ -8,7 +8,7 @@ servicio en produccion, y que el modelo pueda recargarse sin detenerlo.
 import pytest
 
 from app.nucleo import arranque
-from app.nucleo.configuracion import Configuracion, normalizar_url_base_datos
+from app.nucleo.configuracion import RAIZ_BACKEND, Configuracion, normalizar_url_base_datos
 from tests.conftest import encabezado
 
 RUTA_ESTADO = "/api/v1/administracion/estado"
@@ -32,6 +32,47 @@ def test_la_configuracion_de_ejemplo_se_reporta_como_pendiente():
     pendientes = configuracion.credenciales_predeterminadas()
 
     assert set(pendientes) == {"CLAVE_SECRETA", "ADMIN_CORREO", "ADMIN_CONTRASENA"}
+
+
+def _valor_de_ejemplo(ruta_env, variable):
+    """Lee el valor literal de una variable en un archivo `.env.example`."""
+    for linea in ruta_env.read_text(encoding="utf-8").splitlines():
+        if linea.startswith(f"{variable}="):
+            return linea.split("=", 1)[1].strip().strip('"')
+    raise AssertionError(f"{variable} no aparece en {ruta_env}")
+
+
+@pytest.mark.parametrize(
+    ("ruta_env", "variable", "campo"),
+    [
+        (RAIZ_BACKEND / ".env.example", "CLAVE_SECRETA", "clave_secreta"),
+        (RAIZ_BACKEND / ".env.example", "ADMIN_CONTRASENA", "admin_contrasena"),
+        (
+            RAIZ_BACKEND.parent / ".env.pruebas.example",
+            "CLAVE_SECRETA",
+            "clave_secreta",
+        ),
+        (
+            RAIZ_BACKEND.parent / ".env.pruebas.example",
+            "ADMIN_CONTRASENA",
+            "admin_contrasena",
+        ),
+    ],
+)
+def test_los_valores_de_los_archivos_de_ejemplo_se_reconocen(ruta_env, variable, campo):
+    """La comprobación debe reconocer el valor literal que traen los `.env.example`.
+
+    Es una prueba de regresión: el archivo de ejemplo y el conjunto de valores
+    reconocidos como predeterminados se mantienen a mano por separado, y ya
+    ocurrió que un archivo cambió su texto placeholder sin que el código lo
+    acompañara, dejando pasar sin aviso una credencial de ejemplo en
+    producción.
+    """
+    valor = _valor_de_ejemplo(ruta_env, variable)
+
+    configuracion = Configuracion(**{campo: valor}, _env_file=None)
+
+    assert variable in configuracion.credenciales_predeterminadas()
 
 
 def test_una_configuracion_propia_no_reporta_pendientes():

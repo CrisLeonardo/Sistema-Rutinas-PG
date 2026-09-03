@@ -142,13 +142,24 @@ class Configuracion(BaseSettings):
 
 
 # Valores que traen los archivos de ejemplo y que jamas deben llegar a
-# produccion.
+# produccion. Deben coincidir exactamente con backend/.env.example y con
+# .env.pruebas.example: la comprobacion compara cadenas literales, y una
+# discrepancia con lo que esos archivos traen deja pasar la credencial de
+# ejemplo sin que nada avise.
 _CLAVES_DE_EJEMPLO = {
     "clave-de-desarrollo-no-apta-para-produccion",
     "cambie-esta-clave-antes-de-desplegar",
+    "cambie-esta-clave-antes-de-desplegar-en-produccion",
+    "CAMBIE-esta-clave-antes-de-desplegar",
     "",
 }
-_CONTRASENAS_DE_EJEMPLO = {"Admin12345", "admin", "cambieme", ""}
+_CONTRASENAS_DE_EJEMPLO = {
+    "Admin12345",
+    "admin",
+    "cambieme",
+    "CAMBIE-esta-contrasena-de-administrador",
+    "",
+}
 
 
 @lru_cache
