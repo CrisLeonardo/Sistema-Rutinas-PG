@@ -56,6 +56,12 @@ class PlanNutricionalPublico(BaseModel):
     objetivo: str
     explicacion_objetivo: str
 
+    # Guardarrailes clinicos que gobiernan el plan (regla del negocio *e*). Las
+    # correcciones explican por que el plan no es el calculo crudo; las
+    # advertencias senalan cuando conviene consultar a un profesional.
+    correcciones_de_seguridad: list[str] = []
+    advertencias_de_salud: list[str] = []
+
     @computed_field(description="Aviso de consulta profesional (regla del negocio *e*)")
     @property
     def aviso_profesional(self) -> str:
@@ -95,6 +101,11 @@ class PlanNutricionalPublico(BaseModel):
     @property
     def dentro_del_margen_admitido(self) -> bool:
         return self.margen_error_porcentaje < 5.0
+
+    @computed_field(description="Indica si algún guardarraíl clínico modificó el plan")
+    @property
+    def ajustado_por_seguridad(self) -> bool:
+        return bool(self.correcciones_de_seguridad)
 
 
 EXPLICACION_PROTEINA = (

@@ -8,6 +8,12 @@ from fastapi import APIRouter, HTTPException, status
 from sqlalchemy import select
 
 from app.api.dependencias import SesionBD, UsuarioAutenticado
+from app.esquemas.compras import (
+    DIAS_DE_LA_SEMANA,
+    GrupoDeCompra,
+    ListaDeCompras,
+    RenglonDeCompra,
+)
 from app.esquemas.menu import (
     MenuPublico,
     PorcionPublica,
@@ -16,6 +22,7 @@ from app.esquemas.menu import (
 )
 from app.esquemas.plan import PlanNutricionalPublico
 from app.modelos.catalogo import Alimento
+from app.modelos.enumeraciones import CategoriaAlimento
 from app.modelos.perfil import PerfilBiometrico
 from app.modelos.plan import ComidaPlan, Plan
 from app.motor.menu import TIEMPOS_DE_COMIDA, AlimentoDisponible, buscar_sustituto
@@ -40,6 +47,7 @@ _SIN_PLAN = HTTPException(
 def _componer(sesion: SesionBD, plan: Plan) -> PlanNutricionalPublico:
     """Agrega al plan almacenado los datos derivados del perfil que lo origino."""
     perfil = sesion.get(PerfilBiometrico, plan.perfil_id)
+    correcciones, advertencias = servicio_plan.notas_de_seguridad(perfil, plan)
     return PlanNutricionalPublico(
         id=plan.id,
         usuario_id=plan.usuario_id,
@@ -58,7 +66,9 @@ def _componer(sesion: SesionBD, plan: Plan) -> PlanNutricionalPublico:
         grasa_g=float(plan.grasa_g),
         agua_ml=servicio_plan.agua_recomendada(perfil),
         objetivo=perfil.objetivo.value,
-        explicacion_objetivo=servicio_plan.explicacion_objetivo(perfil.objetivo),
+        explicacion_objetivo=servicio_plan.explicacion_objetivo(perfil),
+        correcciones_de_seguridad=correcciones,
+        advertencias_de_salud=advertencias,
     )
 
 
@@ -163,6 +173,11 @@ def consultar_menu(sesion: SesionBD, usuario: UsuarioAutenticado) -> MenuPublico
                 carbohidrato_g_100g=float(registro.carbohidrato_g_100g),
                 grasa_g_100g=float(registro.grasa_g_100g),
                 medida_casera=registro.medida_casera,
+                costo_quetzales_100g=(
+                    float(registro.costo_aproximado_quetzales)
+                    if registro.costo_aproximado_quetzales is not None
+                    else None
+                ),
             )
 
         gramos = int(guardada.cantidad_g)
@@ -178,6 +193,7 @@ def consultar_menu(sesion: SesionBD, usuario: UsuarioAutenticado) -> MenuPublico
                 carbohidrato_g=round(alimento.carbohidrato_de(gramos)),
                 grasa_g=round(alimento.grasa_de(gramos)),
                 medida_casera=alimento.medida_casera,
+                costo_quetzales=alimento.costo_de(gramos),
                 sustituto=(
                     SustitutoPublico(
                         alimento_id=alternativa.alimento_id,
@@ -205,4 +221,87 @@ def consultar_menu(sesion: SesionBD, usuario: UsuarioAutenticado) -> MenuPublico
         energia_objetivo_kcal=float(plan.calorias_objetivo),
         proteina_objetivo_g=float(plan.proteina_g),
         tiempos=ordenados,
+    )
+
+
+@enrutador.get(
+    "/lista-de-compras",
+    response_model=ListaDeCompras,
+    summary="Consultar la lista de compras de la semana",
+)
+def consultar_lista_de_compras(
+    sesion: SesionBD, usuario: UsuarioAutenticado
+) -> ListaDeCompras:
+    """Suma el menú de un día por siete y lo agrupa por puesto de mercado.
+
+    No corresponde a ninguna historia de la pila de producto. Se agrega porque
+    el menú diario dice qué comer en cada tiempo, pero para surtir la despensa
+    hace falta la suma de la semana, agrupada por el lugar donde cada cosa se
+    compra y con el costo a la vista antes de salir de casa.
+    """
+    plan = servicio_plan.obtener_plan_vigente(sesion, usuario)
+    if plan is None:
+        raise _SIN_PLAN
+
+    porciones = list(
+        sesion.execute(
+            select(ComidaPlan).where(ComidaPlan.plan_id == plan.id)
+        ).scalars()
+    )
+    if not porciones:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=(
+                "Su plan no tiene menú, de modo que no hay lista de compras que armar. "
+                "Vuelva a generar su plan."
+            ),
+        )
+
+    # Se acumulan los gramos de cada alimento a lo largo del día y se multiplican
+    # por los días de la semana.
+    gramos_por_alimento: dict[int, int] = {}
+    for porcion in porciones:
+        gramos_por_alimento[porcion.alimento_id] = (
+            gramos_por_alimento.get(porcion.alimento_id, 0) + int(porcion.cantidad_g)
+        )
+
+    por_categoria: dict[CategoriaAlimento, list[RenglonDeCompra]] = {}
+    for alimento_id, gramos_dia in gramos_por_alimento.items():
+        registro = sesion.get(Alimento, alimento_id)
+        if registro is None:
+            continue
+
+        gramos_semana = gramos_dia * DIAS_DE_LA_SEMANA
+        costo = (
+            round(float(registro.costo_aproximado_quetzales) * gramos_semana / 100, 2)
+            if registro.costo_aproximado_quetzales is not None
+            else None
+        )
+        por_categoria.setdefault(registro.categoria, []).append(
+            RenglonDeCompra(
+                alimento_id=registro.id,
+                nombre=registro.nombre,
+                categoria=registro.categoria,
+                gramos_semana=gramos_semana,
+                costo_quetzales=costo,
+                medida_casera=registro.medida_casera,
+            )
+        )
+
+    # Se recorre la enumeracion y no el diccionario para que el orden de los
+    # grupos sea siempre el mismo, cualquiera que sea el plan.
+    grupos = [
+        GrupoDeCompra(
+            categoria=categoria,
+            renglones=sorted(por_categoria[categoria], key=lambda r: r.nombre),
+        )
+        for categoria in CategoriaAlimento
+        if categoria in por_categoria
+    ]
+
+    return ListaDeCompras(
+        plan_id=plan.id,
+        fecha_generacion=plan.fecha_generacion,
+        dias=DIAS_DE_LA_SEMANA,
+        grupos=grupos,
     )

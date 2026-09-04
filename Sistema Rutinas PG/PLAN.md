@@ -623,3 +623,101 @@ No son de programación, pero condicionan la entrega:
       revisó la Dra. Esquivel y el cambio arrastra los imprevistos, el total y el párrafo
       que cita las cifras
 - [ ] Verificar las tres referencias señaladas en `Tesis Final/RESUMEN DE CAMBIOS.md`
+
+---
+
+## Revisión técnica posterior a la Iteración 5
+
+Auditoría del sistema completo —motor, servicios, interfaz y operación— realizada
+sobre la rama `main`. Encontró treinta y dos hallazgos; veintidós quedaron
+corregidos y diez siguen abiertos. Las pruebas pasaron de 400 a 533.
+
+### Corregido
+
+- [x] **Guardarrailes clínicos del plan.** El motor podía prescribir 1 049 kcal
+      diarias, aplicaba siempre el déficit máximo del 20 % sin mirar la
+      composición corporal, no distinguía el bajo peso y calculaba la proteína
+      sobre el peso total (286 g al día en un perfil de 130 kg). Se agregó
+      `app/motor/seguridad.py`, que acota después del cálculo y explica cada
+      corrección al usuario. El margen de la historia HU-06 se sigue midiendo
+      sobre el valor del modelo, de modo que las métricas del Capítulo V no cambian
+- [x] **Fidelidad del menú.** Dimensionaba el alimento proteico solo por su
+      proteína, sin mirar la energía que arrastra: un plan de 1 200 kcal recibía
+      un menú de 1 783. La desviación máxima quedó en 2.6 % en todo el dominio
+- [x] **El costo del catálogo se usa.** Se declaró su unidad —quetzales por 100
+      gramos—, y sostiene el costo del menú, la preferencia por lo económico y la
+      lista de compras. El mismo plan bajó de Q1 546.80 a Q1 053.60 al mes
+- [x] **Límite de intentos de acceso**, por cuenta y por origen
+- [x] **Cambio de contraseña** por parte del propio usuario
+- [x] **Encabezados de seguridad** en las respuestas de la interfaz, y
+      documentación interactiva cerrada en producción
+- [x] **Consulta N+1** al leer la rutina
+- [x] **`semanas_registradas`** contaba registros, no semanas
+- [x] **Retrodatación** de un avance por debajo del último registro
+- [x] **Panel principal** rediseñado: mostraba los módulos de la tesis con el
+      código de sus historias en lugar de los datos del usuario
+- [x] **Navegación inferior en teléfono** y acceso al registro de avance, que no
+      aparecía en ninguna parte de la navegación
+- [x] **Aviso previo al cierre de sesión**, modo oscuro, foco visible y estilos de
+      impresión
+
+### Abierto
+
+| Pendiente | Por qué importa |
+|---|---|
+| Alergias, intolerancias y condiciones de salud | El sistema prescribe alimentos concretos sin preguntar nunca si la persona es alérgica o diabética |
+| Menú semanal de siete días | Hoy es un solo día repetido indefinidamente |
+| Funcionamiento sin conexión | La rutina se consulta dentro del gimnasio, que es donde no hay señal |
+| Migraciones con Alembic | `create_all` no modifica tablas existentes: ningún cambio de modelo tiene hoy camino a producción, y eso bloquea los cuatro puntos anteriores |
+| Pruebas contra PostgreSQL | Corren sobre SQLite: los tipos enumerados del gestor y `Numeric` no se ejercitan nunca |
+| Recuperación de contraseña y revocación de token | El cambio ya existe; la recuperación necesita envío de correo |
+| Alimentos apropiados a cada tiempo | El generador puede proponer pechuga de pollo en el desayuno |
+| Bitácora de auditoría administrativa | No queda registro de quién cambió un rol o el catálogo |
+| Volumen mostrado en la rutina | Se recalcula con la fórmula aunque la rutina se armara con el valor de la red |
+
+### Nota de alcance
+
+La lista de compras y el cambio de contraseña no corresponden a ninguna de las
+once historias de usuario. Conviene registrarlas como requerimientos nuevos de
+prioridad baja, que es la mitigación que la Tabla 12 declara para el riesgo de
+ampliación no controlada del alcance.
+
+---
+
+## Bitácora de entrenamiento y progresión de carga
+
+Cierra los dos hallazgos que la revisión técnica dejó en primer lugar: la rutina
+era de solo lectura y la regla del negocio *d* era código muerto.
+
+### Lo que se construyó
+
+- [x] **Registro de la ejecución real.** Dos entidades nuevas,
+      `sesiones_realizadas` y `series_realizadas`, con el peso y las repeticiones
+      de cada serie. Son tablas nuevas, de modo que `create_all` las crea sin
+      tocar ninguna existente: este incremento no necesitó migraciones
+- [x] **Motor de progresión** (`app/motor/progresion.py`). Progresión doble, con
+      el incremento acotado por `formulas.progresion_admitida`, que hasta ahora
+      solo se invocaba dentro de su propia prueba
+- [x] **La regla *d* se respeta también cuando estorba.** Con cargas ligeras el
+      disco más pequeño del gimnasio ya supera el 10 %; en lugar de saltarse el
+      límite, el sistema responde que se progrese en repeticiones y explica por qué
+- [x] **Descarga por fatiga.** Tres sesiones estancado con esfuerzo alto reportado
+      no es falta de estímulo sino fatiga acumulada, y pide bajar la carga, no subirla
+- [x] **Pantalla de gimnasio** (`/entrenar/:sesionId`) con las cargas precargadas,
+      guardado en el dispositivo y cronómetro de descanso
+- [x] **Bitácora** (`/bitacora`) con racha semanal, volumen, marcas personales y la
+      evolución de la carga por ejercicio
+- [x] **El historial sobrevive a regenerar el plan**, porque se enlaza al ejercicio
+      del catálogo y no a la sesión prescrita
+
+### Nota de alcance
+
+Como la lista de compras y el cambio de contraseña, la bitácora no corresponde a
+ninguna de las once historias de usuario. Conviene registrarla como requerimiento
+nuevo —de prioridad alta, esta vez, porque es la condición para que la regla del
+negocio *d* se cumpla—, según la mitigación que la Tabla 12 declara para el riesgo
+de ampliación no controlada del alcance.
+
+Lo que sí corresponde revisar en la tesis: el apartado 2.5.2 describe la
+sobrecarga progresiva como principio, y hasta ahora el sistema no la
+implementaba. Ahora sí, y el Capítulo IV puede declararlo.

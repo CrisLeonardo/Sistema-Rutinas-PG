@@ -16,7 +16,7 @@ from app.modelos.enumeraciones import Objetivo
 from app.modelos.perfil import PerfilBiometrico
 from app.modelos.plan import ComidaPlan, EjercicioSesion, Plan, SesionEntrenamiento
 from app.modelos.usuario import Usuario
-from app.motor import formulas
+from app.motor import formulas, seguridad
 from app.motor.red_neuronal import ModeloNoEntrenado, MotorNeuronal
 from app.motor.menu import (
     AlimentoDisponible,
@@ -37,22 +37,10 @@ bitacora = logging.getLogger(__name__)
 ORIGEN_RED_NEURONAL = "red_neuronal"
 ORIGEN_FORMULA = "formula"
 
-EXPLICACIONES_OBJETIVO = {
-    Objetivo.PERDIDA_GRASA: (
-        "Su plan tiene un 20 % menos de energía que su gasto diario. Ese es el límite "
-        "que el sistema permite: un recorte mayor haría que perdiera músculo junto con "
-        "la grasa."
-    ),
-    Objetivo.MANTENIMIENTO: (
-        "Su plan aporta la misma energía que usted gasta al día, de modo que conserve "
-        "su composición corporal actual."
-    ),
-    Objetivo.GANANCIA_MUSCULAR: (
-        "Su plan tiene un 15 % más de energía que su gasto diario. Ese excedente es el "
-        "material con que se construye el músculo nuevo; un excedente mayor se "
-        "acumularía sobre todo como grasa."
-    ),
-}
+EXPLICACION_MANTENIMIENTO = (
+    "Su plan aporta la misma energía que usted gasta al día, de modo que conserve "
+    "su composición corporal actual."
+)
 
 
 class PerfilIncompleto(Exception):
@@ -246,6 +234,11 @@ def alimentos_disponibles(sesion: Session) -> list[AlimentoDisponible]:
             carbohidrato_g_100g=float(alimento.carbohidrato_g_100g),
             grasa_g_100g=float(alimento.grasa_g_100g),
             medida_casera=alimento.medida_casera,
+            costo_quetzales_100g=(
+                float(alimento.costo_aproximado_quetzales)
+                if alimento.costo_aproximado_quetzales is not None
+                else None
+            ),
         )
         for alimento in sesion.execute(sentencia).scalars()
     ]
@@ -336,9 +329,38 @@ def construir_plan(perfil: PerfilBiometrico) -> Plan:
         )
         origen = ORIGEN_FORMULA
 
-    # El margen se almacena en cada plan para poder auditar de forma permanente
-    # el criterio de aceptacion de la historia HU-06.
+    # El margen se mide sobre el valor que el modelo produjo, antes de que los
+    # guardarrailes clinicos lo acoten: es lo que evalua la precision de la red
+    # frente a las formulas de referencia, que es el criterio de aceptacion de la
+    # historia HU-06. La correccion de seguridad que viene despues es una regla
+    # del negocio, no un error del modelo, y confundirlas haria que un plan
+    # correcto se reportara como fuera del margen admitido.
     margen = formulas.margen_de_error(calorias, energia_referencia) * 100
+
+    # Los guardarrailes clinicos acotan lo prescrito a lo que es seguro comer.
+    revisado = seguridad.aplicar(
+        energia_kcal=calorias,
+        proteina_g=proteina_g,
+        carbohidrato_g=carbohidrato_g,
+        grasa_g=grasa_g,
+        peso_kg=peso,
+        estatura_cm=estatura,
+        sexo=perfil.sexo,
+        objetivo=perfil.objetivo,
+        gasto_energetico_total=referencias.gasto_promedio,
+    )
+    if revisado.hubo_correccion:
+        bitacora.info(
+            "El plan del perfil %s se ajustó por seguridad: %s kcal calculadas, "
+            "%s kcal prescritas.",
+            perfil.id,
+            revisado.energia_calculada_kcal,
+            revisado.energia_kcal,
+        )
+    calorias = float(revisado.energia_kcal)
+    proteina_g = float(revisado.proteina_g)
+    carbohidrato_g = float(revisado.carbohidrato_g)
+    grasa_g = float(revisado.grasa_g)
 
     plan = Plan(
         usuario_id=perfil.usuario_id,
@@ -394,6 +416,46 @@ def agua_recomendada(perfil: PerfilBiometrico) -> int:
     return formulas.agua_recomendada_ml(float(perfil.peso_kg), perfil.nivel_actividad)
 
 
-def explicacion_objetivo(objetivo: Objetivo) -> str:
-    """Explica en lenguaje sencillo por que el plan tiene esa cantidad de energia."""
-    return EXPLICACIONES_OBJETIVO[objetivo]
+def explicacion_objetivo(perfil: PerfilBiometrico) -> str:
+    """Explica en lenguaje sencillo por que el plan tiene esa cantidad de energia.
+
+    El porcentaje se calcula para el perfil concreto y no se declara fijo: los
+    guardarrailes clinicos reducen el ajuste cuando la composicion corporal no
+    admite el maximo de la regla del negocio *b*, y anunciar un 20 % que el plan
+    no aplica seria describirle al usuario un plan distinto del que recibio.
+    """
+    indice = seguridad.indice_masa_corporal(float(perfil.peso_kg), float(perfil.estatura_cm))
+    ajuste = seguridad.ajuste_admitido(perfil.objetivo, indice)
+
+    if perfil.objetivo == Objetivo.MANTENIMIENTO or ajuste == 0:
+        if perfil.objetivo == Objetivo.PERDIDA_GRASA:
+            return (
+                "Su plan aporta la energía que usted gasta al día. El sistema no le "
+                "recorta energía porque su peso ya está por debajo de lo normal: la "
+                "grasa se reduce entrenando, no comiendo menos."
+            )
+        return EXPLICACION_MANTENIMIENTO
+
+    if perfil.objetivo == Objetivo.PERDIDA_GRASA:
+        return (
+            f"Su plan tiene un {abs(ajuste) * 100:.0f} % menos de energía que su gasto "
+            "diario. Es el recorte que su composición corporal admite: uno mayor haría "
+            "que perdiera músculo junto con la grasa."
+        )
+
+    return (
+        f"Su plan tiene un {ajuste * 100:.0f} % más de energía que su gasto diario. Ese "
+        "excedente es el material con que se construye el músculo nuevo; uno mayor se "
+        "acumularía sobre todo como grasa."
+    )
+
+
+def notas_de_seguridad(perfil: PerfilBiometrico, plan: Plan) -> tuple[list[str], list[str]]:
+    """Correcciones y advertencias clinicas que gobiernan el plan del perfil."""
+    return seguridad.notas_del_perfil(
+        peso_kg=float(perfil.peso_kg),
+        estatura_cm=float(perfil.estatura_cm),
+        sexo=perfil.sexo,
+        objetivo=perfil.objetivo,
+        energia_prescrita_kcal=float(plan.calorias_objetivo),
+    )

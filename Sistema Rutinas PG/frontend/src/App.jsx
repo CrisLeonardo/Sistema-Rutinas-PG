@@ -3,10 +3,15 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import BarraNavegacion from './componentes/BarraNavegacion.jsx'
 import RutaProtegida from './componentes/RutaProtegida.jsx'
 import { useSesion } from './contexto/ContextoSesion.jsx'
+import AvisoDeSesion from './componentes/AvisoDeSesion.jsx'
 import Acceso from './paginas/Acceso.jsx'
 import AdministracionCatalogos from './paginas/AdministracionCatalogos.jsx'
 import AdministracionCuentas from './paginas/AdministracionCuentas.jsx'
+import AjustesCuenta from './paginas/AjustesCuenta.jsx'
+import BitacoraSesion from './paginas/BitacoraSesion.jsx'
+import HistorialEntrenamiento from './paginas/HistorialEntrenamiento.jsx'
 import HistorialMedidas from './paginas/HistorialMedidas.jsx'
+import ListaDeCompras from './paginas/ListaDeCompras.jsx'
 import MenuDiario from './paginas/MenuDiario.jsx'
 import Panel from './paginas/Panel.jsx'
 import PerfilBiometrico from './paginas/PerfilBiometrico.jsx'
@@ -22,7 +27,8 @@ export default function App() {
   return (
     <>
       <BarraNavegacion />
-      <main className="container py-4">
+      <AvisoDeSesion />
+      <main className="container py-4 contenido-principal">
         <Routes>
           <Route
             path="/acceso"
@@ -93,6 +99,38 @@ export default function App() {
             element={
               <RutaProtegida>
                 <MenuDiario />
+              </RutaProtegida>
+            }
+          />
+          <Route
+            path="/entrenar/:sesionId"
+            element={
+              <RutaProtegida>
+                <BitacoraSesion />
+              </RutaProtegida>
+            }
+          />
+          <Route
+            path="/bitacora"
+            element={
+              <RutaProtegida>
+                <HistorialEntrenamiento />
+              </RutaProtegida>
+            }
+          />
+          <Route
+            path="/compras"
+            element={
+              <RutaProtegida>
+                <ListaDeCompras />
+              </RutaProtegida>
+            }
+          />
+          <Route
+            path="/cuenta"
+            element={
+              <RutaProtegida>
+                <AjustesCuenta />
               </RutaProtegida>
             }
           />

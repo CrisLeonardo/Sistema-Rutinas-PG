@@ -16,7 +16,7 @@ from app.esquemas.rutina import (
     SesionRutinaPublica,
 )
 from app.modelos.perfil import PerfilBiometrico
-from app.modelos.plan import Plan, SesionEntrenamiento
+from app.modelos.plan import EjercicioSesion, Plan, SesionEntrenamiento
 from app.servicios import plan as servicio_plan
 
 enrutador = APIRouter(prefix="/rutina", tags=["Rutina de entrenamiento"])
@@ -32,7 +32,15 @@ def _componer(sesion: SesionBD, plan: Plan) -> RutinaPublica:
     sentencia = (
         select(SesionEntrenamiento)
         .where(SesionEntrenamiento.plan_id == plan.id)
-        .options(selectinload(SesionEntrenamiento.ejercicios))
+        # La carga encadena hasta el catalogo. Sin el segundo tramo, leer
+        # `prescrito.ejercicio.nombre` mas abajo dispara un SELECT por cada
+        # ejercicio prescrito: con cinco sesiones de tres ejercicios son quince
+        # viajes a la base de datos para armar una sola respuesta.
+        .options(
+            selectinload(SesionEntrenamiento.ejercicios).selectinload(
+                EjercicioSesion.ejercicio
+            )
+        )
         .order_by(SesionEntrenamiento.dia)
     )
     almacenadas = list(sesion.execute(sentencia).scalars())

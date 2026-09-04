@@ -201,7 +201,18 @@ class ReporteEvolucion(BaseModel):
             return None
         return round(sum(valores) / len(valores), 1)
 
-    @computed_field(description="Semanas con al menos un registro")
+    @computed_field(description="Registros de avance capturados")
+    @property
+    def registros_totales(self) -> int:
+        return len(self.puntos)
+
+    @computed_field(description="Semanas distintas con al menos un registro")
     @property
     def semanas_registradas(self) -> int:
-        return len(self.puntos)
+        """Cuenta semanas del calendario, no registros.
+
+        Antes devolvia la cantidad de registros: quien capturaba tres veces en
+        una misma semana veia «3 semanas registradas», y el reporte de la
+        historia HU-10 declaraba una constancia que no existia.
+        """
+        return len({punto.fecha.isocalendar()[:2] for punto in self.puntos})

@@ -167,6 +167,47 @@ class RutinaPublica(BaseModel):
                 return False
         return True
 
+    @computed_field(description="Grupos musculares que el esquema no trabaja de forma directa")
+    @property
+    def grupos_sin_trabajo_directo(self) -> list[str]:
+        """Grupos que la frecuencia declarada deja sin sesion propia.
+
+        Con cuatro sesiones semanales, el brazo y el abdomen no reciben una
+        sesion dedicada: trabajan de forma indirecta en los press y los remos.
+        El generador ya lo sabia y no lo decia, de modo que el usuario veia
+        desaparecer dos grupos de su rutina sin ninguna explicacion.
+        """
+        from app.motor.rutina import GRUPOS_DE_CUERPO_COMPLETO
+
+        trabajados = {
+            ejercicio.grupo_muscular
+            for sesion in self.sesiones
+            for ejercicio in sesion.ejercicios
+        }
+        return [
+            NOMBRES_GRUPO[grupo]
+            for grupo in GRUPOS_DE_CUERPO_COMPLETO
+            if grupo not in trabajados
+        ]
+
+    @computed_field(description="Por qué algunos grupos no aparecen en la rutina")
+    @property
+    def explicacion_grupos_ausentes(self) -> str | None:
+        faltantes = self.grupos_sin_trabajo_directo
+        if not faltantes:
+            return None
+
+        listado = " y ".join(
+            [", ".join(faltantes[:-1]), faltantes[-1]] if len(faltantes) > 1 else faltantes
+        ).strip(", ")
+        return (
+            f"Con {self.dias_entrenamiento_semana} sesiones a la semana no alcanza para "
+            f"darle un día propio a cada músculo. {listado} no tienen sesión dedicada, "
+            "pero sí trabajan: intervienen en los empujes, los jalones y los ejercicios "
+            "de pierna. Si quiere trabajarlos aparte, aumente sus días de entrenamiento "
+            "en el perfil biométrico."
+        )
+
     @computed_field(description="Explicación de la progresión de carga")
     @property
     def explicacion_progresion(self) -> str:

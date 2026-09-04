@@ -29,6 +29,7 @@ class PorcionPublica(BaseModel):
     carbohidrato_g: int
     grasa_g: int
     medida_casera: str | None = None
+    costo_quetzales: float | None = None
     sustituto: SustitutoPublico | None = None
 
     @computed_field(description="Nombre legible de la categoría")
@@ -103,6 +104,11 @@ class TiempoComidaPublico(BaseModel):
     def proteina_g(self) -> int:
         return sum(porcion.proteina_g for porcion in self.porciones)
 
+    @computed_field(description="Costo aproximado del tiempo de comida, en quetzales")
+    @property
+    def costo_quetzales(self) -> float:
+        return round(sum(porcion.costo_quetzales or 0.0 for porcion in self.porciones), 2)
+
 
 class MenuPublico(BaseModel):
     """Menu diario asociado al plan vigente (historia HU-08)."""
@@ -123,6 +129,44 @@ class MenuPublico(BaseModel):
     @property
     def proteina_g(self) -> int:
         return sum(tiempo.proteina_g for tiempo in self.tiempos)
+
+    @computed_field(description="Costo aproximado del día completo, en quetzales")
+    @property
+    def costo_diario_quetzales(self) -> float:
+        """Costo del menu de un dia, con los precios vigentes del catalogo.
+
+        Es una estimacion: los precios del catalogo se levantan en el mercado y
+        varian con la temporada. Los alimentos sin precio registrado suman cero,
+        de modo que la cifra es un piso y no un techo.
+        """
+        return round(sum(tiempo.costo_quetzales for tiempo in self.tiempos), 2)
+
+    @computed_field(description="Costo aproximado de una semana completa, en quetzales")
+    @property
+    def costo_semanal_quetzales(self) -> float:
+        return round(self.costo_diario_quetzales * 7, 2)
+
+    @computed_field(description="Costo aproximado de un mes de treinta días, en quetzales")
+    @property
+    def costo_mensual_quetzales(self) -> float:
+        """Cifra con la que el usuario puede decidir si el plan le es asequible.
+
+        El estudio de campo del Capitulo I encontro que buena parte de la
+        poblacion no puede destinar mas de Q200 mensuales a este fin: sin esta
+        cifra, el plan propone una alimentacion cuyo costo el usuario descubre
+        recien en el mercado.
+        """
+        return round(self.costo_diario_quetzales * 30, 2)
+
+    @computed_field(description="Porciones cuyo alimento no tiene precio registrado")
+    @property
+    def porciones_sin_precio(self) -> int:
+        return sum(
+            1
+            for tiempo in self.tiempos
+            for porcion in tiempo.porciones
+            if porcion.costo_quetzales is None
+        )
 
     @computed_field(description="Diferencia porcentual entre el menú y el plan")
     @property

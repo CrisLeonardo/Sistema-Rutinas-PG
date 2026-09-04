@@ -87,14 +87,25 @@ export default function PlanNutricional() {
             comparado con dos fórmulas médicas de referencia.
           </p>
         </div>
-        <button
-          type="button"
-          className="btn btn-principal control-tactil align-self-start"
-          onClick={generar}
-          disabled={generando}
-        >
-          {generando ? 'Calculando…' : plan ? 'Volver a calcular' : 'Generar mi plan'}
-        </button>
+        <div className="d-flex gap-2 align-self-start flex-shrink-0">
+          {plan && (
+            <button
+              type="button"
+              className="btn btn-outline-secondary control-tactil no-imprimir"
+              onClick={() => window.print()}
+            >
+              Imprimir
+            </button>
+          )}
+          <button
+            type="button"
+            className="btn btn-principal control-tactil no-imprimir"
+            onClick={generar}
+            disabled={generando}
+          >
+            {generando ? 'Calculando…' : plan ? 'Volver a calcular' : 'Generar mi plan'}
+          </button>
+        </div>
       </div>
 
       {error && (
@@ -121,6 +132,19 @@ export default function PlanNutricional() {
                 Con sus medidas ya registradas, el cálculo toma unos segundos.
               </p>
             </div>
+          </div>
+        </div>
+      )}
+
+      {plan?.advertencias_de_salud?.length > 0 && (
+        <div className="col-12">
+          <div className="alert alert-warning mb-0" role="alert">
+            <strong>Antes de seguir este plan.</strong>
+            <ul className="mb-0 mt-2 ps-3">
+              {plan.advertencias_de_salud.map((aviso) => (
+                <li key={aviso}>{aviso}</li>
+              ))}
+            </ul>
           </div>
         </div>
       )}
@@ -259,6 +283,28 @@ export default function PlanNutricional() {
               </div>
             </div>
           </div>
+
+          {plan.correcciones_de_seguridad?.length > 0 && (
+            <div className="col-12">
+              <div className="card shadow-sm borde-destacado">
+                <div className="card-body">
+                  <h2 className="h5 card-title">Ajustes que hizo el sistema</h2>
+                  <p className="texto-ayuda">
+                    Su plan no es el resultado crudo del cálculo. Estas son las
+                    correcciones que se le aplicaron para que sea seguro seguirlo, y por
+                    qué.
+                  </p>
+                  <ul className="mb-0 ps-3">
+                    {plan.correcciones_de_seguridad.map((correccion) => (
+                      <li key={correccion} className="mb-2">
+                        {correccion}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className="col-12">
             <div className="alert alert-secondary mb-0" role="note">

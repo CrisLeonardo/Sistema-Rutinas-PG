@@ -29,6 +29,17 @@ const ETIQUETAS_CAMPO = {
   objetivo: 'Objetivo',
   nivel_experiencia: 'Nivel de experiencia',
   dias_entrenamiento_semana: 'Días de entrenamiento por semana',
+  contrasena_actual: 'Contraseña actual',
+  contrasena_nueva: 'Contraseña nueva',
+  peso_kg: 'Peso',
+  perimetro_cintura_cm: 'Perímetro de cintura',
+  sesiones_cumplidas: 'Sesiones cumplidas',
+  adherencia_nutricional: 'Cumplimiento del plan',
+  fecha_registro: 'Fecha',
+  series: 'Series',
+  repeticiones: 'Repeticiones',
+  percepcion_esfuerzo: 'Esfuerzo de la sesión',
+  duracion_minutos: 'Duración',
 }
 
 /** Convierte el detalle de un error de validación en un texto legible. */
@@ -67,6 +78,12 @@ async function interpretarError(respuesta) {
 
   if (respuesta.status === 401) return 'Su sesión no está activa. Inicie sesión nuevamente.'
   if (respuesta.status === 403) return 'No cuenta con permisos para realizar esta operación.'
+  if (respuesta.status === 429) {
+    return 'Demasiados intentos seguidos. Espere unos minutos antes de volver a intentarlo.'
+  }
+  if (respuesta.status >= 500) {
+    return 'El servidor no pudo atender la solicitud. Intente de nuevo en unos momentos.'
+  }
   return 'No fue posible completar la operación. Intente de nuevo.'
 }
 
@@ -108,6 +125,8 @@ export const servicioAcceso = {
   iniciarSesion: (datos) => peticion('/autenticacion/acceso', { metodo: 'POST', datos }),
   renovar: (token) => peticion('/autenticacion/renovacion', { metodo: 'POST', token }),
   consultarSesion: (token) => peticion('/autenticacion/sesion', { token }),
+  cambiarContrasena: (datos, token) =>
+    peticion('/autenticacion/cambio-de-contrasena', { metodo: 'POST', datos, token }),
 }
 
 export const servicioPerfil = {
@@ -122,10 +141,23 @@ export const servicioPlan = {
   consultarVigente: (token) => peticion('/plan-nutricional', { token }),
   consultarHistorial: (token) => peticion('/plan-nutricional/historial', { token }),
   consultarMenu: (token) => peticion('/plan-nutricional/menu', { token }),
+  consultarListaDeCompras: (token) =>
+    peticion('/plan-nutricional/lista-de-compras', { token }),
 }
 
 export const servicioRutina = {
   consultarVigente: (token) => peticion('/rutina', { token }),
+}
+
+export const servicioEntrenamiento = {
+  abrirSesion: (sesionId, token) =>
+    peticion(`/entrenamiento/sesiones/${sesionId}`, { token }),
+  registrarSesion: (datos, token) =>
+    peticion('/entrenamiento/sesiones', { metodo: 'POST', datos, token }),
+  consultarBitacora: (token) => peticion('/entrenamiento/sesiones', { token }),
+  consultarResumen: (token) => peticion('/entrenamiento/resumen', { token }),
+  consultarEjercicio: (ejercicioId, token) =>
+    peticion(`/entrenamiento/ejercicios/${ejercicioId}`, { token }),
 }
 
 export const servicioProgreso = {

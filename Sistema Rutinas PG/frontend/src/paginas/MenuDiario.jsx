@@ -80,7 +80,16 @@ export default function MenuDiario() {
   return (
     <div className="row g-4">
       <div className="col-12">
-        <h1 className="h3 mb-1">Qué comer cada día</h1>
+        <div className="d-flex justify-content-between align-items-start gap-3">
+          <h1 className="h3 mb-1">Qué comer cada día</h1>
+          <button
+            type="button"
+            className="btn btn-outline-secondary btn-sm control-tactil flex-shrink-0 no-imprimir"
+            onClick={() => window.print()}
+          >
+            Imprimir
+          </button>
+        </div>
         <p className="texto-ayuda mb-0">
           Un reparto de su plan en cinco tiempos, con alimentos que se consiguen en el
           municipio. Las cantidades están en gramos y en medidas de cocina.
@@ -104,15 +113,28 @@ export default function MenuDiario() {
                 <div className="h4 mb-0">{menu.proteina_g} g</div>
               </div>
               <div className="col-6 col-sm-3">
-                <div className="texto-ayuda">Alimentos distintos</div>
-                <div className="h4 mb-0">{menu.alimentos_distintos}</div>
+                <div className="texto-ayuda">Cuesta al día</div>
+                <div className="h4 mb-0">Q{menu.costo_diario_quetzales.toFixed(2)}</div>
               </div>
             </div>
             <p className="texto-ayuda mt-3 mb-0">
               El menú queda a {menu.desviacion_energia_porcentaje} % de lo que su plan
-              pide. Esa diferencia viene de redondear las porciones a cantidades que se
-              puedan servir.
+              pide, con {menu.alimentos_distintos} alimentos distintos. Esa diferencia
+              viene de redondear las porciones a cantidades que se puedan servir.
             </p>
+            <p className="texto-ayuda mb-0">
+              Seguirlo cuesta cerca de{' '}
+              <strong>Q{Math.round(menu.costo_mensual_quetzales).toLocaleString('es-GT')}
+              </strong>{' '}
+              al mes con los precios del catálogo.
+              {menu.porciones_sin_precio > 0 &&
+                ` ${menu.porciones_sin_precio} porciones todavía no tienen precio registrado, de modo que el total se queda corto.`}
+            </p>
+            <div className="mt-3 no-imprimir">
+              <Link to="/compras" className="btn btn-outline-secondary control-tactil">
+                Ver mi lista de compras
+              </Link>
+            </div>
           </div>
         </div>
       </div>
@@ -123,8 +145,9 @@ export default function MenuDiario() {
             <div className="card-body">
               <div className="d-flex justify-content-between align-items-baseline gap-2">
                 <h2 className="h5 card-title mb-0">{tiempo.nombre}</h2>
-                <span className="texto-ayuda flex-shrink-0">
+                <span className="texto-ayuda flex-shrink-0 text-end">
                   {tiempo.energia_kcal} kcal · {tiempo.proteina_g} g proteína
+                  <span className="d-block">Q{tiempo.costo_quetzales.toFixed(2)}</span>
                 </span>
               </div>
 

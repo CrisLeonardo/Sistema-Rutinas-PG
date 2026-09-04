@@ -59,6 +59,21 @@ class SinPlanVigente(Exception):
     """
 
 
+class FechaAnteriorAlUltimoRegistro(Exception):
+    """La fecha indicada es anterior a la del ultimo avance registrado.
+
+    El contrato de entrada ya impide fechar un registro en el futuro, pero nada
+    impedia fecharlo antes del anterior. Aceptarlo desordenaria la serie que
+    alimenta las graficas de la historia HU-10 y haria que el ritmo semanal se
+    calculara sobre un intervalo negativo, con lo que el reajuste dejaria de
+    medir nada.
+    """
+
+    def __init__(self, ultima: date) -> None:
+        super().__init__(ultima)
+        self.ultima = ultima
+
+
 def listar_progreso(sesion: Session, usuario: Usuario) -> list[RegistroProgreso]:
     """Devuelve los registros del usuario, del mas antiguo al mas reciente.
 
@@ -148,6 +163,9 @@ def registrar_progreso(
     anterior = obtener_ultimo_registro(sesion, usuario)
 
     fecha = datos.fecha_registro or date.today()
+    if anterior is not None and fecha < anterior.fecha_registro.date():
+        raise FechaAnteriorAlUltimoRegistro(anterior.fecha_registro.date())
+
     registro = RegistroProgreso(
         usuario_id=usuario.id,
         plan_id=plan_vigente.id,

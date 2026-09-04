@@ -98,6 +98,19 @@ def autenticar_usuario(sesion: Session, correo: str, contrasena: str) -> Usuario
     return usuario
 
 
+def contrasena_coincide(usuario: Usuario, contrasena: str) -> bool:
+    """Comprueba la contrasena vigente de una cuenta ya autenticada."""
+    return verificar_contrasena(contrasena, usuario.contrasena_cifrada)
+
+
+def cambiar_contrasena(sesion: Session, usuario: Usuario, contrasena_nueva: str) -> Usuario:
+    """Sustituye la contrasena de la cuenta por su resumen criptografico nuevo."""
+    usuario.contrasena_cifrada = cifrar_contrasena(contrasena_nueva)
+    sesion.commit()
+    sesion.refresh(usuario)
+    return usuario
+
+
 def listar_usuarios(sesion: Session) -> list[Usuario]:
     """Devuelve todas las cuentas ordenadas por fecha de registro."""
     sentencia = select(Usuario).order_by(Usuario.fecha_registro.desc())

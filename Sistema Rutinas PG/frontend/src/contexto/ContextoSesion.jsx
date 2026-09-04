@@ -19,6 +19,11 @@ const CLAVE_USUARIO = 'rutinas.usuario'
 const INTERVALO_REVISION_MS = 30_000
 const MARGEN_RENOVACION_MS = 5 * 60_000
 
+// Antelación con que se avisa que la sesión está por caducar. Sin el aviso, la
+// sesión se cerraba de golpe y se perdía lo que el usuario estuviera
+// escribiendo, que en el formulario del perfil biométrico son cuatro pasos.
+const MARGEN_AVISO_MS = 2 * 60_000
+
 const EVENTOS_ACTIVIDAD = ['mousedown', 'keydown', 'scroll', 'touchstart', 'pointerdown']
 
 const ContextoSesion = createContext(null)
@@ -38,6 +43,7 @@ export function ProveedorSesion({ children }) {
   const [token, setToken] = useState(() => leerAlmacenado(CLAVE_TOKEN))
   const [usuario, setUsuario] = useState(() => leerAlmacenado(CLAVE_USUARIO, true))
   const [expiroPorInactividad, setExpiroPorInactividad] = useState(false)
+  const [porExpirar, setPorExpirar] = useState(false)
 
   const ultimaActividad = useRef(Date.now())
   const vigenciaMs = useRef(30 * 60_000)
@@ -52,6 +58,7 @@ export function ProveedorSesion({ children }) {
     setToken(respuesta.token_acceso)
     setUsuario(respuesta.usuario)
     setExpiroPorInactividad(false)
+    setPorExpirar(false)
   }, [])
 
   const limpiarSesion = useCallback(() => {
@@ -71,7 +78,20 @@ export function ProveedorSesion({ children }) {
   const cerrarSesion = useCallback(() => {
     limpiarSesion()
     setExpiroPorInactividad(false)
+    setPorExpirar(false)
   }, [limpiarSesion])
+
+  /** Prolonga la sesión sin que el usuario tenga que volver a autenticarse. */
+  const continuarSesion = useCallback(async () => {
+    if (!token) return
+    try {
+      ultimaActividad.current = Date.now()
+      guardarSesion(await servicioAcceso.renovar(token))
+    } catch {
+      limpiarSesion()
+      setExpiroPorInactividad(true)
+    }
+  }, [token, guardarSesion, limpiarSesion])
 
   // Registra la última interacción del usuario con la aplicación.
   useEffect(() => {
@@ -96,8 +116,13 @@ export function ProveedorSesion({ children }) {
       if (inactividad >= vigenciaMs.current) {
         limpiarSesion()
         setExpiroPorInactividad(true)
+        setPorExpirar(false)
         return
       }
+
+      // Se avisa antes de cerrar, en lugar de cerrar y ya: quien está llenando
+      // un formulario largo debe poder salvar lo escrito.
+      setPorExpirar(inactividad >= vigenciaMs.current - MARGEN_AVISO_MS)
 
       const transcurrido = Date.now() - emitidoEn.current
       if (transcurrido >= vigenciaMs.current - MARGEN_RENOVACION_MS) {
@@ -141,10 +166,24 @@ export function ProveedorSesion({ children }) {
       autenticado: Boolean(token && usuario),
       esAdministrador: usuario?.rol === 'administrador',
       expiroPorInactividad,
+      porExpirar,
       iniciarSesion,
       cerrarSesion,
+      continuarSesion,
+      // La usa el cambio de contraseña: el servidor emite un token nuevo y la
+      // sesión debe adoptarlo, o seguiría atada al anterior.
+      renovarSesion: guardarSesion,
     }),
-    [token, usuario, expiroPorInactividad, iniciarSesion, cerrarSesion],
+    [
+      token,
+      usuario,
+      expiroPorInactividad,
+      porExpirar,
+      iniciarSesion,
+      cerrarSesion,
+      continuarSesion,
+      guardarSesion,
+    ],
   )
 
   return <ContextoSesion.Provider value={valor}>{children}</ContextoSesion.Provider>

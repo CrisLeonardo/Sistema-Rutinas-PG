@@ -215,6 +215,7 @@ patrón modelo-vista-controlador adoptado en el apartado 3.1.2.
 | POST | `/api/v1/autenticacion/registro` | Público | HU-01 |
 | POST | `/api/v1/autenticacion/acceso` | Público | HU-02 |
 | POST | `/api/v1/autenticacion/renovacion` | Autenticado | HU-02 |
+| POST | `/api/v1/autenticacion/cambio-de-contrasena` | Autenticado | Seguridad |
 | GET | `/api/v1/autenticacion/sesion` | Autenticado | HU-02 |
 | GET | `/api/v1/usuarios` | Administrador | HU-03 |
 | PUT | `/api/v1/usuarios/{id}/rol` | Administrador | HU-03 |
@@ -226,10 +227,16 @@ patrón modelo-vista-controlador adoptado en el apartado 3.1.2.
 | GET | `/api/v1/plan-nutricional` | Autenticado | HU-06 |
 | GET | `/api/v1/plan-nutricional/historial` | Autenticado | HU-06 |
 | GET | `/api/v1/rutina` | Autenticado | HU-07 |
+| GET | `/api/v1/entrenamiento/sesiones/{id}` | Autenticado | Adicional |
+| POST | `/api/v1/entrenamiento/sesiones` | Autenticado | Adicional |
+| GET | `/api/v1/entrenamiento/sesiones` | Autenticado | Adicional |
+| GET | `/api/v1/entrenamiento/ejercicios/{id}` | Autenticado | Adicional |
+| GET | `/api/v1/entrenamiento/resumen` | Autenticado | Adicional |
 | POST | `/api/v1/progreso` | Autenticado | HU-09 |
 | GET | `/api/v1/progreso` | Autenticado | HU-09 |
 | GET | `/api/v1/progreso/reporte` | Autenticado | HU-10 |
 | GET | `/api/v1/plan-nutricional/menu` | Autenticado | HU-08 |
+| GET | `/api/v1/plan-nutricional/lista-de-compras` | Autenticado | Adicional |
 | GET | `/api/v1/catalogos/alimentos` | Autenticado | HU-11 |
 | POST | `/api/v1/catalogos/alimentos` | Administrador | HU-11 |
 | PUT | `/api/v1/catalogos/alimentos/{id}` | Administrador | HU-11 |
@@ -264,8 +271,94 @@ Conforme al requerimiento no funcional 4.5.1:
   filtran por el identificador que viaja en el token verificado y no por un
   parámetro de la petición.
 
+- Los intentos fallidos de acceso se cuentan por cuenta y por dirección de origen
+  a la vez, y se bloquean tras agotarse. Contar solo por cuenta permitiría dejar
+  fuera al titular de un correo conocido; contar solo por origen dejaría pasar un
+  ataque repartido entre direcciones. El límite protege además la disponibilidad:
+  `bcrypt` consume cerca de un décimo de segundo de procesador por intento, y la
+  instancia contratada tiene medio núcleo.
+
+- Cada respuesta lleva encabezados de seguridad propios. Los del sitio estático,
+  declarados en `render.yaml` y en `nginx.conf`, no alcanzan a las respuestas del
+  backend. Se añaden `nosniff`, `X-Frame-Options: DENY`, una política de contenido
+  restrictiva y `Cache-Control: no-store`, para que un plan —que es un dato de
+  salud— no quede en la memoria intermedia de ningún proxy. HSTS solo en producción.
+
+- La documentación interactiva y el esquema OpenAPI se sirven **solo fuera de
+  producción**: publicarlos entrega a cualquiera el mapa completo de la interfaz,
+  incluidas las rutas reservadas al administrador.
+
+- El usuario puede cambiar su propia contraseña. Se le exige la vigente aunque la
+  sesión ya esté abierta: un teléfono desatendido no debe bastar para quedarse con
+  la cuenta.
+
 Los archivos `.env` contienen credenciales y están excluidos del control de
 versiones; solo se versionan las plantillas `.env.example`.
+
+## Guardarrailes clínicos del plan
+
+El motor produce el requerimiento energético que las fórmulas de referencia
+determinan. Antes de prescribirlo, `app/motor/seguridad.py` comprueba que lo
+calculado quepa dentro de lo que es seguro comer, y lo corrige cuando no.
+
+| Situación | Qué hace el sistema |
+|---|---|
+| Energía por debajo del mínimo alimentario | La eleva a 1 200 kcal en mujeres y 1 500 en hombres, y lo explica |
+| Índice de masa corporal bajo con objetivo de perder grasa | No aplica déficit: prescribe mantenimiento y advierte |
+| Índice de masa corporal normal | Gradúa el déficit —10 % o 15 %— en lugar de aplicar siempre el 20 % |
+| Obesidad | Calcula la proteína sobre un peso de referencia, no sobre el peso total |
+| Cualquier caso | La proteína nunca supera el 35 % de la energía del día |
+
+La corrección se aplica **después** del cálculo y no dentro de las fórmulas, a
+propósito. Las ecuaciones de Mifflin-St Jeor y Harris-Benedict son el patrón
+contra el que se mide la precisión de la red neuronal, y alterarlas cambiaría la
+referencia misma de esa medición. El margen de error de la historia HU-06 se
+sigue midiendo sobre el valor que el modelo produce, antes de acotarlo: el ajuste
+es una regla del negocio, no un error del modelo, y confundirlos haría que un plan
+correcto se reportara como fuera del margen admitido.
+
+El plan devuelve las correcciones aplicadas en `correcciones_de_seguridad` y los
+avisos de salud en `advertencias_de_salud`, y ambos se muestran al usuario: el
+plan no se corrige en silencio.
+
+Estas reglas **no sustituyen la valoración profesional** ni emiten diagnóstico,
+conforme a la regla del negocio *e* del apartado 4.3.4. Acotan una prescripción,
+que es cosa distinta.
+
+## Costo del plan y lista de compras
+
+El catálogo registra el costo de cada alimento **en quetzales por cada 100
+gramos**, igual que su aporte nutricional. Con ese dato el sistema hace tres
+cosas: estima lo que cuesta el menú por día y por mes, prefiere el alimento
+económico cuando existe uno de aporte equivalente, y arma la lista de compras de
+la semana.
+
+El estudio de campo del Capítulo I documenta que la barrera declarada con más
+frecuencia es económica. Un plan cuyo costo el usuario descubre recién frente al
+puesto del mercado no resuelve esa barrera: la traslada.
+
+La lista de compras suma el menú por siete días, lo agrupa por categoría —que es
+como se recorren los puestos— y expresa las cantidades en libras, que es la
+unidad con que se despacha en los mercados del municipio.
+
+**Si la base de datos ya tenía el catálogo cargado antes de esta versión, hay que
+reexpresar los costos una sola vez:**
+
+```bash
+cd backend
+uv run python actualizar_costos_del_catalogo.py            # muestra qué haría
+uv run python actualizar_costos_del_catalogo.py --aplicar  # lo aplica
+```
+
+Antes, la columna no declaraba su unidad: la instrucción del levantamiento pedía
+«el precio observado en el mercado», y el catálogo quedó con la tortilla por
+pieza, el pollo por libra y el aceite por envase. Sumar esos valores no producía
+ninguna cifra con sentido, y por eso el dato se capturaba sin que nada lo usara.
+El script solo corrige la fila que conserva el valor sembrado: un precio que el
+administrador ya haya corregido en el mercado se respeta y se reporta aparte.
+
+Los precios siguen siendo estimaciones hasta el levantamiento de campo, igual que
+el resto del catálogo.
 
 ## Validaciones del perfil biométrico
 
@@ -299,6 +392,73 @@ El catálogo de ejercicios se carga al arrancar con 25 ejercicios ejecutables co
 equipamiento básico. **Es una lista provisional:** la historia HU-11 exige levantar
 el equipamiento efectivamente disponible en el Gimnasio FAMAS mediante visita
 directa. La carga es idempotente y no deshace lo que el administrador modifique.
+
+## Bitácora de entrenamiento y progresión de carga
+
+La rutina era de solo lectura: el sistema prescribía series, repeticiones y
+repeticiones en reserva, y no tenía forma de saber si se ejecutaron ni con cuánto
+peso. Al final de la semana el usuario reportaba cuántas sesiones cumplió —un
+número suelto— y con eso el sistema decidía si reajustaba el plan.
+
+Esa falta de datos tenía una consecuencia concreta: la regla del negocio *d* del
+apartado 4.3.4, que acota el incremento de carga al 10 % entre microciclos,
+estaba implementada en `formulas.progresion_admitida` y **no se invocaba desde
+ningún servicio**. El principio de sobrecarga progresiva del apartado 2.5.2
+aparecía únicamente como un párrafo que le pedía al usuario subir la carga por su
+cuenta. En la práctica, la rutina de la semana doce era idéntica a la de la
+primera.
+
+La bitácora registra la ejecución real —serie por serie, con su peso— y con ella
+el sistema calcula la carga de la sesión siguiente.
+
+### El método: progresión doble
+
+Es el que la literatura de referencia prescribe para el principiante y el
+intermedio, y consta de tres pasos:
+
+1. Se entrena dentro de un rango de repeticiones, no en un número fijo.
+2. Mientras no se alcance el extremo alto del rango **en todas las series**, se
+   repite la misma carga y se busca sumar repeticiones.
+3. Cuando se alcanza, se sube la carga y las repeticiones vuelven al extremo bajo.
+
+El paso 3 es el que la regla *d* acota. De esa cota sale una consecuencia que
+importa: con cargas ligeras, el incremento más pequeño que el gimnasio permite
+—un disco de 1.25 kg por lado— ya supera el 10 %. Con 20 kg en la barra, subir
+2.5 kg es un 12.5 %. El sistema **no se salta la regla**: responde que se siga
+progresando en repeticiones hasta que el salto quepa dentro del límite.
+
+| Situación | Qué decide el sistema |
+|---|---|
+| Sin historial | No inventa una carga: pide elegir un peso y guardarlo |
+| No completó el rango | Repetir la misma carga y sumar repeticiones |
+| Completó el rango en todas las series | Subir al siguiente escalón armable, dentro del 10 % |
+| El escalón mínimo excedería el 10 % | Seguir en repeticiones y explicar por qué |
+| Ejercicio de peso corporal | Progresar en repeticiones; no hay carga que anotar |
+| Tres sesiones estancado con esfuerzo alto | Descargar un 10 %: es fatiga acumulada, no falta de estímulo |
+
+La bitácora se enlaza al **ejercicio del catálogo** y no a la sesión prescrita.
+Al regenerarse el plan, las sesiones prescritas se sustituyen por otras nuevas;
+el historial de cargas debe sobrevivir a ese cambio, porque es justamente lo que
+da continuidad al entrenamiento.
+
+### La pantalla del gimnasio
+
+`/entrenar/:sesionId` se usa con el teléfono en la mano entre serie y serie, y de
+eso salen sus tres decisiones de diseño:
+
+- **Todo viene precargado.** La carga sugerida y las repeticiones objetivo ya
+  están escritas: confirmar una serie es un toque, no cuatro campos.
+- **Lo marcado se guarda en el dispositivo** conforme se avanza. Un teléfono que
+  se bloquea a mitad de la sesión no debe costar el entrenamiento entero.
+- **El descanso se cronometra solo.** Es parte de la dosis prescrita —dos minutos
+  en los compuestos— y hasta ahora la pantalla lo declaraba en texto y confiaba
+  en que alguien lo midiera.
+
+El resumen de la bitácora entrega además la racha de semanas, el volumen semanal
+y las marcas personales de cada ejercicio, con la repetición máxima estimada por
+la fórmula de Epley. Es una estimación para comparar series de repeticiones
+distintas en una sola cifra: **el sistema nunca le pide a nadie levantar su
+máximo.**
 
 ## Seguimiento y reajuste
 

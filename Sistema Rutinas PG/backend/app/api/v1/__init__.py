@@ -6,6 +6,7 @@ from app.api.v1 import (
     administracion,
     autenticacion,
     catalogos,
+    entrenamiento,
     perfiles,
     planes,
     progreso,
@@ -20,6 +21,7 @@ enrutador_v1.include_router(perfiles.enrutador)
 enrutador_v1.include_router(planes.enrutador)
 enrutador_v1.include_router(rutinas.enrutador)
 enrutador_v1.include_router(progreso.enrutador)
+enrutador_v1.include_router(entrenamiento.enrutador)
 enrutador_v1.include_router(catalogos.enrutador)
 enrutador_v1.include_router(administracion.enrutador)
 

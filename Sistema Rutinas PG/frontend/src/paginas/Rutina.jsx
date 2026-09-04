@@ -81,14 +81,33 @@ export default function Rutina() {
             cada músculo alcance a recuperarse entre sesiones.
           </p>
         </div>
-        <button
-          type="button"
-          className="btn btn-principal control-tactil align-self-start"
-          onClick={generar}
-          disabled={generando}
-        >
-          {generando ? 'Armando…' : rutina ? 'Volver a armar' : 'Generar mi rutina'}
-        </button>
+        <div className="d-flex gap-2 align-self-start flex-shrink-0 flex-wrap">
+          {rutina && (
+            <>
+              <Link
+                to="/bitacora"
+                className="btn btn-outline-secondary control-tactil no-imprimir"
+              >
+                Mi bitácora
+              </Link>
+              <button
+                type="button"
+                className="btn btn-outline-secondary control-tactil no-imprimir"
+                onClick={() => window.print()}
+              >
+                Imprimir
+              </button>
+            </>
+          )}
+          <button
+            type="button"
+            className="btn btn-principal control-tactil no-imprimir"
+            onClick={generar}
+            disabled={generando}
+          >
+            {generando ? 'Armando…' : rutina ? 'Volver a armar' : 'Generar mi rutina'}
+          </button>
+        </div>
       </div>
 
       {error && (
@@ -179,6 +198,17 @@ export default function Rutina() {
                     </h2>
                     <div className={`accordion-collapse collapse ${abierta ? 'show' : ''}`}>
                       <div className="accordion-body p-0">
+                        <div className="p-3 border-bottom no-imprimir">
+                          <Link
+                            to={`/entrenar/${sesion.id}`}
+                            className="btn btn-principal control-tactil w-100"
+                          >
+                            Entrenar esta sesión
+                          </Link>
+                          <p className="texto-ayuda text-center mt-2 mb-0">
+                            Anote sus cargas y el sistema le dirá cuándo subir de peso.
+                          </p>
+                        </div>
                         <ul className="list-group list-group-flush">
                           {sesion.ejercicios.map((ejercicio) => (
                             <li key={ejercicio.ejercicio_id} className="list-group-item">
@@ -241,7 +271,15 @@ export default function Rutina() {
             <div className="card shadow-sm h-100">
               <div className="card-body">
                 <h2 className="h5 card-title">Cómo progresar</h2>
-                <p className="mb-0">{rutina.explicacion_progresion}</p>
+                <p>{rutina.explicacion_progresion}</p>
+                {rutina.explicacion_grupos_ausentes && (
+                  <>
+                    <h2 className="h5 card-title mt-4">
+                      Por qué no aparecen todos los músculos
+                    </h2>
+                    <p className="mb-0">{rutina.explicacion_grupos_ausentes}</p>
+                  </>
+                )}
               </div>
             </div>
           </div>

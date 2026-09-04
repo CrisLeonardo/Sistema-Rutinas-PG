@@ -53,6 +53,14 @@ def registrar(
         raise _SIN_PLAN from None
     except servicio_perfil.PerfilNoRegistrado:
         raise _SIN_PLAN from None
+    except servicio_progreso.FechaAnteriorAlUltimoRegistro as error:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=(
+                "La fecha del registro no puede ser anterior a la de su último avance, "
+                f"del {error.ultima.strftime('%d/%m/%Y')}."
+            ),
+        ) from None
 
     return RespuestaProgreso(
         registro=RegistroProgresoPublico.model_validate(registro),

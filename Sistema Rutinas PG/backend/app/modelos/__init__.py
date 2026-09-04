@@ -5,6 +5,7 @@ por nombre y para que la creacion del esquema incluya la totalidad de las tablas
 """
 
 from app.modelos.catalogo import Alimento, Ejercicio
+from app.modelos.entrenamiento import SerieRealizada, SesionRealizada
 from app.modelos.enumeraciones import (
     CategoriaAlimento,
     GrupoMuscular,
@@ -31,6 +32,8 @@ __all__ = [
     "PerfilBiometrico",
     "Plan",
     "RegistroProgreso",
+    "SerieRealizada",
+    "SesionRealizada",
     "RolUsuario",
     "SesionEntrenamiento",
     "Sexo",

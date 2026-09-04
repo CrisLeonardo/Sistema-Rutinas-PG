@@ -9,6 +9,17 @@ from app.modelos.enumeraciones import RolUsuario
 LONGITUD_MINIMA_CONTRASENA = 8
 
 
+def _validar_robustez(valor: str) -> str:
+    """Reglas de robustez de la contrasena, compartidas por el alta y el cambio."""
+    if valor.strip() != valor:
+        raise ValueError("La contraseña no puede iniciar ni terminar con espacios.")
+    if not any(caracter.isalpha() for caracter in valor):
+        raise ValueError("La contraseña debe incluir al menos una letra.")
+    if not any(caracter.isdigit() for caracter in valor):
+        raise ValueError("La contraseña debe incluir al menos un número.")
+    return valor
+
+
 class RegistroUsuario(BaseModel):
     """Datos requeridos para dar de alta una cuenta (historia HU-01)."""
 
@@ -31,13 +42,27 @@ class RegistroUsuario(BaseModel):
     @field_validator("contrasena")
     @classmethod
     def validar_robustez(cls, valor: str) -> str:
-        if valor.strip() != valor:
-            raise ValueError("La contraseña no puede iniciar ni terminar con espacios.")
-        if not any(caracter.isalpha() for caracter in valor):
-            raise ValueError("La contraseña debe incluir al menos una letra.")
-        if not any(caracter.isdigit() for caracter in valor):
-            raise ValueError("La contraseña debe incluir al menos un número.")
-        return valor
+        return _validar_robustez(valor)
+
+
+class CambioContrasena(BaseModel):
+    """Sustitucion de la contrasena por parte de su propio titular.
+
+    Se exige la contrasena vigente ademas de la sesion activa: un telefono
+    desbloqueado y desatendido no debe bastar para quedarse con la cuenta.
+    """
+
+    contrasena_actual: str = Field(min_length=1, max_length=72)
+    contrasena_nueva: str = Field(
+        min_length=LONGITUD_MINIMA_CONTRASENA,
+        max_length=72,
+        description="Minimo ocho caracteres, con al menos una letra y un numero",
+    )
+
+    @field_validator("contrasena_nueva")
+    @classmethod
+    def validar_robustez(cls, valor: str) -> str:
+        return _validar_robustez(valor)
 
 
 class CredencialesAcceso(BaseModel):

@@ -293,3 +293,28 @@ Para detenerlo, conservando los datos:
 ```bash
 docker compose -f docker-compose.pruebas.yml --env-file .env.pruebas down
 ```
+
+## Reexpresión de los costos del catálogo
+
+**Paso obligatorio la primera vez que se publica esta versión sobre una base de
+datos que ya tenía el catálogo cargado.**
+
+El costo de los alimentos pasó a expresarse en quetzales por cada 100 gramos,
+igual que su aporte nutricional. Antes la columna no declaraba unidad y el
+catálogo quedó con valores por pieza, por libra y por envase mezclados. La carga
+de arranque no corrige esto: solo inserta los alimentos que faltan y nunca
+modifica los existentes, para no deshacer lo que el administrador haya corregido.
+
+```bash
+cd backend
+URL_BASE_DATOS="<cadena de Supabase>" uv run python actualizar_costos_del_catalogo.py
+URL_BASE_DATOS="<cadena de Supabase>" uv run python actualizar_costos_del_catalogo.py --aplicar
+```
+
+La primera invocación solo muestra qué haría. La segunda guarda. El script
+respeta cualquier precio que ya se haya corregido a mano y lo reporta aparte para
+revisarlo.
+
+Sin este paso, la lista de compras y el costo del menú muestran cifras sin
+sentido.
+

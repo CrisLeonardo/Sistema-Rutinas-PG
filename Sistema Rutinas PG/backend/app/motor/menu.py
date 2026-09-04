@@ -15,6 +15,7 @@ asigna a cada tiempo una porcion del requerimiento diario, cubriendo primero la
 proteina, que es la que la regla del negocio *c* fija con menos holgura.
 """
 
+from collections.abc import Callable
 from dataclasses import dataclass, field
 
 from app.modelos.enumeraciones import CategoriaAlimento
@@ -47,18 +48,34 @@ CATEGORIAS_FRESCAS = (
     CategoriaAlimento.FRUTA,
 )
 
-# Estructura de cada tiempo: que tipo de alimento lo compone. La refaccion es
-# ligera y la cena prescinde del tuberculo, por costumbre local.
+# Estructura de cada tiempo: que tipo de alimento lo compone. La cena prescinde
+# del tuberculo pesado, por costumbre local.
+#
+# Las dos refacciones llevan componente energetico —el pan, la tortilla o el
+# platano que acompanan a la fruta— y no solo fruta suelta. Sin el, cada
+# refaccion entregaba la mitad de la energia que le correspondia y las comidas
+# principales tenian que absorber ese faltante: en un plan de 3 500 kilocalorias
+# el cereal del almuerzo llegaba a su porcion maxima y el menu se quedaba 300
+# kilocalorias corto. Ademas, una refaccion de solo fruta no es la que se come
+# en el municipio.
 COMPOSICION_POR_TIEMPO: dict[str, tuple[tuple[CategoriaAlimento, ...], ...]] = {
     "Desayuno": (CATEGORIAS_PROTEICAS, CATEGORIAS_ENERGETICAS, CATEGORIAS_FRESCAS),
-    "Refacción de la mañana": (CATEGORIAS_FRESCAS, CATEGORIAS_PROTEICAS),
+    "Refacción de la mañana": (
+        CATEGORIAS_FRESCAS,
+        CATEGORIAS_PROTEICAS,
+        CATEGORIAS_ENERGETICAS,
+    ),
     "Almuerzo": (
         CATEGORIAS_PROTEICAS,
         CATEGORIAS_ENERGETICAS,
         CATEGORIAS_FRESCAS,
         CATEGORIAS_GRASAS,
     ),
-    "Refacción de la tarde": (CATEGORIAS_FRESCAS, CATEGORIAS_GRASAS),
+    "Refacción de la tarde": (
+        CATEGORIAS_FRESCAS,
+        CATEGORIAS_GRASAS,
+        CATEGORIAS_ENERGETICAS,
+    ),
     "Cena": (CATEGORIAS_PROTEICAS, CATEGORIAS_FRESCAS, CATEGORIAS_ENERGETICAS),
 }
 
@@ -81,12 +98,39 @@ PORCION_FRUTA_G = 150
 # Proporción de la energía de cada tiempo que se cubre con grasa añadida.
 PROPORCION_GRASA_POR_TIEMPO = 0.15
 
+# Proporción de la energía de un tiempo de comida que puede ocupar su alimento
+# proteico. El resto queda para la verdura, la grasa añadida y el cereal, que
+# son los que completan el plato: sin este tope, el alimento proteico se comía
+# el tiempo entero y el menú desbordaba la energía del plan.
+PROPORCION_MAXIMA_PROTEICA_POR_TIEMPO = 0.55
+
 # Tolerancia con que se da por cerrado el ajuste final de energía.
 TOLERANCIA_ENERGIA = 0.03
+
+# Pasadas del ajuste final. Cada una reparte el faltante solo entre las porciones
+# que todavía admiten crecer o menguar, de modo que lo que una porción topada no
+# puede absorber lo recoja otra en la pasada siguiente.
+PASADAS_DE_AJUSTE = 6
 
 # Cantidad de alimentos a partir de la cual se considera que el catalogo permite
 # armar un menu con variedad suficiente.
 MINIMO_ALIMENTOS_PARA_MENU = 8
+
+# Proporcion de los candidatos de cada categoria que entra en la rotacion, una
+# vez ordenados del mas economico al mas caro por unidad de lo que aportan.
+#
+# Sin este filtro el reparto rota por todos los alimentos de la categoria por
+# igual, y la semilla de maranon —a Q13.20 los 100 gramos— aparece tantas veces
+# como el mani, que cumple la misma funcion a la cuarta parte del precio. El
+# estudio de campo del Capitulo I encontro que la barrera declarada con mas
+# frecuencia es economica: proponer el alimento caro cuando existe el barato
+# equivalente es proponer un plan que el usuario no va a sostener.
+PROPORCION_CANDIDATOS_ECONOMICOS = 0.5
+
+# Nunca se rota sobre menos de esta cantidad de alimentos por categoria: la
+# variedad tambien sostiene la adherencia, y un menu de un solo alimento por
+# categoria se abandona por aburrimiento antes que por precio.
+MINIMO_CANDIDATOS_EN_ROTACION = 3
 
 
 @dataclass(frozen=True)
@@ -101,9 +145,18 @@ class AlimentoDisponible:
     carbohidrato_g_100g: float
     grasa_g_100g: float
     medida_casera: str | None = None
+    # Quetzales por cada 100 gramos, igual que el aporte nutricional. Es None
+    # mientras el levantamiento de campo no registre el precio del alimento.
+    costo_quetzales_100g: float | None = None
 
     def energia_de(self, gramos: float) -> float:
         return self.energia_kcal_100g * gramos / 100
+
+    def costo_de(self, gramos: float) -> float | None:
+        """Costo de la porcion, o None si el alimento no tiene precio registrado."""
+        if self.costo_quetzales_100g is None:
+            return None
+        return self.costo_quetzales_100g * gramos / 100
 
     def proteina_de(self, gramos: float) -> float:
         return self.proteina_g_100g * gramos / 100
@@ -128,6 +181,7 @@ class PorcionPropuesta:
     carbohidrato_g: int
     grasa_g: int
     medida_casera: str | None
+    costo_quetzales: float | None = None
     sustituto: "PorcionPropuesta | None" = None
 
 
@@ -147,6 +201,13 @@ class TiempoComida:
     def proteina_g(self) -> int:
         return sum(porcion.proteina_g for porcion in self.porciones)
 
+    @property
+    def costo_quetzales(self) -> float:
+        """Costo del tiempo de comida. Los alimentos sin precio suman cero."""
+        return round(
+            sum(porcion.costo_quetzales or 0.0 for porcion in self.porciones), 2
+        )
+
 
 @dataclass(frozen=True)
 class MenuDiario:
@@ -163,6 +224,11 @@ class MenuDiario:
     @property
     def proteina_g(self) -> int:
         return sum(tiempo.proteina_g for tiempo in self.tiempos)
+
+    @property
+    def costo_quetzales(self) -> float:
+        """Costo aproximado del dia completo, en quetzales."""
+        return round(sum(tiempo.costo_quetzales for tiempo in self.tiempos), 2)
 
     @property
     def desviacion_energia(self) -> float:
@@ -205,6 +271,7 @@ def _construir_porcion(
         carbohidrato_g=round(alimento.carbohidrato_de(gramos)),
         grasa_g=round(alimento.grasa_de(gramos)),
         medida_casera=alimento.medida_casera,
+        costo_quetzales=alimento.costo_de(gramos),
         sustituto=sustituto,
     )
 
@@ -249,12 +316,116 @@ def buscar_sustituto(
     return _construir_porcion(elegido, _gramos_para_energia(elegido, energia_original))
 
 
-def _gramos_para_proteina(alimento: AlimentoDisponible, proteina_g: float) -> int:
-    """Gramos del alimento que aportan la proteina pedida, dentro de sus topes."""
+def _gramos_para_proteina(
+    alimento: AlimentoDisponible,
+    proteina_g: float,
+    energia_disponible_kcal: float | None = None,
+) -> int:
+    """Gramos del alimento que aportan la proteina pedida, dentro de sus topes.
+
+    Cuando se indica la energia disponible del tiempo de comida, la porcion se
+    acota tambien por ella. Sin ese tope, un alimento proteico poco denso
+    desbordaba el tiempo entero: el garbanzo cocido aporta 8.9 gramos de
+    proteina por cada 100, de modo que cubrir 35 gramos exigia 395 gramos de
+    garbanzo, que arrastran 648 kilocalorias cuando el almuerzo disponia de 631.
+
+    El efecto se concentraba justamente en los planes de perdida de grasa, que
+    son los que combinan poca energia con mucha proteina y los que declara la
+    mayoria de los usuarios: el menu de un plan de 1 200 kilocalorias entregaba
+    1 783, un 48 % de mas.
+    """
     if alimento.proteina_g_100g <= 0:
         return PORCION_MINIMA_G
+
     gramos = proteina_g * 100 / alimento.proteina_g_100g
+
+    if energia_disponible_kcal is not None and alimento.energia_kcal_100g > 0:
+        gramos_que_caben = energia_disponible_kcal * 100 / alimento.energia_kcal_100g
+        gramos = min(gramos, gramos_que_caben)
+
     return int(min(max(round(gramos / 5) * 5, PORCION_MINIMA_G), _porcion_maxima(alimento)))
+
+
+def energia_por_gramo_de_proteina(alimento: AlimentoDisponible) -> float:
+    """Kilocalorias que arrastra cada gramo de proteina del alimento.
+
+    Es la medida con que se decide si un alimento proteico cabe en el tiempo de
+    comida: el pollo entrega proteina a 5.3 kilocalorias el gramo y el garbanzo
+    a 18.4, de modo que cubrir la misma proteina con garbanzo cuesta el triple
+    de energia.
+    """
+    if alimento.proteina_g_100g <= 0:
+        return float("inf")
+    return alimento.energia_kcal_100g / alimento.proteina_g_100g
+
+
+def costo_por_unidad_aportada(
+    alimento: AlimentoDisponible, categorias: tuple[CategoriaAlimento, ...]
+) -> float | None:
+    """Cuanto cuesta lo que el alimento aporta en el papel que va a cumplir.
+
+    Un alimento no es caro o barato en abstracto, sino en relacion con aquello
+    por lo que se le incluye: el pollo se compra por su proteina y la tortilla
+    por su energia. Comparar ambos por el precio del kilogramo diria que la
+    tortilla es mas barata sin decir nada util, porque no cumplen la misma
+    funcion dentro del tiempo de comida.
+
+    Devuelve None cuando el alimento todavia no tiene precio registrado.
+    """
+    if alimento.costo_quetzales_100g is None:
+        return None
+
+    if categorias == CATEGORIAS_PROTEICAS:
+        if alimento.proteina_g_100g <= 0:
+            return None
+        return alimento.costo_quetzales_100g / alimento.proteina_g_100g
+
+    if categorias in (CATEGORIAS_ENERGETICAS, CATEGORIAS_GRASAS):
+        if alimento.energia_kcal_100g <= 0:
+            return None
+        return alimento.costo_quetzales_100g / alimento.energia_kcal_100g
+
+    # Las verduras y las frutas se sirven en porcion fija, de modo que lo que
+    # cuenta es el precio de esa porcion y no su densidad de nada.
+    return alimento.costo_quetzales_100g
+
+
+def candidatos_economicos(
+    candidatos: list[AlimentoDisponible], categorias: tuple[CategoriaAlimento, ...]
+) -> list[AlimentoDisponible]:
+    """Reduce la rotacion a la mitad mas economica de la categoria.
+
+    Conserva el orden original dentro de los elegidos, de modo que el menu siga
+    siendo el mismo para el mismo perfil. Los alimentos sin precio registrado se
+    conservan: excluirlos castigaria al catalogo por estar incompleto, que es
+    justo lo que el levantamiento de campo esta pendiente de resolver.
+    """
+    if len(candidatos) <= MINIMO_CANDIDATOS_EN_ROTACION:
+        return candidatos
+
+    con_precio = [
+        (alimento, costo_por_unidad_aportada(alimento, categorias))
+        for alimento in candidatos
+    ]
+    sin_precio = [alimento for alimento, costo in con_precio if costo is None]
+    tasados = [(alimento, costo) for alimento, costo in con_precio if costo is not None]
+    if not tasados:
+        return candidatos
+
+    cuantos = max(
+        round(len(candidatos) * PROPORCION_CANDIDATOS_ECONOMICOS),
+        MINIMO_CANDIDATOS_EN_ROTACION,
+    )
+    economicos = {
+        id(alimento)
+        for alimento, _ in sorted(tasados, key=lambda par: par[1])[: cuantos - len(sin_precio)]
+    }
+    elegidos = [
+        alimento
+        for alimento in candidatos
+        if id(alimento) in economicos or alimento in sin_precio
+    ]
+    return elegidos or candidatos
 
 
 def _porcion_fija(alimento: AlimentoDisponible) -> int:
@@ -267,7 +438,6 @@ def _porcion_fija(alimento: AlimentoDisponible) -> int:
 def _ajustar_energia(
     tiempos: list[TiempoComida],
     energia_objetivo: float,
-    por_categoria: dict[CategoriaAlimento, list[AlimentoDisponible]],
     disponibles: list[AlimentoDisponible],
 ) -> list[TiempoComida]:
     """Corrige la energia del menu escalando sus componentes energeticos.
@@ -278,12 +448,7 @@ def _ajustar_energia(
     porcion admite variar sin volverse impracticable, y no entre la proteina,
     que la regla del negocio *c* fija con poca holgura.
     """
-    energia_actual = sum(tiempo.energia_kcal for tiempo in tiempos)
     if energia_objetivo <= 0:
-        return tiempos
-
-    diferencia = energia_objetivo - energia_actual
-    if abs(diferencia) / energia_objetivo <= TOLERANCIA_ENERGIA:
         return tiempos
 
     ajustables = [
@@ -296,8 +461,6 @@ def _ajustar_energia(
         return tiempos
 
     por_nombre = {alimento.nombre: alimento for alimento in disponibles}
-    energia_por_porcion = diferencia / len(ajustables)
-
     corregidos = [
         TiempoComida(
             nombre=tiempo.nombre,
@@ -307,22 +470,45 @@ def _ajustar_energia(
         for tiempo in tiempos
     ]
 
-    for indice_tiempo, indice_porcion in ajustables:
-        porcion = corregidos[indice_tiempo].porciones[indice_porcion]
-        alimento = por_nombre.get(porcion.nombre)
-        if alimento is None or alimento.energia_kcal_100g <= 0:
-            continue
+    # Se ajusta en varias pasadas. Con una sola, las porciones que topan en su
+    # limite se llevan una parte de la correccion que no pueden absorber, y esa
+    # parte se pierde: el menu queda descuadrado sin que nada lo intente de
+    # nuevo. En cada pasada se recalcula el faltante y se reparte entre las
+    # porciones que todavia tienen margen.
+    for _ in range(PASADAS_DE_AJUSTE):
+        energia_actual = sum(tiempo.energia_kcal for tiempo in corregidos)
+        diferencia = energia_objetivo - energia_actual
+        if abs(diferencia) / energia_objetivo <= TOLERANCIA_ENERGIA:
+            break
 
-        gramos_extra = energia_por_porcion * 100 / alimento.energia_kcal_100g
-        gramos = int(
-            min(
-                max(round((porcion.gramos + gramos_extra) / 5) * 5, PORCION_MINIMA_G),
-                _porcion_maxima(alimento),
+        con_margen = []
+        for indice_tiempo, indice_porcion in ajustables:
+            porcion = corregidos[indice_tiempo].porciones[indice_porcion]
+            alimento = por_nombre.get(porcion.nombre)
+            if alimento is None or alimento.energia_kcal_100g <= 0:
+                continue
+            tope = _porcion_maxima(alimento)
+            crece = diferencia > 0 and porcion.gramos < tope
+            mengua = diferencia < 0 and porcion.gramos > PORCION_MINIMA_G
+            if crece or mengua:
+                con_margen.append((indice_tiempo, indice_porcion, alimento))
+
+        if not con_margen:
+            break
+
+        energia_por_porcion = diferencia / len(con_margen)
+        for indice_tiempo, indice_porcion, alimento in con_margen:
+            porcion = corregidos[indice_tiempo].porciones[indice_porcion]
+            gramos_extra = energia_por_porcion * 100 / alimento.energia_kcal_100g
+            gramos = int(
+                min(
+                    max(round((porcion.gramos + gramos_extra) / 5) * 5, PORCION_MINIMA_G),
+                    _porcion_maxima(alimento),
+                )
             )
-        )
-        corregidos[indice_tiempo].porciones[indice_porcion] = _construir_porcion(
-            alimento, gramos, porcion.sustituto
-        )
+            corregidos[indice_tiempo].porciones[indice_porcion] = _construir_porcion(
+                alimento, gramos, porcion.sustituto
+            )
 
     return corregidos
 
@@ -377,7 +563,18 @@ def generar_menu(
         porciones: list[PorcionPropuesta] = []
         energia_asignada = 0.0
 
-        def elegir(categorias: tuple[CategoriaAlimento, ...]) -> AlimentoDisponible | None:
+        def elegir(
+            categorias: tuple[CategoriaAlimento, ...],
+            cabe: "Callable[[AlimentoDisponible], bool] | None" = None,
+        ) -> AlimentoDisponible | None:
+            """Toma el siguiente alimento de la rotacion que cumpla la condicion.
+
+            La rotacion es la que da variedad al menu: se avanza una posicion en
+            cada eleccion, de modo que los tiempos no repitan el mismo alimento.
+            Cuando se indica una condicion, se recorre la rotacion desde esa
+            posicion y se toma el primero que la cumpla; si ninguno la cumple, se
+            devuelve el de la posicion original y el ajuste posterior se encarga.
+            """
             nonlocal desplazamiento
             candidatos = [
                 alimento
@@ -386,9 +583,19 @@ def generar_menu(
             ]
             if not candidatos:
                 return None
-            elegido = candidatos[desplazamiento % len(candidatos)]
+
+            en_rotacion = candidatos_economicos(candidatos, categorias)
+            inicio = desplazamiento % len(en_rotacion)
             desplazamiento += 1
-            return elegido
+
+            if cabe is None:
+                return en_rotacion[inicio]
+
+            for salto in range(len(en_rotacion)):
+                candidato = en_rotacion[(inicio + salto) % len(en_rotacion)]
+                if cabe(candidato):
+                    return candidato
+            return en_rotacion[inicio]
 
         def agregar(alimento: AlimentoDisponible, gramos: int) -> None:
             nonlocal energia_asignada
@@ -400,10 +607,25 @@ def generar_menu(
 
         # 1. Proteína.
         if CATEGORIAS_PROTEICAS in composicion:
-            alimento = elegir(CATEGORIAS_PROTEICAS)
+            proteina_del_tiempo = proteina_g * proporcion / peso_proteico
+            # La proteína puede ocupar buena parte de la energía del tiempo,
+            # pero no toda: hay que dejar sitio para el resto de la composición.
+            energia_para_proteina = energia_del_tiempo * PROPORCION_MAXIMA_PROTEICA_POR_TIEMPO
+
+            def cabe_en_el_tiempo(candidato: AlimentoDisponible) -> bool:
+                return (
+                    energia_por_gramo_de_proteina(candidato) * proteina_del_tiempo
+                    <= energia_para_proteina
+                )
+
+            alimento = elegir(CATEGORIAS_PROTEICAS, cabe_en_el_tiempo)
             if alimento is not None:
-                proteina_del_tiempo = proteina_g * proporcion / peso_proteico
-                agregar(alimento, _gramos_para_proteina(alimento, proteina_del_tiempo))
+                agregar(
+                    alimento,
+                    _gramos_para_proteina(
+                        alimento, proteina_del_tiempo, energia_para_proteina
+                    ),
+                )
 
         # 2. Verduras y frutas, en porción fija.
         if CATEGORIAS_FRESCAS in composicion:
@@ -429,7 +651,7 @@ def generar_menu(
             TiempoComida(nombre=nombre_tiempo, proporcion=proporcion, porciones=porciones)
         )
 
-    tiempos = _ajustar_energia(tiempos, energia_kcal, por_categoria, disponibles)
+    tiempos = _ajustar_energia(tiempos, energia_kcal, disponibles)
 
     return MenuDiario(
         tiempos=tiempos,

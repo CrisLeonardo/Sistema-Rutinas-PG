@@ -316,7 +316,66 @@ def test_el_reporte_entrega_la_adherencia_y_las_sesiones_cumplidas(cliente, con_
 
     assert reporte["sesiones_totales"] == 7
     assert reporte["adherencia_promedio"] == pytest.approx(85.0)
-    assert reporte["semanas_registradas"] == 2
+    assert reporte["registros_totales"] == 2
+    # Los dos avances se capturaron el mismo día, de modo que son una sola
+    # semana registrada por mucho que sean dos registros.
+    assert reporte["semanas_registradas"] == 1
+
+
+def test_las_semanas_registradas_cuentan_semanas_y_no_registros(cliente, con_plan):
+    """Quien captura tres veces en una semana no lleva tres semanas de constancia.
+
+    El reporte de la historia HU-10 sirve para que el usuario vea su constancia;
+    contar registros en lugar de semanas la declaraba mayor de lo que era.
+    """
+    hoy = date.today()
+    registrar(cliente, con_plan, fecha_registro=str(hoy - timedelta(days=21)))
+    registrar(
+        cliente, con_plan, peso_kg=81.0, fecha_registro=str(hoy - timedelta(days=14))
+    )
+    registrar(
+        cliente, con_plan, peso_kg=81.2, fecha_registro=str(hoy - timedelta(days=13))
+    )
+    registrar(cliente, con_plan, peso_kg=80.0, fecha_registro=str(hoy))
+
+    reporte = cliente.get(RUTA_REPORTE, headers=encabezado(con_plan)).json()
+
+    assert reporte["registros_totales"] == 4
+    assert reporte["semanas_registradas"] == 3
+
+
+def test_no_se_admite_un_avance_anterior_al_ultimo_registrado(cliente, con_plan):
+    """Retrodatar por debajo del ultimo registro desordenaria la serie del reporte.
+
+    El contrato ya impedia fechar en el futuro, pero nada impedia fecharlo antes
+    del anterior: el ritmo semanal se calcularia sobre un intervalo negativo y
+    las graficas de la historia HU-10 se leerian al reves.
+    """
+    hoy = date.today()
+    registrar(cliente, con_plan, fecha_registro=str(hoy - timedelta(days=7)))
+
+    respuesta = cliente.post(
+        RUTA_PROGRESO,
+        json={"peso_kg": 80.0, "fecha_registro": str(hoy - timedelta(days=20))},
+        headers=encabezado(con_plan),
+    )
+
+    assert respuesta.status_code == 409
+    assert "anterior" in respuesta.json()["detail"]
+
+
+def test_se_admite_un_avance_del_mismo_dia_que_el_anterior(cliente, con_plan):
+    """Corregir un dato recien capturado es legitimo; retroceder en el tiempo, no."""
+    hoy = date.today()
+    registrar(cliente, con_plan, fecha_registro=str(hoy))
+
+    respuesta = cliente.post(
+        RUTA_PROGRESO,
+        json={"peso_kg": 80.5, "fecha_registro": str(hoy)},
+        headers=encabezado(con_plan),
+    )
+
+    assert respuesta.status_code == 201
 
 
 def test_el_reporte_compara_el_plan_inicial_con_el_vigente(cliente, con_plan):
