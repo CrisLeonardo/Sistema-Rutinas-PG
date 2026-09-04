@@ -24,25 +24,30 @@ services:
     # cruza esa distancia, y el criterio de aceptación de HU-06 concede tres
     # segundos para el plan completo.
     region: ohio
-    # 0.5 núcleos y 512 MB. La medición manda: el servicio ocupa 271 MB con un
-    # proceso de trabajo, de los cuales 190 son la propia biblioteca
-    # TensorFlow. Un segundo proceso no cabría, y por eso PROCESOS_DE_TRABAJO
-    # queda en uno.
-    plan: 0.5c-512mb
+    # PROVISIONAL: plan gratuito solo para probar el despliegue. La medición
+    # real manda 0.5c-512mb (el servicio ocupa 271 MB, de los cuales 190 son
+    # TensorFlow) y ese es el plan que documentan DESPLIEGUE.md y la tesis
+    # (Capítulo III/IV, criterio de 3 s de HU-06). El gratuito duerme el
+    # servicio a los 15 minutos sin tráfico: NO usar para la entrega ni la
+    # defensa. Volver a "0.5c-512mb" antes de esa fecha.
+    plan: free
     dockerfilePath: ./backend/Dockerfile
     dockerContext: ./backend
     # Render consulta esta ruta antes de dirigir tráfico a una versión nueva:
     # si el servicio no responde, la publicación se cancela y la versión
     # anterior sigue atendiendo.
     healthCheckPath: /api/v1/estado
-    disk:
-      # El modelo entrenado sobrevive aquí a la actualización del contenedor,
-      # que es lo que permite reentrenar la red y ponerla en operación desde
-      # /api/v1/administracion/modelo/recargar sin detener el servicio
-      # (requerimiento no funcional 4.5.6).
-      name: modelo-entrenado
-      mountPath: /aplicacion/modelo
-      sizeGB: 1
+    # PROVISIONAL: sin disco porque el plan gratuito no admite discos
+    # persistentes. Sin él, el modelo no sobrevive a un redeploy: entrada.sh
+    # simplemente lo vuelve a copiar de la imagen en cada arranque (ver el
+    # comentario de "Sembrando el modelo..." ahí). Esto es aceptable para
+    # pruebas, pero implica que ya no hay recarga en caliente del modelo
+    # reentrenado (requerimiento 4.5.6) hasta restaurar este bloque:
+    #
+    # disk:
+    #   name: modelo-entrenado
+    #   mountPath: /aplicacion/modelo
+    #   sizeGB: 1
     envVars:
       - key: ENTORNO
         value: produccion
