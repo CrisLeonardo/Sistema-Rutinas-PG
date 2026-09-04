@@ -31,8 +31,11 @@ services:
     # servicio a los 15 minutos sin tráfico: NO usar para la entrega ni la
     # defensa. Volver a "0.5c-512mb" antes de esa fecha.
     plan: free
-    dockerfilePath: ./backend/Dockerfile
-    dockerContext: ./backend
+    # Las rutas de un Blueprint se resuelven contra la raíz del repositorio,
+    # no contra la carpeta donde vive este render.yaml, que es "Sistema
+    # Rutinas PG/". Por eso llevan ese prefijo.
+    dockerfilePath: ./Sistema Rutinas PG/backend/Dockerfile
+    dockerContext: ./Sistema Rutinas PG/backend
     # Render consulta esta ruta antes de dirigir tráfico a una versión nueva:
     # si el servicio no responde, la publicación se cancela y la versión
     # anterior sigue atendiendo.
@@ -92,7 +95,7 @@ services:
   - type: web
     name: rutinas-interfaz
     runtime: static
-    rootDir: frontend
+    rootDir: Sistema Rutinas PG/frontend
     buildCommand: npm ci && npm run build
     staticPublishPath: ./dist
     envVars:
