@@ -1,15 +1,26 @@
 /**
- * Pantalla de captura del perfil biométrico (historia HU-04).
+ * Mis medidas (historia HU-04).
  *
  * El formulario se divide en tres pasos cortos, conforme al requerimiento no
  * funcional 4.5.3. Las validaciones que se aplican aquí son un apoyo a la
  * experiencia de uso: el servidor las vuelve a verificar en su totalidad, según
  * exige el apartado 4.8.3.
+ *
+ * El indicador de pasos deja de ser una fila de tres círculos con su nombre
+ * —que en 390 px se aprieta hasta no leerse— y pasa a ser una barra de tres
+ * tramos junto a la flecha de volver, con «Paso 1 de 3» al lado.
+ *
+ * Los radios desaparecen: el sexo son dos botones, los días de la semana son
+ * siete, y la actividad, el objetivo y la experiencia son filas de 56 px con su
+ * explicación debajo. Un radio de 20 px es un blanco difícil para el pulgar, y
+ * la explicación que va al lado es lo que decide la respuesta.
  */
 
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 
+import AvisoDeError from '../componentes/AvisoDeError.jsx'
+import Icono from '../componentes/Icono.jsx'
 import {
   NIVELES_ACTIVIDAD,
   NIVELES_EXPERIENCIA,
@@ -23,8 +34,16 @@ import { ErrorApi, servicioPerfil } from '../servicios/api.js'
 
 const PASOS = [
   { numero: 1, titulo: 'Sus medidas', ayuda: 'Datos con los que se calcula su gasto energético.' },
-  { numero: 2, titulo: 'Su actividad', ayuda: 'Cuánto se mueve durante la semana y qué busca lograr.' },
-  { numero: 3, titulo: 'Su entrenamiento', ayuda: 'Con esto se ajusta el volumen de la rutina.' },
+  {
+    numero: 2,
+    titulo: 'Su actividad',
+    ayuda: 'Cuánto se mueve durante la semana y qué busca lograr.',
+  },
+  {
+    numero: 3,
+    titulo: 'Su entrenamiento',
+    ayuda: 'Con esto se ajusta el volumen de la rutina.',
+  },
 ]
 
 const FORMULARIO_INICIAL = {
@@ -100,6 +119,11 @@ export default function PerfilBiometrico() {
   const actualizar = (evento) => {
     const { name, value } = evento.target
     setFormulario((anterior) => ({ ...anterior, [name]: value }))
+    setError(null)
+  }
+
+  const elegir = (campo, valor) => {
+    setFormulario((anterior) => ({ ...anterior, [campo]: valor }))
     setError(null)
   }
 
@@ -189,7 +213,7 @@ export default function PerfilBiometrico() {
         },
         token,
       )
-      navegar('/historial-medidas', { replace: true })
+      navegar('/avance/medidas', { replace: true })
     } catch (fallo) {
       setError(fallo instanceof ErrorApi ? fallo.message : 'No fue posible guardar sus medidas.')
     } finally {
@@ -200,302 +224,292 @@ export default function PerfilBiometrico() {
   const indice = calcularIndice(formulario.peso_kg, formulario.estatura_cm)
 
   if (cargando) {
-    return <p className="texto-ayuda">Cargando sus datos…</p>
+    return (
+      <div className="pila" aria-busy="true">
+        <div className="esqueleto esqueleto--titulo" />
+        <div className="esqueleto esqueleto--fila" />
+        <div className="esqueleto esqueleto--fila" />
+        <span className="solo-lectores">Cargando sus datos…</span>
+      </div>
+    )
   }
 
   return (
-    <div className="d-flex justify-content-center">
-      <div className="card shadow-sm tarjeta-formulario">
-        <div className="card-body p-4">
-          <h1 className="h4 mb-1">
-            {teniaPerfil ? 'Actualizar mis medidas' : 'Mi perfil biométrico'}
-          </h1>
-          <p className="texto-ayuda">
-            {teniaPerfil
-              ? 'Sus medidas anteriores se conservan; esta actualización se agrega a su historial.'
-              : 'Con estos datos el sistema calcula su requerimiento de energía y su rutina.'}
-          </p>
+    <div className="pila-5">
+      <div className="cabecera-pantalla">
+        {paso === 1 ? (
+          <Link to="/avance/medidas" className="cabecera-pantalla__volver" aria-label="Volver">
+            <Icono nombre="arrow-left-01" tamano={18} />
+          </Link>
+        ) : (
+          <button
+            type="button"
+            className="cabecera-pantalla__volver"
+            onClick={retroceder}
+            aria-label="Volver al paso anterior"
+          >
+            <Icono nombre="arrow-left-01" tamano={18} />
+          </button>
+        )}
+        <div className="tramos" role="progressbar" aria-valuenow={paso} aria-valuemin={1} aria-valuemax={3}>
+          {PASOS.map((definicion) => (
+            <span
+              key={definicion.numero}
+              className={`tramos__tramo${
+                definicion.numero <= paso ? ' tramos__tramo--activo' : ''
+              }`}
+            />
+          ))}
+        </div>
+      </div>
 
-          <ol className="lista-pasos" aria-label="Avance del formulario">
-            {PASOS.map((definicion) => (
-              <li
-                key={definicion.numero}
-                className={`paso ${definicion.numero === paso ? 'paso-activo' : ''} ${
-                  definicion.numero < paso ? 'paso-completo' : ''
-                }`}
-              >
-                <span className="paso-numero">{definicion.numero}</span>
-                <span className="paso-titulo">{definicion.titulo}</span>
-              </li>
-            ))}
-          </ol>
+      <div className="pila-2">
+        <p className="apoyo mono">Paso {paso} de {PASOS.length}</p>
+        <h1 className="titulo-pantalla">{PASOS[paso - 1].titulo}</h1>
+        <p className="apoyo">
+          {paso === 1 && teniaPerfil
+            ? 'Sus medidas anteriores se conservan; esta actualización se agrega a su historial.'
+            : PASOS[paso - 1].ayuda}
+        </p>
+      </div>
 
-          <p className="texto-ayuda">{PASOS[paso - 1].ayuda}</p>
+      {error && <AvisoDeError mensaje={error} />}
 
-          {error && (
-            <div className="alert alert-danger" role="alert">
-              {error}
-            </div>
-          )}
-
-          <form onSubmit={enviar} noValidate>
-            {paso === 1 && (
-              <>
-                <div className="mb-3">
-                  <label className="form-label" htmlFor="peso_kg">
-                    Peso, en kilogramos
-                  </label>
+      <form onSubmit={enviar} noValidate className="pila-5">
+        {paso === 1 && (
+          <>
+            <div className="pila-3">
+              <div className="campos-par">
+                <label className="campo">
+                  <span className="campo__etiqueta">Peso (kg)</span>
                   <input
-                    id="peso_kg"
                     name="peso_kg"
                     type="number"
                     inputMode="decimal"
                     step="0.1"
                     min={RANGOS.pesoMinimo}
                     max={RANGOS.pesoMaximo}
-                    className="form-control form-control-lg control-tactil"
+                    className="campo__control campo__control--numero"
                     value={formulario.peso_kg}
                     onChange={actualizar}
                     required
                   />
-                  <div className="form-text">
+                  <span className="campo__ayuda">
                     Entre {RANGOS.pesoMinimo} y {RANGOS.pesoMaximo} kilogramos.
-                  </div>
-                </div>
+                  </span>
+                </label>
 
-                <div className="mb-3">
-                  <label className="form-label" htmlFor="estatura_cm">
-                    Estatura, en centímetros
-                  </label>
+                <label className="campo">
+                  <span className="campo__etiqueta">Estatura (cm)</span>
                   <input
-                    id="estatura_cm"
                     name="estatura_cm"
                     type="number"
-                    inputMode="decimal"
-                    step="0.5"
+                    inputMode="numeric"
                     min={RANGOS.estaturaMinima}
                     max={RANGOS.estaturaMaxima}
-                    className="form-control form-control-lg control-tactil"
+                    className="campo__control campo__control--numero"
                     value={formulario.estatura_cm}
                     onChange={actualizar}
                     required
                   />
-                  <div className="form-text">
+                  <span className="campo__ayuda">
                     Por ejemplo, 1.70 metros se escribe como 170.
-                  </div>
-                </div>
+                  </span>
+                </label>
+              </div>
 
-                <div className="mb-3">
-                  <label className="form-label" htmlFor="edad">
-                    Edad, en años cumplidos
-                  </label>
+              <div className="campos-par">
+                <label className="campo">
+                  <span className="campo__etiqueta">Edad</span>
                   <input
-                    id="edad"
                     name="edad"
                     type="number"
                     inputMode="numeric"
-                    step="1"
                     min={RANGOS.edadMinima}
                     max={RANGOS.edadMaxima}
-                    className="form-control form-control-lg control-tactil"
+                    className="campo__control campo__control--numero"
                     value={formulario.edad}
                     onChange={actualizar}
                     required
                   />
-                  <div className="form-text">
+                  <span className="campo__ayuda">
                     El sistema atiende únicamente a personas mayores de edad.
-                  </div>
-                </div>
+                  </span>
+                </label>
 
-                <fieldset className="mb-3">
-                  <legend className="form-label">Sexo</legend>
-                  {SEXOS.map((opcion) => (
-                    <div className="form-check opcion-tactil" key={opcion.valor}>
-                      <input
-                        className="form-check-input"
-                        type="radio"
-                        name="sexo"
-                        id={`sexo-${opcion.valor}`}
-                        value={opcion.valor}
-                        checked={formulario.sexo === opcion.valor}
-                        onChange={actualizar}
-                      />
-                      <label className="form-check-label" htmlFor={`sexo-${opcion.valor}`}>
+                <fieldset className="campo">
+                  <legend className="campo__etiqueta">Sexo</legend>
+                  <div className="opciones-fila">
+                    {SEXOS.map((opcion) => (
+                      <button
+                        key={opcion.valor}
+                        type="button"
+                        className={`opcion-boton opcion-boton--grande${
+                          formulario.sexo === opcion.valor ? ' opcion-boton--seleccionada' : ''
+                        }`}
+                        onClick={() => elegir('sexo', opcion.valor)}
+                        aria-pressed={formulario.sexo === opcion.valor}
+                      >
                         {opcion.etiqueta}
-                      </label>
-                    </div>
-                  ))}
-                  <div className="form-text">
-                    Las fórmulas de Mifflin-St Jeor y Harris-Benedict lo utilizan para
-                    calcular su gasto de energía en reposo.
-                  </div>
-                </fieldset>
-
-                {indice !== null && (
-                  <div className="alert alert-light border" role="status">
-                    <div className="fw-semibold">Índice de masa corporal: {indice}</div>
-                    <div className="texto-ayuda mb-0">
-                      {clasificarIndice(indice)}. Es una referencia general, no un
-                      diagnóstico médico.
-                    </div>
-                  </div>
-                )}
-              </>
-            )}
-
-            {paso === 2 && (
-              <>
-                <fieldset className="mb-4">
-                  <legend className="form-label">¿Qué tan activo es en su día a día?</legend>
-                  {NIVELES_ACTIVIDAD.map((opcion) => (
-                    <div className="form-check opcion-tactil" key={opcion.valor}>
-                      <input
-                        className="form-check-input"
-                        type="radio"
-                        name="nivel_actividad"
-                        id={`actividad-${opcion.valor}`}
-                        value={opcion.valor}
-                        checked={formulario.nivel_actividad === opcion.valor}
-                        onChange={actualizar}
-                      />
-                      <label className="form-check-label" htmlFor={`actividad-${opcion.valor}`}>
-                        <span className="fw-semibold">{opcion.etiqueta}</span>
-                        <span className="d-block texto-ayuda">{opcion.detalle}</span>
-                      </label>
-                    </div>
-                  ))}
-                </fieldset>
-
-                <fieldset className="mb-3">
-                  <legend className="form-label">¿Qué desea lograr?</legend>
-                  {OBJETIVOS.map((opcion) => (
-                    <div className="form-check opcion-tactil" key={opcion.valor}>
-                      <input
-                        className="form-check-input"
-                        type="radio"
-                        name="objetivo"
-                        id={`objetivo-${opcion.valor}`}
-                        value={opcion.valor}
-                        checked={formulario.objetivo === opcion.valor}
-                        onChange={actualizar}
-                      />
-                      <label className="form-check-label" htmlFor={`objetivo-${opcion.valor}`}>
-                        <span className="fw-semibold">{opcion.etiqueta}</span>
-                        <span className="d-block texto-ayuda">{opcion.detalle}</span>
-                      </label>
-                    </div>
-                  ))}
-                </fieldset>
-              </>
-            )}
-
-            {paso === 3 && (
-              <>
-                <fieldset className="mb-4">
-                  <legend className="form-label">¿Cuánta experiencia tiene entrenando?</legend>
-                  {NIVELES_EXPERIENCIA.map((opcion) => (
-                    <div className="form-check opcion-tactil" key={opcion.valor}>
-                      <input
-                        className="form-check-input"
-                        type="radio"
-                        name="nivel_experiencia"
-                        id={`experiencia-${opcion.valor}`}
-                        value={opcion.valor}
-                        checked={formulario.nivel_experiencia === opcion.valor}
-                        onChange={actualizar}
-                      />
-                      <label className="form-check-label" htmlFor={`experiencia-${opcion.valor}`}>
-                        <span className="fw-semibold">{opcion.etiqueta}</span>
-                        <span className="d-block texto-ayuda">{opcion.detalle}</span>
-                      </label>
-                    </div>
-                  ))}
-                </fieldset>
-
-                <div className="mb-4">
-                  <label className="form-label" htmlFor="dias_entrenamiento_semana">
-                    Días que puede entrenar por semana
-                  </label>
-                  <select
-                    id="dias_entrenamiento_semana"
-                    name="dias_entrenamiento_semana"
-                    className="form-select form-select-lg control-tactil"
-                    value={formulario.dias_entrenamiento_semana}
-                    onChange={actualizar}
-                  >
-                    {[1, 2, 3, 4, 5, 6, 7].map((dias) => (
-                      <option key={dias} value={dias}>
-                        {dias} {dias === 1 ? 'día' : 'días'}
-                      </option>
+                      </button>
                     ))}
-                  </select>
-                  <div className="form-text">
-                    Su rutina tendrá exactamente esta cantidad de sesiones.
                   </div>
-                </div>
-
-                <div className="card bg-light border-0 mb-4">
-                  <div className="card-body">
-                    <h2 className="h6">Resumen de lo que va a guardar</h2>
-                    <dl className="row mb-0 small">
-                      <dt className="col-6">Peso</dt>
-                      <dd className="col-6">{formulario.peso_kg} kg</dd>
-                      <dt className="col-6">Estatura</dt>
-                      <dd className="col-6">{formulario.estatura_cm} cm</dd>
-                      <dt className="col-6">Edad</dt>
-                      <dd className="col-6">{formulario.edad} años</dd>
-                      <dt className="col-6">Sexo</dt>
-                      <dd className="col-6">{etiquetaDe(SEXOS, formulario.sexo)}</dd>
-                      <dt className="col-6">Actividad</dt>
-                      <dd className="col-6">
-                        {etiquetaDe(NIVELES_ACTIVIDAD, formulario.nivel_actividad)}
-                      </dd>
-                      <dt className="col-6">Objetivo</dt>
-                      <dd className="col-6">{etiquetaDe(OBJETIVOS, formulario.objetivo)}</dd>
-                      <dt className="col-6">Índice de masa corporal</dt>
-                      <dd className="col-6 mb-0">{indice ?? '—'}</dd>
-                    </dl>
-                  </div>
-                </div>
-              </>
-            )}
-
-            <div className="d-flex gap-2">
-              {paso > 1 && (
-                <button
-                  type="button"
-                  className="btn btn-outline-secondary btn-lg control-tactil flex-fill"
-                  onClick={retroceder}
-                >
-                  Atrás
-                </button>
-              )}
-              {paso < PASOS.length ? (
-                <button
-                  type="button"
-                  className="btn btn-principal btn-lg control-tactil flex-fill"
-                  onClick={avanzar}
-                >
-                  Continuar
-                </button>
-              ) : (
-                <button
-                  type="submit"
-                  className="btn btn-principal btn-lg control-tactil flex-fill"
-                  disabled={enviando}
-                >
-                  {enviando ? 'Guardando…' : 'Guardar mis medidas'}
-                </button>
-              )}
+                  <span className="campo__ayuda">
+                    Las fórmulas de Mifflin-St Jeor y Harris-Benedict lo utilizan para calcular
+                    su gasto de energía en reposo.
+                  </span>
+                </fieldset>
+              </div>
             </div>
-          </form>
 
-          <p className="texto-ayuda mt-4 mb-0">
-            Sus datos biométricos son privados: nadie más, ni el administrador del
-            sistema, puede consultarlos.
-          </p>
-        </div>
+            {indice !== null && (
+              <div className="tarjeta tarjeta--densa" role="status">
+                <div className="fila--entre">
+                  <span className="pila-2 crece">
+                    <span className="lista__titulo">Índice de masa corporal</span>
+                    <span className="lista__detalle">
+                      Referencia general, no un diagnóstico médico.
+                    </span>
+                  </span>
+                  <span className="pila-2 a-la-derecha">
+                    <span className="cifra-indice">{indice}</span>
+                    <span
+                      className={`cifras__rotulo ${
+                        clasificarIndice(indice) === 'Peso normal' ? 'tinta-ok' : 'tinta-aviso'
+                      }`}
+                    >
+                      {clasificarIndice(indice)}
+                    </span>
+                  </span>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+
+        {paso === 2 && (
+          <>
+            <GrupoDeOpciones
+              titulo="¿Qué tan activo es en su día a día?"
+              opciones={NIVELES_ACTIVIDAD}
+              valor={formulario.nivel_actividad}
+              alElegir={(valor) => elegir('nivel_actividad', valor)}
+            />
+            <GrupoDeOpciones
+              titulo="¿Qué desea lograr?"
+              opciones={OBJETIVOS}
+              valor={formulario.objetivo}
+              alElegir={(valor) => elegir('objetivo', valor)}
+            />
+          </>
+        )}
+
+        {paso === 3 && (
+          <>
+            <GrupoDeOpciones
+              titulo="¿Cuánta experiencia tiene entrenando?"
+              opciones={NIVELES_EXPERIENCIA}
+              valor={formulario.nivel_experiencia}
+              alElegir={(valor) => elegir('nivel_experiencia', valor)}
+            />
+
+            <div className="pila-3">
+              <span className="lista__titulo">Días que puede entrenar por semana</span>
+              <div className="opciones-fila">
+                {[1, 2, 3, 4, 5, 6, 7].map((dias) => (
+                  <button
+                    key={dias}
+                    type="button"
+                    className={`opcion-boton mono${
+                      Number(formulario.dias_entrenamiento_semana) === dias
+                        ? ' opcion-boton--seleccionada'
+                        : ''
+                    }`}
+                    onClick={() => elegir('dias_entrenamiento_semana', String(dias))}
+                    aria-pressed={Number(formulario.dias_entrenamiento_semana) === dias}
+                  >
+                    {dias}
+                  </button>
+                ))}
+              </div>
+              <p className="campo__ayuda">Su rutina tendrá exactamente esta cantidad de sesiones.</p>
+            </div>
+
+            <div className="pila-3">
+              <span className="rotulo">Resumen de lo que va a guardar</span>
+              <div className="lista">
+                <FilaResumen nombre="Peso" valor={`${formulario.peso_kg} kg`} />
+                <FilaResumen nombre="Estatura" valor={`${formulario.estatura_cm} cm`} />
+                <FilaResumen nombre="Edad" valor={`${formulario.edad} años`} />
+                <FilaResumen nombre="Sexo" valor={etiquetaDe(SEXOS, formulario.sexo)} />
+                <FilaResumen
+                  nombre="Actividad"
+                  valor={etiquetaDe(NIVELES_ACTIVIDAD, formulario.nivel_actividad)}
+                />
+                <FilaResumen nombre="Objetivo" valor={etiquetaDe(OBJETIVOS, formulario.objetivo)} />
+                <FilaResumen
+                  nombre="Experiencia"
+                  valor={etiquetaDe(NIVELES_EXPERIENCIA, formulario.nivel_experiencia)}
+                />
+                <FilaResumen
+                  nombre="Días por semana"
+                  valor={formulario.dias_entrenamiento_semana}
+                />
+                <FilaResumen nombre="Índice de masa corporal" valor={indice ?? '—'} />
+              </div>
+            </div>
+          </>
+        )}
+
+        {paso < PASOS.length ? (
+          <button type="button" className="boton boton--principal" onClick={avanzar}>
+            Continuar
+          </button>
+        ) : (
+          <button type="submit" className="boton boton--principal" disabled={enviando}>
+            {enviando ? 'Guardando…' : 'Guardar mis medidas'}
+          </button>
+        )}
+      </form>
+
+      <p className="nota-al-pie centrado">Sus medidas son privadas: nadie más las consulta.</p>
+    </div>
+  )
+}
+
+/** Un grupo de opciones excluyentes, como filas grandes con su explicación. */
+function GrupoDeOpciones({ titulo, opciones, valor, alElegir }) {
+  return (
+    <div className="pila-3">
+      <span className="lista__titulo">{titulo}</span>
+      <div className="lista">
+        {opciones.map((opcion) => (
+          <button
+            key={opcion.valor}
+            type="button"
+            className={`lista__fila${valor === opcion.valor ? ' lista__fila--seleccionada' : ''}`}
+            onClick={() => alElegir(opcion.valor)}
+            aria-pressed={valor === opcion.valor}
+          >
+            <span className="pila-2 crece">
+              <span className="lista__titulo">{opcion.etiqueta}</span>
+              {opcion.detalle && <span className="lista__detalle">{opcion.detalle}</span>}
+            </span>
+            {valor === opcion.valor && (
+              <Icono nombre="tick-02" tamano={18} className="tinta-acento" />
+            )}
+          </button>
+        ))}
       </div>
+    </div>
+  )
+}
+
+function FilaResumen({ nombre, valor }) {
+  return (
+    <div className="lista__fila">
+      <span className="lista__etiqueta crece">{nombre}</span>
+      <span className="lista__valor">{valor}</span>
     </div>
   )
 }

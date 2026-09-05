@@ -1,31 +1,28 @@
 /**
- * Pantalla de reportes gráficos de evolución (historia HU-10).
+ * Mi evolución (historia HU-10).
  *
- * Presenta tres cosas: la evolución del peso en el tiempo, la adherencia y las
- * sesiones cumplidas, y la comparación entre el plan inicial y el vigente. Los
- * agregados llegan calculados del servidor, de modo que esta pantalla solo
- * dibuja.
+ * Presenta lo que ha cambiado desde que empezó: el peso, la constancia y el
+ * contraste entre el plan inicial y el vigente. Los agregados llegan calculados
+ * del servidor, de modo que esta pantalla solo dibuja.
+ *
+ * Tenía cuatro gráficas y una tabla de comparación, todas al mismo nivel. Ahora
+ * el peso es la tarjeta protagonista —es la cifra por la que se abre la
+ * pantalla—, la constancia queda en una fila de cifras y las barras de sesiones,
+ * y la comparación de planes se reduce a una fila que abre su tabla en una hoja.
+ * Las gráficas de adherencia y de cintura pasan también a esa hoja: son datos de
+ * respaldo, no la respuesta.
  */
 
 import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 
+import AvisoDeError from '../componentes/AvisoDeError.jsx'
 import GraficaBarras from '../componentes/GraficaBarras.jsx'
 import GraficaLineas from '../componentes/GraficaLineas.jsx'
+import Hoja from '../componentes/Hoja.jsx'
 import { useSesion } from '../contexto/ContextoSesion.jsx'
 import { servicioProgreso } from '../servicios/api.js'
-
-const SESIONES_MAXIMAS = 7
-
-function fechaLegible(valor) {
-  if (!valor) return '—'
-  return new Date(valor).toLocaleDateString('es-GT', { dateStyle: 'long' })
-}
-
-function conSigno(valor, unidad) {
-  if (valor === null || valor === undefined) return '—'
-  return `${valor > 0 ? '+' : ''}${valor} ${unidad}`
-}
+import { conSigno, entero, fechaLarga } from '../utilidades/formatos.js'
 
 export default function Reportes() {
   const { token } = useSesion()
@@ -33,6 +30,7 @@ export default function Reportes() {
   const [reporte, setReporte] = useState(null)
   const [cargando, setCargando] = useState(true)
   const [error, setError] = useState(null)
+  const [hojaAbierta, setHojaAbierta] = useState(null)
 
   const cargar = useCallback(async () => {
     setCargando(true)
@@ -51,19 +49,34 @@ export default function Reportes() {
   }, [cargar])
 
   if (cargando) {
-    return <p className="texto-ayuda">Cargando su evolución…</p>
-  }
-
-  if (error) {
     return (
-      <div className="alert alert-danger" role="alert">
-        {error}
+      <div className="pila" aria-busy="true">
+        <div className="esqueleto esqueleto--titulo" />
+        <div className="esqueleto esqueleto--tarjeta" />
+        <div className="esqueleto esqueleto--fila" />
+        <span className="solo-lectores">Cargando su evolución…</span>
       </div>
     )
   }
 
+  if (error) return <AvisoDeError mensaje={error} alReintentar={cargar} />
+
   const puntos = reporte?.puntos ?? []
   const comparacion = reporte?.comparacion_planes
+
+  if (puntos.length === 0) {
+    return (
+      <div className="vacio">
+        <h1 className="vacio__titulo">Todavía no ha registrado ningún avance</h1>
+        <p className="cuerpo">
+          Sus gráficas aparecerán aquí en cuanto registre su primera semana.
+        </p>
+        <Link to="/avance" className="boton boton--principal">
+          Registrar mi avance
+        </Link>
+      </div>
+    )
+  }
 
   const puntosPeso = puntos.map((punto) => ({ etiqueta: punto.fecha, valor: punto.peso_kg }))
   const puntosSesiones = puntos.map((punto) => ({
@@ -73,224 +86,203 @@ export default function Reportes() {
   const puntosAdherencia = puntos
     .filter((punto) => punto.adherencia_nutricional !== null)
     .map((punto) => ({ etiqueta: punto.fecha, valor: punto.adherencia_nutricional }))
-  const puntosCintura = puntos
-    .filter((punto) => punto.perimetro_cintura_cm !== null)
-    .map((punto) => ({ etiqueta: punto.fecha, valor: punto.perimetro_cintura_cm }))
+  const conCintura = puntos.filter((punto) => punto.perimetro_cintura_cm !== null)
+  const puntosCintura = conCintura.map((punto) => ({
+    etiqueta: punto.fecha,
+    valor: punto.perimetro_cintura_cm,
+  }))
+
+  // El cambio de cintura no viene calculado del servidor: es la diferencia
+  // entre la primera y la última medición que lo traen.
+  const cambioCintura =
+    conCintura.length >= 2
+      ? Math.round(
+          (conCintura[conCintura.length - 1].perimetro_cintura_cm -
+            conCintura[0].perimetro_cintura_cm) *
+            10,
+        ) / 10
+      : null
+
+  const baja = reporte.cambio_total_kg !== null && reporte.cambio_total_kg < 0
 
   return (
-    <div className="row g-4">
-      <div className="col-12 d-flex flex-column flex-sm-row justify-content-between gap-3">
-        <div>
-          <h1 className="h3 mb-1">Mi evolución</h1>
-          <p className="texto-ayuda mb-0">
-            Lo que ha cambiado desde que empezó, semana a semana.
-          </p>
-        </div>
-        <Link to="/progreso" className="btn btn-principal control-tactil align-self-start">
-          Registrar mi avance
-        </Link>
+    <div className="pila">
+      <div className="pila-2">
+        <h1 className="titulo-pantalla">Mi evolución</h1>
+        <p className="apoyo">Lo que ha cambiado desde que empezó, semana a semana.</p>
       </div>
 
-      {puntos.length === 0 && (
-        <div className="col-12">
-          <div className="card shadow-sm">
-            <div className="card-body text-center p-4">
-              <h2 className="h5">Todavía no ha registrado ningún avance</h2>
-              <p className="texto-ayuda mb-0">
-                Sus gráficas aparecerán aquí en cuanto registre su primera semana.
-              </p>
-            </div>
+      <div className="tarjeta tarjeta--protagonista">
+        <div className="fila--entre fila--abajo">
+          <div className="pila-2">
+            <span className="rotulo">Peso</span>
+            <span className="cifra-con-unidad">
+              <span className="cifra-evolucion">{reporte.peso_actual}</span>
+              <span className="apoyo">kg</span>
+            </span>
           </div>
+          {reporte.cambio_total_kg !== null && (
+            <div className="pila-2 a-la-derecha">
+              <span className={`cifra-pequena ${baja ? 'tinta-ok' : 'tinta-peligro'}`}>
+                {conSigno(reporte.cambio_total_kg, 1)} kg
+              </span>
+              <span className="cifras__rotulo">desde {reporte.peso_inicial} kg</span>
+            </div>
+          )}
         </div>
+        <GraficaLineas
+          puntos={puntosPeso}
+          etiquetaValor="kg"
+          descripcion="Evolución de su peso registrado"
+        />
+      </div>
+
+      <div className="cifras">
+        <div className="cifras__columna">
+          <span className="cifras__valor">{reporte.sesiones_totales}</span>
+          <span className="cifras__rotulo">sesiones</span>
+        </div>
+        <div className="cifras__columna">
+          <span className="cifras__valor">
+            {reporte.adherencia_promedio === null ? '—' : `${reporte.adherencia_promedio} %`}
+          </span>
+          <span className="cifras__rotulo">del plan</span>
+        </div>
+        <div className="cifras__columna">
+          <span className={`cifras__valor ${cambioCintura < 0 ? 'tinta-ok' : ''}`}>
+            {cambioCintura === null ? '—' : `${conSigno(cambioCintura, 1)} cm`}
+          </span>
+          <span className="cifras__rotulo">cintura</span>
+        </div>
+      </div>
+
+      <div className="tarjeta tarjeta--densa">
+        <span className="rotulo">Sesiones por semana</span>
+        <GraficaBarras
+          puntos={puntosSesiones}
+          etiquetaValor="sesiones"
+          descripcion="Sesiones de entrenamiento cumplidas por semana"
+        />
+        <p className="nota-al-pie">
+          {reporte.sesiones_totales} sesiones en total · {reporte.semanas_registradas} semanas
+          registradas
+        </p>
+      </div>
+
+      {(puntosAdherencia.length > 0 || puntosCintura.length > 0) && (
+        <button
+          type="button"
+          className="fila-punteada"
+          onClick={() => setHojaAbierta('detalle')}
+        >
+          <span className="apoyo">Adherencia y cintura, semana a semana</span>
+          <span className="boton-texto">Ver</span>
+        </button>
       )}
 
-      {puntos.length > 0 && (
-        <>
-          <div className="col-12">
-            <div className="card shadow-sm">
-              <div className="card-body">
-                <div className="row g-3 text-center text-sm-start">
-                  <div className="col-6 col-sm-3">
-                    <div className="texto-ayuda">Peso inicial</div>
-                    <div className="h4 mb-0">{reporte.peso_inicial} kg</div>
-                  </div>
-                  <div className="col-6 col-sm-3">
-                    <div className="texto-ayuda">Peso actual</div>
-                    <div className="h4 mb-0">{reporte.peso_actual} kg</div>
-                  </div>
-                  <div className="col-6 col-sm-3">
-                    <div className="texto-ayuda">Cambio total</div>
-                    <div
-                      className={`h4 mb-0 ${
-                        reporte.cambio_total_kg === null
-                          ? ''
-                          : reporte.cambio_total_kg < 0
-                            ? 'text-success'
-                            : 'text-danger'
-                      }`}
-                    >
-                      {conSigno(reporte.cambio_total_kg, 'kg')}
-                    </div>
-                  </div>
-                  <div className="col-6 col-sm-3">
-                    <div className="texto-ayuda">Semanas registradas</div>
-                    <div className="h4 mb-0">{reporte.semanas_registradas}</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+      {comparacion && (
+        <button
+          type="button"
+          className="fila-resumen"
+          onClick={() => setHojaAbierta('planes')}
+        >
+          <span className="apoyo crece">Plan inicial frente al de ahora</span>
+          <span className="apoyo mono">
+            {comparacion.hubo_cambio
+              ? `${conSigno(Math.round(comparacion.diferencia_calorias), 0)} kcal`
+              : 'sin cambios'}
+          </span>
+        </button>
+      )}
 
-          <div className="col-12 col-lg-6">
-            <div className="card shadow-sm h-100">
-              <div className="card-body">
-                <h2 className="h5 card-title">Evolución de su peso</h2>
-                <GraficaLineas
-                  puntos={puntosPeso}
-                  etiquetaValor="kg"
-                  decimales={1}
-                  descripcion="Peso corporal registrado en cada semana, en kilogramos."
-                />
-              </div>
-            </div>
-          </div>
+      <Link to="/avance" className="boton boton--principal">
+        Registrar mi avance
+      </Link>
 
-          <div className="col-12 col-lg-6">
-            <div className="card shadow-sm h-100">
-              <div className="card-body">
-                <h2 className="h5 card-title">Sesiones que completó</h2>
-                <GraficaBarras
-                  puntos={puntosSesiones}
-                  maximoFijo={SESIONES_MAXIMAS}
-                  etiquetaValor="sesiones"
-                  descripcion={`Total acumulado: ${reporte.sesiones_totales} sesiones de entrenamiento.`}
-                />
-              </div>
-            </div>
-          </div>
-
+      {hojaAbierta === 'detalle' && (
+        <Hoja
+          titulo="Adherencia y cintura"
+          descripcion="Los dos datos opcionales del registro semanal, si los ha ido anotando."
+          alCerrar={() => setHojaAbierta(null)}
+        >
           {puntosAdherencia.length > 0 && (
-            <div className="col-12 col-lg-6">
-              <div className="card shadow-sm h-100">
-                <div className="card-body">
-                  <h2 className="h5 card-title">Qué tanto siguió su plan</h2>
-                  <GraficaBarras
-                    puntos={puntosAdherencia}
-                    maximoFijo={100}
-                    etiquetaValor="%"
-                    color="var(--color-principal)"
-                    descripcion={`Promedio: ${reporte.adherencia_promedio} % de cumplimiento.`}
-                  />
-                </div>
-              </div>
+            <div className="pila-2">
+              <span className="rotulo">Cumplimiento del plan</span>
+              <GraficaLineas
+                puntos={puntosAdherencia}
+                etiquetaValor="%"
+                descripcion="Porcentaje de cumplimiento del plan de comidas"
+              />
             </div>
           )}
-
           {puntosCintura.length > 0 && (
-            <div className="col-12 col-lg-6">
-              <div className="card shadow-sm h-100">
-                <div className="card-body">
-                  <h2 className="h5 card-title">Perímetro de cintura</h2>
-                  <GraficaLineas
-                    puntos={puntosCintura}
-                    etiquetaValor="cm"
-                    decimales={0}
-                    color="#0369a1"
-                    descripcion="La cintura suele bajar antes que el peso de la báscula."
-                  />
-                </div>
-              </div>
+            <div className="pila-2">
+              <span className="rotulo">Perímetro de cintura</span>
+              <GraficaLineas
+                puntos={puntosCintura}
+                etiquetaValor="cm"
+                descripcion="Evolución del perímetro de cintura"
+              />
             </div>
           )}
-
-          {comparacion && (
-            <div className="col-12">
-              <div className="card shadow-sm">
-                <div className="card-body">
-                  <h2 className="h5 card-title">Su plan inicial frente al de ahora</h2>
-                  {comparacion.hubo_cambio ? (
-                    <p className="texto-ayuda">
-                      Su plan se recalculó conforme cambiaron sus medidas. Así quedó.
-                    </p>
-                  ) : (
-                    <p className="texto-ayuda">
-                      Su plan todavía no ha cambiado: sigue vigente el que se generó el{' '}
-                      {fechaLegible(comparacion.fecha_inicial)}.
-                    </p>
-                  )}
-
-                  <div className="contenedor-tabla">
-                    <table className="table table-sm align-middle mb-0">
-                      <thead>
-                        <tr>
-                          <th scope="col">Dato</th>
-                          <th scope="col" className="text-end">
-                            Plan inicial
-                          </th>
-                          <th scope="col" className="text-end">
-                            Plan vigente
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        <tr>
-                          <th scope="row" className="fw-normal">
-                            Energía diaria
-                          </th>
-                          <td className="text-end">
-                            {Math.round(comparacion.calorias_inicial)} kcal
-                          </td>
-                          <td className="text-end fw-semibold">
-                            {Math.round(comparacion.calorias_vigente)} kcal
-                          </td>
-                        </tr>
-                        <tr>
-                          <th scope="row" className="fw-normal">
-                            Proteína
-                          </th>
-                          <td className="text-end">{Math.round(comparacion.proteina_inicial)} g</td>
-                          <td className="text-end fw-semibold">
-                            {Math.round(comparacion.proteina_vigente)} g
-                          </td>
-                        </tr>
-                        <tr>
-                          <th scope="row" className="fw-normal">
-                            Carbohidrato
-                          </th>
-                          <td className="text-end">
-                            {Math.round(comparacion.carbohidrato_inicial)} g
-                          </td>
-                          <td className="text-end fw-semibold">
-                            {Math.round(comparacion.carbohidrato_vigente)} g
-                          </td>
-                        </tr>
-                        <tr>
-                          <th scope="row" className="fw-normal">
-                            Grasa
-                          </th>
-                          <td className="text-end">{Math.round(comparacion.grasa_inicial)} g</td>
-                          <td className="text-end fw-semibold">
-                            {Math.round(comparacion.grasa_vigente)} g
-                          </td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-
-                  {comparacion.hubo_cambio && (
-                    <p className="mt-3 mb-0">
-                      Diferencia de energía:{' '}
-                      <span className="fw-semibold">
-                        {conSigno(Math.round(comparacion.diferencia_calorias), 'kcal al día')}
-                      </span>
-                    </p>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
-        </>
+        </Hoja>
       )}
+
+      {hojaAbierta === 'planes' && comparacion && (
+        <Hoja
+          titulo="Su plan inicial frente al de ahora"
+          descripcion={
+            comparacion.hubo_cambio
+              ? 'Su plan se recalculó conforme cambiaron sus medidas. Así quedó.'
+              : `Su plan todavía no ha cambiado: sigue vigente el que se generó el ${fechaLarga(comparacion.fecha_inicial)}.`
+          }
+          alCerrar={() => setHojaAbierta(null)}
+        >
+          <div className="lista">
+            <div className="lista__fila">
+              <span className="lista__detalle crece">Dato</span>
+              <span className="lista__detalle lista__valor--fijo">Inicial</span>
+              <span className="lista__detalle lista__valor--fijo">Ahora</span>
+            </div>
+            <FilaComparacion
+              nombre="Energía diaria"
+              inicial={`${entero(comparacion.calorias_inicial)} kcal`}
+              vigente={`${entero(comparacion.calorias_vigente)} kcal`}
+            />
+            <FilaComparacion
+              nombre="Proteína"
+              inicial={`${entero(comparacion.proteina_inicial)} g`}
+              vigente={`${entero(comparacion.proteina_vigente)} g`}
+            />
+            <FilaComparacion
+              nombre="Carbohidrato"
+              inicial={`${entero(comparacion.carbohidrato_inicial)} g`}
+              vigente={`${entero(comparacion.carbohidrato_vigente)} g`}
+            />
+            <FilaComparacion
+              nombre="Grasa"
+              inicial={`${entero(comparacion.grasa_inicial)} g`}
+              vigente={`${entero(comparacion.grasa_vigente)} g`}
+            />
+          </div>
+          {comparacion.hubo_cambio && (
+            <p className="apoyo">
+              Diferencia de energía:{' '}
+              {conSigno(Math.round(comparacion.diferencia_calorias), 0)} kcal al día.
+            </p>
+          )}
+        </Hoja>
+      )}
+    </div>
+  )
+}
+
+function FilaComparacion({ nombre, inicial, vigente }) {
+  return (
+    <div className="lista__fila">
+      <span className="lista__etiqueta crece">{nombre}</span>
+      <span className="lista__valor lista__valor--fijo lista__valor--tenue">{inicial}</span>
+      <span className="lista__valor lista__valor--fijo">{vigente}</span>
     </div>
   )
 }

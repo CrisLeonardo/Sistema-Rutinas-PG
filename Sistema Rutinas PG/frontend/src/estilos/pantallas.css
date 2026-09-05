@@ -270,7 +270,15 @@
 .control-peso__mandos {
   align-items: center;
   display: flex;
-  gap: var(--m-sp-5);
+  gap: var(--m-sp-3);
+}
+
+/* El paso que dan los botones, entre los dos: se ve qué está cambiando. */
+.control-peso__paso {
+  color: var(--u-text-4);
+  font-size: 12.5px;
+  text-align: center;
+  width: 64px;
 }
 
 .control-peso__boton {
@@ -338,7 +346,16 @@
 
 .opciones-fila {
   display: flex;
-  gap: var(--m-sp-2);
+  gap: 7px;
+}
+
+/* Ocho botones no caben en una fila de 350 px sin bajar del área táctil
+   mínima. En vez de encogerlos o dejar que el último caiga solo a una segunda
+   fila, se reparten en dos filas de cuatro. */
+.opciones-rejilla {
+  display: grid;
+  gap: 7px;
+  grid-template-columns: repeat(4, 1fr);
 }
 
 .opcion-boton {
@@ -390,6 +407,22 @@
 
 .tramos__tramo--activo {
   background: var(--brand-accent);
+}
+
+/* Rejilla de cuatro cifras de la medición vigente. */
+.rejilla-medidas {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: 1fr 1fr;
+}
+
+/* Chips de la medición vigente, bajo un filete. */
+.chips {
+  border-top: 1px solid var(--u-hair);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  padding-top: 14px;
 }
 
 /* ── Menú del día y lista de compras ─────────────────────── */

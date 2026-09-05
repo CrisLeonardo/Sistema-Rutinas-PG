@@ -178,6 +178,21 @@
   letter-spacing: -0.03em;
 }
 
+/* Índice de masa corporal, calculado mientras se escribe. */
+.cifra-indice {
+  display: block;
+  font: 500 22px/1 var(--ui-font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Peso actual en la tarjeta de evolución. */
+.cifra-evolucion {
+  display: block;
+  font: 500 42px/1 var(--ui-font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.03em;
+}
+
 .cifra-media {
   display: block;
   font: 500 26px/1 var(--ui-font-mono);
