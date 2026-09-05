@@ -1,0 +1,899 @@
+/* ============================================================
+   Recetas de componentes.
+
+   Son los únicos patrones permitidos: tarjeta, botón, campo,
+   fila de lista, fila de cifras, chip, aviso, barra de progreso,
+   interruptor, barra de macronutrientes, píldoras y hoja inferior.
+   ============================================================ */
+
+/* ── Tarjeta ──────────────────────────────────────────────────
+   Cinco tarjetas son cinco bordes; una lista de cinco filas es un solo
+   objeto. La tarjeta se reserva para lo que de verdad es una unidad. */
+
+.tarjeta {
+  background: var(--adm-card);
+  border: 1px solid var(--u-hair);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--adm-shadow-xs);
+  display: flex;
+  flex-direction: column;
+  gap: var(--m-sp-4);
+  padding: 20px;
+}
+
+.tarjeta--densa {
+  gap: var(--m-sp-3);
+  padding: 16px 18px;
+}
+
+/* La tarjeta protagonista de una pantalla: la que lleva la cifra grande. */
+.tarjeta--protagonista {
+  border-radius: var(--radius-2xl);
+  padding: 24px;
+}
+
+/* La sesión de hoy: el único elemento con borde de acento de la pantalla. */
+.tarjeta--destacada {
+  border: 1.5px solid var(--brand-accent);
+  box-shadow: 0 10px 30px color-mix(in srgb, var(--brand-accent) 16%, transparent);
+}
+
+.tarjeta__cabecera {
+  align-items: baseline;
+  display: flex;
+  gap: var(--m-sp-3);
+  justify-content: space-between;
+}
+
+/* ── Botones ─────────────────────────────────────────────────
+   Uno principal por pantalla. El resto son secundarios o texto. */
+
+.boton {
+  align-items: center;
+  border: 0;
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  display: flex;
+  font-family: var(--ui-font-sans);
+  gap: var(--m-sp-2);
+  justify-content: center;
+  min-height: var(--m-tap);
+  padding: 0 20px;
+  text-align: center;
+  text-decoration: none;
+  transition: transform 90ms var(--ease-out), background-color 140ms var(--ease-out);
+  width: 100%;
+}
+
+.boton:active {
+  transform: scale(0.97);
+}
+
+.boton:disabled,
+.boton[aria-disabled="true"] {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.boton--principal {
+  background: var(--brand-accent);
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--brand-accent) 28%, transparent);
+  color: var(--brand-on-accent);
+  font: 600 16px/1 var(--ui-font-sans);
+  min-height: 56px;
+}
+
+.boton--secundario {
+  background: color-mix(in srgb, var(--u-text) 7%, transparent);
+  border: 1px solid var(--u-hair-2);
+  color: var(--u-text);
+  font: 600 15px/1 var(--ui-font-sans);
+  min-height: 52px;
+}
+
+.boton--secundario:hover {
+  background: color-mix(in srgb, var(--u-text) 12%, transparent);
+}
+
+/* Nunca rojo sólido: una acción destructiva se anuncia, no se grita. */
+.boton--destructivo {
+  background: color-mix(in srgb, var(--c-danger-solid) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--c-danger-solid) 34%, transparent);
+  color: var(--c-danger);
+  font: 600 15px/1 var(--ui-font-sans);
+  min-height: 52px;
+}
+
+.boton--destructivo:hover {
+  background: color-mix(in srgb, var(--c-danger-solid) 16%, transparent);
+}
+
+.boton--compacto {
+  font: 600 13.5px/1 var(--ui-font-sans);
+  min-height: var(--m-tap);
+  padding: 0 16px;
+  width: auto;
+}
+
+/* Botón circular: imprimir, más, menos, volver. */
+.boton--circular {
+  background: color-mix(in srgb, var(--u-text) 7%, transparent);
+  border: 1px solid var(--u-hair-2);
+  border-radius: var(--radius-full);
+  color: var(--u-text);
+  flex-shrink: 0;
+  height: var(--m-tap);
+  padding: 0;
+  width: var(--m-tap);
+}
+
+.boton--circular:hover {
+  background: color-mix(in srgb, var(--u-text) 12%, transparent);
+}
+
+/* Botón sin apariencia de botón, para enlaces y acciones dentro de una fila. */
+.boton-texto {
+  background: none;
+  border: 0;
+  color: var(--brand-accent-ink);
+  cursor: pointer;
+  font: 500 13.5px/1 var(--ui-font-sans);
+  padding: 0;
+  transition: transform 90ms var(--ease-out);
+}
+
+.boton-texto:active {
+  transform: scale(0.97);
+}
+
+.boton-texto--peligro {
+  color: var(--c-danger);
+}
+
+.boton-texto--tenue {
+  color: var(--u-text-3);
+}
+
+/* ── Campos de formulario ─────────────────────────────────── */
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.campo__etiqueta {
+  color: var(--u-text-4);
+  font: 500 12.5px/1 var(--ui-font-sans);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.campo__control {
+  background: var(--adm-card);
+  border: 1px solid var(--u-hair-2);
+  border-radius: var(--radius-lg);
+  color: var(--u-text);
+  font: 400 16px/1.2 var(--ui-font-sans);
+  min-height: 54px;
+  padding: 14px 16px;
+  transition: border-color 140ms var(--ease-out);
+  width: 100%;
+}
+
+.campo__control::placeholder {
+  color: var(--u-text-4);
+}
+
+.campo__control:focus {
+  border-color: var(--brand-accent);
+  outline: none;
+}
+
+.campo__control:focus-visible {
+  outline: 2px solid var(--brand-accent);
+  outline-offset: 2px;
+}
+
+.campo__control--activo {
+  border-color: var(--brand-accent);
+}
+
+.campo__control--numero {
+  font: 500 20px/1.2 var(--ui-font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+textarea.campo__control {
+  line-height: 1.5;
+  min-height: 96px;
+  resize: vertical;
+}
+
+select.campo__control {
+  appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, currentColor 50%),
+    linear-gradient(135deg, currentColor 50%, transparent 50%);
+  background-position: calc(100% - 19px) calc(50% + 1px), calc(100% - 14px) calc(50% + 1px);
+  background-repeat: no-repeat;
+  background-size: 5px 5px, 5px 5px;
+  padding-right: 40px;
+}
+
+/* La ayuda solo se escribe si aporta algo: los rangos válidos, cómo medir. */
+.campo__ayuda {
+  color: var(--u-text-4);
+  font: 400 12px/1.4 var(--ui-font-sans);
+}
+
+.campo__error {
+  color: var(--c-danger);
+  font: 400 12.5px/1.4 var(--ui-font-sans);
+}
+
+.campo--erroneo .campo__control {
+  border-color: var(--c-danger);
+}
+
+/* Campo con una acción a la derecha («Ver» en la contraseña). */
+.campo__envoltura {
+  position: relative;
+}
+
+.campo__envoltura .campo__control {
+  padding-right: 62px;
+}
+
+.campo__accion {
+  background: none;
+  border: 0;
+  color: var(--brand-accent-ink);
+  cursor: pointer;
+  font: 500 13px/1 var(--ui-font-sans);
+  padding: 8px;
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+/* Rejilla de dos columnas para pares de campos cortos (peso y estatura). */
+.campos-par {
+  display: grid;
+  gap: var(--m-sp-3);
+  grid-template-columns: 1fr 1fr;
+}
+
+/* Pista viva de validación: un punto que se enciende cuando la regla se cumple. */
+.pista {
+  align-items: center;
+  color: var(--u-text-3);
+  display: flex;
+  font: 400 13px/1.4 var(--ui-font-sans);
+  gap: var(--m-sp-2);
+  padding-left: 2px;
+}
+
+.pista__punto {
+  background: var(--u-text-4);
+  border-radius: var(--radius-full);
+  flex-shrink: 0;
+  height: 7px;
+  transition: background-color 180ms var(--ease-out);
+  width: 7px;
+}
+
+.pista--cumplida .pista__punto {
+  background: var(--c-ok);
+}
+
+/* ── Lista de filas ──────────────────────────────────────── */
+
+.lista {
+  background: var(--adm-card);
+  border: 1px solid var(--u-hair);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+}
+
+.lista__fila {
+  align-items: center;
+  background: none;
+  border: 0;
+  border-bottom: 1px solid var(--u-hair);
+  color: inherit;
+  display: flex;
+  font-family: var(--ui-font-sans);
+  gap: var(--m-sp-3);
+  min-height: var(--m-tap);
+  padding: 15px 18px;
+  text-align: left;
+  text-decoration: none;
+  width: 100%;
+}
+
+.lista__fila:last-child {
+  border-bottom: 0;
+}
+
+/* Solo las filas que llevan a algún sitio reaccionan al puntero. */
+a.lista__fila,
+button.lista__fila,
+label.lista__fila {
+  cursor: pointer;
+  transition: background-color 140ms var(--ease-out), transform 90ms var(--ease-out);
+}
+
+a.lista__fila:hover,
+button.lista__fila:hover,
+label.lista__fila:hover {
+  background: var(--adm-card-hover);
+}
+
+a.lista__fila:active,
+button.lista__fila:active {
+  transform: scale(0.99);
+}
+
+.lista__titulo {
+  color: var(--u-text);
+  font: 500 15px/1.3 var(--ui-font-sans);
+}
+
+.lista__detalle {
+  color: var(--u-text-4);
+  font: 400 12.5px/1.4 var(--ui-font-sans);
+}
+
+.lista__valor {
+  color: var(--u-text-2);
+  font: 500 15px/1 var(--ui-font-mono);
+  font-variant-numeric: tabular-nums;
+  margin-left: auto;
+  white-space: nowrap;
+}
+
+.lista__chevron {
+  color: var(--u-text-4);
+  font-size: 17px;
+  margin-left: auto;
+}
+
+.lista__fila--tenue {
+  opacity: 0.55;
+}
+
+.lista__fila--seleccionada {
+  border-color: transparent;
+  box-shadow: inset 0 0 0 1.5px var(--brand-accent);
+}
+
+/* Fila punteada: una acción opcional que todavía no existe. */
+.fila-punteada {
+  align-items: center;
+  background: none;
+  border: 1px dashed var(--u-hair-2);
+  border-radius: var(--radius-lg);
+  color: inherit;
+  cursor: pointer;
+  display: flex;
+  font-family: var(--ui-font-sans);
+  gap: var(--m-sp-3);
+  justify-content: space-between;
+  min-height: 54px;
+  padding: 12px 16px;
+  text-align: left;
+  text-decoration: none;
+  transition: border-color 140ms var(--ease-out);
+  width: 100%;
+}
+
+.fila-punteada:hover {
+  border-color: var(--brand-accent);
+}
+
+/* ── Fila de cifras ───────────────────────────────────────────
+   Una sola tarjeta dividida en columnas por un hueco de 1 px: el filete lo
+   dibuja el hueco, no un borde por columna. */
+
+.cifras {
+  background: var(--u-hair);
+  border: 1px solid var(--u-hair);
+  border-radius: var(--radius-xl);
+  display: grid;
+  gap: 1px;
+  grid-auto-columns: 1fr;
+  grid-auto-flow: column;
+  overflow: hidden;
+}
+
+.cifras--envuelve {
+  grid-auto-flow: row;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+}
+
+.cifras__columna {
+  background: var(--adm-card);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 15px 14px;
+}
+
+.cifras__valor {
+  font: 500 20px/1 var(--ui-font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+.cifras__rotulo {
+  color: var(--u-text-4);
+  font: 400 11.5px/1.3 var(--ui-font-sans);
+}
+
+/* ── Chip ────────────────────────────────────────────────── */
+
+.chip {
+  align-items: center;
+  background: color-mix(in srgb, var(--u-text) 8%, transparent);
+  border-radius: var(--radius-full);
+  color: var(--u-text-3);
+  display: inline-flex;
+  font: 600 11px/1.2 var(--ui-font-sans);
+  gap: 6px;
+  padding: 5px 10px;
+  white-space: nowrap;
+}
+
+.chip--ok {
+  background: color-mix(in srgb, var(--c-ok-solid) 14%, transparent);
+  color: var(--c-ok);
+}
+
+.chip--aviso {
+  background: color-mix(in srgb, var(--c-warn-solid) 14%, transparent);
+  color: var(--c-warn);
+}
+
+.chip--peligro {
+  background: color-mix(in srgb, var(--c-danger-solid) 14%, transparent);
+  color: var(--c-danger);
+}
+
+.chip--info {
+  background: color-mix(in srgb, var(--c-info-solid) 14%, transparent);
+  color: var(--c-info);
+}
+
+.chip--acento {
+  background: var(--brand-accent);
+  color: var(--brand-on-accent);
+}
+
+/* Chip que además es un control (filtros del catálogo). */
+button.chip {
+  border: 0;
+  cursor: pointer;
+  transition: transform 90ms var(--ease-out);
+}
+
+button.chip:active {
+  transform: scale(0.97);
+}
+
+button.chip.chip--activo {
+  background: var(--u-text);
+  color: var(--brand-bg);
+}
+
+/* ── Aviso ────────────────────────────────────────────────────
+   Sin borde ni icono. Lo que no es urgente no es un aviso: es nota al pie. */
+
+.aviso {
+  border-radius: var(--radius-lg);
+  font: 500 13px/1.45 var(--ui-font-sans);
+  padding: 13px 16px;
+  text-wrap: pretty;
+}
+
+.aviso--ok {
+  background: color-mix(in srgb, var(--c-ok-solid) 12%, transparent);
+  color: var(--c-ok);
+}
+
+.aviso--aviso {
+  background: color-mix(in srgb, var(--c-warn-solid) 12%, transparent);
+  color: var(--c-warn);
+}
+
+.aviso--peligro {
+  background: color-mix(in srgb, var(--c-danger-solid) 12%, transparent);
+  color: var(--c-danger);
+}
+
+.aviso--info {
+  background: color-mix(in srgb, var(--c-info-solid) 12%, transparent);
+  color: var(--c-info);
+}
+
+/* ── Barra de progreso ───────────────────────────────────── */
+
+.progreso {
+  background: color-mix(in srgb, var(--u-text) 8%, transparent);
+  border-radius: var(--radius-full);
+  height: 7px;
+  overflow: hidden;
+  width: 100%;
+}
+
+.progreso__relleno {
+  background: var(--brand-accent);
+  border-radius: var(--radius-full);
+  height: 100%;
+  transition: width 240ms var(--ease-entry);
+}
+
+/* ── Interruptor ─────────────────────────────────────────── */
+
+.interruptor {
+  align-items: center;
+  background: color-mix(in srgb, var(--u-text) 14%, transparent);
+  border: 0;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  display: flex;
+  flex-shrink: 0;
+  height: 28px;
+  justify-content: flex-start;
+  padding: 0 3px;
+  transition: background-color 180ms var(--ease-out);
+  width: 46px;
+}
+
+.interruptor__perilla {
+  background: var(--u-text-3);
+  border-radius: var(--radius-full);
+  height: 22px;
+  transition: transform 180ms var(--ease-entry), background-color 180ms var(--ease-out);
+  width: 22px;
+}
+
+.interruptor--encendido {
+  background: var(--brand-accent);
+}
+
+.interruptor--encendido .interruptor__perilla {
+  background: var(--brand-on-accent);
+  transform: translateX(18px);
+}
+
+/* ── Casilla de la lista de compras ──────────────────────── */
+
+.casilla {
+  align-items: center;
+  background: none;
+  border: 1.5px solid var(--u-hair-2);
+  border-radius: 8px;
+  color: transparent;
+  cursor: pointer;
+  display: flex;
+  flex-shrink: 0;
+  font-size: 14px;
+  height: 24px;
+  justify-content: center;
+  padding: 0;
+  transition: background-color 140ms var(--ease-out), transform 90ms var(--ease-out);
+  width: 24px;
+}
+
+.casilla:active {
+  transform: scale(0.9);
+}
+
+.casilla--marcada {
+  background: var(--brand-accent);
+  border-color: var(--brand-accent);
+  color: var(--brand-on-accent);
+}
+
+/* ── Barra de macronutrientes ────────────────────────────── */
+
+.macros {
+  border-radius: var(--radius-full);
+  display: flex;
+  height: 7px;
+  overflow: hidden;
+  width: 100%;
+}
+
+.macros__segmento {
+  height: 100%;
+}
+
+.macros__segmento--proteina {
+  background: var(--brand-accent);
+}
+
+.macros__segmento--carbohidrato {
+  background: var(--c-warn-solid);
+}
+
+.macros__segmento--grasa {
+  background: var(--c-info-solid);
+}
+
+.macros__leyenda {
+  display: grid;
+  gap: var(--m-sp-3);
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.macros__punto {
+  border-radius: var(--radius-full);
+  display: inline-block;
+  height: 9px;
+  width: 9px;
+}
+
+/* ── Píldoras de pestaña ─────────────────────────────────── */
+
+.pildoras {
+  display: flex;
+  gap: var(--m-sp-2);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.pildoras::-webkit-scrollbar {
+  display: none;
+}
+
+.pildora {
+  background: color-mix(in srgb, var(--u-text) 7%, transparent);
+  border: 0;
+  border-radius: var(--radius-full);
+  color: var(--u-text-3);
+  cursor: pointer;
+  font: 500 13.5px/1 var(--ui-font-sans);
+  padding: 9px 15px;
+  text-decoration: none;
+  transition: background-color 200ms var(--ease-entry), color 200ms var(--ease-entry),
+    transform 90ms var(--ease-out);
+  white-space: nowrap;
+}
+
+.pildora:active {
+  transform: scale(0.97);
+}
+
+.pildora--activa {
+  background: var(--u-text);
+  color: var(--brand-bg);
+  font-weight: 600;
+}
+
+/* ── Hoja inferior ────────────────────────────────────────────
+   Sustituye a los desplegables y a los diálogos: entra desde abajo, que es
+   donde está el pulgar. */
+
+.velo {
+  animation: aparecer 200ms var(--ease-entry);
+  background: rgba(0, 0, 0, 0.55);
+  border: 0;
+  inset: 0;
+  padding: 0;
+  position: fixed;
+  width: 100%;
+  z-index: 1200;
+}
+
+.hoja-inferior {
+  animation: subir 240ms var(--ease-entry);
+  background: var(--adm-overlay);
+  border-radius: var(--radius-2xl) var(--radius-2xl) 0 0;
+  bottom: 0;
+  box-shadow: var(--adm-shadow-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--m-sp-4);
+  left: 0;
+  max-height: 86svh;
+  overflow-y: auto;
+  padding: 12px 20px calc(24px + env(safe-area-inset-bottom, 0px));
+  position: fixed;
+  right: 0;
+  z-index: 1210;
+}
+
+@media (min-width: 641px) {
+  .hoja-inferior {
+    animation: aparecer 200ms var(--ease-entry);
+    border-radius: var(--radius-2xl);
+    bottom: auto;
+    left: 50%;
+    max-width: 520px;
+    right: auto;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: calc(100% - 48px);
+  }
+}
+
+.hoja-inferior__asa {
+  background: var(--u-hair-2);
+  border-radius: var(--radius-full);
+  flex-shrink: 0;
+  height: 4px;
+  margin: 0 auto;
+  width: 38px;
+}
+
+@media (min-width: 641px) {
+  .hoja-inferior__asa {
+    display: none;
+  }
+}
+
+.hoja-inferior__cabecera {
+  align-items: baseline;
+  display: flex;
+  gap: var(--m-sp-3);
+  justify-content: space-between;
+}
+
+@keyframes subir {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes aparecer {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* ── Gráficas ─────────────────────────────────────────────────
+   SVG propio: el requerimiento 4.5.5 pide que el sistema funcione sin
+   complementos adicionales. */
+
+.grafica {
+  display: block;
+  height: auto;
+  max-width: 100%;
+  width: 100%;
+}
+
+.grafica__cuadricula {
+  stroke: var(--u-hair);
+  stroke-width: 1;
+}
+
+.grafica__linea {
+  fill: none;
+  stroke: var(--brand-accent);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2.5;
+}
+
+.grafica__punto {
+  fill: var(--brand-accent);
+}
+
+.grafica__ejes {
+  color: var(--u-text-4);
+  display: flex;
+  font: 400 11px/1 var(--ui-font-mono);
+  justify-content: space-between;
+}
+
+.barras {
+  align-items: flex-end;
+  display: flex;
+  gap: 7px;
+  height: 108px;
+}
+
+.barras__barra {
+  background: color-mix(in srgb, var(--brand-accent) 42%, transparent);
+  border-radius: 5px 5px 0 0;
+  flex: 1;
+  min-height: 3px;
+}
+
+.barras__barra--ultima {
+  background: var(--brand-accent);
+}
+
+/* ── Cabecera de pantalla ────────────────────────────────── */
+
+.cabecera-pantalla {
+  align-items: center;
+  display: flex;
+  gap: var(--m-sp-3);
+  min-height: 52px;
+}
+
+.cabecera-pantalla__volver {
+  align-items: center;
+  background: none;
+  border: 0;
+  border-radius: var(--radius-full);
+  color: var(--u-text);
+  cursor: pointer;
+  display: flex;
+  flex-shrink: 0;
+  font-size: 20px;
+  height: var(--m-tap);
+  justify-content: center;
+  margin-left: -10px;
+  transition: background-color 140ms var(--ease-out), transform 90ms var(--ease-out);
+  width: var(--m-tap);
+}
+
+.cabecera-pantalla__volver:hover {
+  background: color-mix(in srgb, var(--u-text) 7%, transparent);
+}
+
+.cabecera-pantalla__volver:active {
+  transform: scale(0.94);
+}
+
+/* Avatar con iniciales: la marca es tipográfica, no hay fotografías. */
+.avatar {
+  align-items: center;
+  background: color-mix(in srgb, var(--brand-accent) 16%, transparent);
+  border-radius: var(--radius-full);
+  color: var(--brand-accent-ink);
+  display: flex;
+  flex-shrink: 0;
+  font: 600 15px/1 var(--ui-font-sans);
+  height: 40px;
+  justify-content: center;
+  text-decoration: none;
+  width: 40px;
+}
+
+.avatar--grande {
+  font-size: 19px;
+  height: 54px;
+  width: 54px;
+}
+
+/* Marca: la letra «P» en Unbounded dentro de un cuadrado de acento. */
+.marca {
+  align-items: center;
+  background: var(--brand-accent);
+  border-radius: var(--radius-lg);
+  color: var(--brand-on-accent);
+  display: flex;
+  font: 600 18px/1 var(--font-display);
+  height: 46px;
+  justify-content: center;
+  width: 46px;
+}
+
+/* ── Estado vacío ────────────────────────────────────────────
+   Título corto, una frase y un solo botón que lleva al siguiente paso. */
+
+.vacio {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  gap: var(--m-sp-4);
+  padding: 40px 8px;
+  text-align: center;
+}
+
+.vacio__titulo {
+  font: 500 22px/1.2 var(--ui-font-sans);
+  letter-spacing: -0.02em;
+  margin: 0;
+}

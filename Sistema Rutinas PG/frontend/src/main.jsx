@@ -2,11 +2,9 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 
-import 'bootstrap/dist/css/bootstrap.min.css'
-// El paquete de comportamiento de Bootstrap activa el menú desplegable de la
-// barra de navegación en pantallas angostas.
-import 'bootstrap/dist/js/bootstrap.bundle.min.js'
-import './estilos.css'
+// Los tokens definen las variables que usan las demás hojas, de modo que
+// index.css los importa primero y nada se carga por su cuenta.
+import './estilos/index.css'
 
 import App from './App.jsx'
 import { ProveedorSesion } from './contexto/ContextoSesion.jsx'

@@ -1,0 +1,150 @@
+/* ============================================================
+   Sistema de Rutinas y Planes Nutricionales — tokens de diseño
+   Derivados del Leogin Design System, con el verde del producto
+   como acento (#14532d en claro / #4ade80 en oscuro).
+
+   Cópiese tal cual a frontend/src/estilos/tokens.css e impórtese
+   ANTES de cualquier otra hoja de estilo.
+   ============================================================ */
+
+/* Fuentes: interfaz Geist, cifras JetBrains Mono, marca Unbounded.
+   Iconos: Hugeicons "Stroke Rounded" (el único set permitido). */
+@import url("https://fonts.googleapis.com/css2?family=Geist:wght@100..900&family=Unbounded:wght@200..900&family=JetBrains+Mono:wght@100..800&display=swap");
+@import url("https://cdn.hugeicons.com/font/hgi-stroke-rounded.css");
+
+:root {
+  /* Tipografía */
+  --ui-font-sans: 'Geist', system-ui, sans-serif;
+  --ui-font-mono: 'JetBrains Mono', ui-monospace, monospace;  /* TODA cifra */
+  --font-display: 'Unbounded', system-ui, sans-serif;         /* solo la marca */
+
+  /* Superficies — tema oscuro (por defecto) */
+  --brand-bg: #0a0a0d;        /* fondo de pantalla */
+  --brand-bg-2: #131317;      /* barra lateral del panel de administración */
+  --adm-card: #17171c;        /* tarjetas y filas */
+  --adm-card-hover: #1c1c22;
+  --adm-overlay: #1f1f26;     /* hojas y diálogos */
+
+  /* Tinta */
+  --brand-text: #F5F3EF;
+  --u-text: #F5F3EF;                       /* texto principal */
+  --u-text-2: rgba(245, 243, 239, 0.74);   /* texto secundario */
+  --u-text-3: rgba(245, 243, 239, 0.50);   /* apoyo */
+  --u-text-4: rgba(245, 243, 239, 0.40);   /* etiquetas y rótulos */
+  --u-hair: rgba(245, 243, 239, 0.10);     /* filete de 1 px */
+  --u-hair-2: rgba(245, 243, 239, 0.18);   /* borde de control */
+
+  /* Acento */
+  --brand-accent: #4ade80;      /* relleno */
+  --brand-accent-ink: #4ade80;  /* acento COMO TEXTO */
+  --brand-on-accent: #06120c;   /* tinta sobre el relleno de acento */
+
+  /* Estados semánticos: -X es tinta, -X-solid es relleno */
+  --c-ok: #4ade80;     --c-ok-solid: #22c55e;
+  --c-warn: #fbbf24;   --c-warn-solid: #f59e0b;
+  --c-danger: #f87171; --c-danger-solid: #ef4444;
+  --c-info: #60a5fa;   --c-info-solid: #3b82f6;
+
+  /* Radios */
+  --radius-md: 10px;    /* campos de la cuadrícula de series */
+  --radius-lg: 14px;    /* botones, campos, filas */
+  --radius-xl: 20px;    /* tarjetas */
+  --radius-2xl: 28px;   /* tarjeta protagonista (cifra grande) */
+  --radius-full: 9999px;
+
+  /* Espaciado */
+  --m-sp-1: 4px; --m-sp-2: 8px; --m-sp-3: 12px;
+  --m-sp-4: 16px; --m-sp-5: 24px; --m-sp-6: 32px;
+
+  /* Área táctil y barra inferior */
+  --m-tap: 44px;      /* mínimo absoluto */
+  --m-nav-h: 68px;    /* alto de la barra inferior fija */
+
+  /* Elevación */
+  --adm-shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.30);
+  --adm-shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.36);
+  --adm-shadow-md: 0 10px 28px rgba(0, 0, 0, 0.44);
+  --adm-shadow-lg: 0 20px 52px rgba(0, 0, 0, 0.52);
+
+  --ease-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-entry: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Tema claro. La misma opacidad NO da el mismo contraste en los dos
+   modos: la tinta oscura sube a 0.82 / 0.62 / 0.48 para pasar 4.5:1. */
+[data-scheme="light"] {
+  --brand-bg: #f4f4f6;
+  --brand-bg-2: #ffffff;
+  --adm-card: #ffffff;
+  --adm-card-hover: #f7f7f9;
+  --adm-overlay: #ffffff;
+
+  --brand-text: #17161a;
+  --u-text: #17161a;
+  --u-text-2: rgba(23, 22, 26, 0.82);
+  --u-text-3: rgba(23, 22, 26, 0.62);
+  --u-text-4: rgba(23, 22, 26, 0.48);
+  --u-hair: rgba(0, 0, 0, 0.08);
+  --u-hair-2: rgba(0, 0, 0, 0.14);
+
+  --brand-accent: #14532d;
+  --brand-accent-ink: #14532d;
+  --brand-on-accent: #ffffff;
+
+  --c-ok: #14532d;     --c-ok-solid: #16a34a;
+  --c-warn: #78350f;   --c-warn-solid: #d97706;
+  --c-danger: #991b1b; --c-danger-solid: #dc2626;
+  --c-info: #1e40af;   --c-info-solid: #2563eb;
+
+  --adm-shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --adm-shadow-sm: 0 2px 6px rgba(0, 0, 0, 0.06);
+  --adm-shadow-md: 0 8px 20px rgba(0, 0, 0, 0.08);
+  --adm-shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.10);
+}
+
+/* ── Base ─────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  min-width: 320px;
+  background: var(--brand-bg);
+  color: var(--u-text);
+  font-family: var(--ui-font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+a { color: var(--brand-accent-ink); text-decoration: none; }
+a:hover { color: color-mix(in srgb, var(--brand-accent-ink) 82%, var(--u-text)); }
+
+[class*="hgi-"] { display: inline-block; line-height: 1; flex-shrink: 0; }
+
+/* Foco visible solo por teclado. Se conserva del sistema actual. */
+:focus-visible {
+  outline: 2px solid var(--brand-accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Pulsación: la única animación que llevan todos los controles táctiles. */
+.press { transition: transform 90ms var(--ease-out); }
+.press:active { transform: scale(0.97); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ── Escala tipográfica ───────────────────────────────────── */
+/* Título de pantalla     500 28px/1.15, letter-spacing -.03em
+   Título de tarjeta      500 17-19px/1.15
+   Cuerpo                 400 14.5-15px/1.5
+   Apoyo                  400 12.5-13.5px/1.4, color --u-text-3
+   Rótulo (mayúsculas)    600 11.5px/1, letter-spacing .12em, --u-text-4
+   Cifra pequeña          500 17-20px/1 mono
+   Cifra de tarjeta       500 26-44px/1 mono, letter-spacing -.03em
+   Cifra protagonista     500 52-64px/1 mono, letter-spacing -.04em      */

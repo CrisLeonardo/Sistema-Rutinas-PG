@@ -1,0 +1,8 @@
+/* Punto único de entrada de los estilos. El orden importa: los tokens definen
+   las variables que usan todas las demás hojas. */
+
+@import './tokens.css';
+@import './base.css';
+@import './componentes.css';
+@import './navegacion.css';
+@import './pantallas.css';

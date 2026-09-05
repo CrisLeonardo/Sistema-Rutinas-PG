@@ -1,0 +1,259 @@
+/* ============================================================
+   Base: armazón de la aplicación, escala tipográfica, esqueletos
+   de carga e impresión.
+
+   Se importa después de tokens.css y antes de las hojas de
+   componentes y de pantallas.
+   ============================================================ */
+
+/* ── Armazón ──────────────────────────────────────────────── */
+
+/* La barra de navegación es fija en el borde inferior: el contenido reserva su
+   alto para que la última fila —que suele ser el botón de la acción— no quede
+   debajo. */
+.armazon {
+  display: flex;
+  flex-direction: column;
+  min-height: 100svh;
+}
+
+.contenido-principal {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  padding: 8px 20px 96px;
+  width: 100%;
+}
+
+/* Modo enfoque: la sesión de entrenamiento no lleva barra inferior. */
+.contenido-principal--enfoque {
+  padding-bottom: 0;
+}
+
+/* De 641 a 1024 px el contenido se estrecha y se centra; desde 1025 px la
+   navegación pasa arriba y el ancho se limita a 1140 px. */
+@media (min-width: 641px) {
+  .contenido-principal {
+    margin: 0 auto;
+    max-width: 720px;
+    padding-inline: 24px;
+  }
+}
+
+@media (min-width: 1025px) {
+  .contenido-principal {
+    max-width: 1140px;
+    padding-bottom: 64px;
+    padding-top: 24px;
+  }
+}
+
+/* La administración usa su propio armazón de escritorio. */
+.contenido-principal--administracion {
+  max-width: none;
+  padding: 0;
+}
+
+/* Pila vertical: la separación entre hermanos la da el hueco, nunca el margen
+   de cada elemento. */
+.pila {
+  display: flex;
+  flex-direction: column;
+  gap: var(--m-sp-4);
+}
+
+.pila-2 { display: flex; flex-direction: column; gap: var(--m-sp-2); }
+.pila-3 { display: flex; flex-direction: column; gap: var(--m-sp-3); }
+.pila-5 { display: flex; flex-direction: column; gap: var(--m-sp-5); }
+.pila-6 { display: flex; flex-direction: column; gap: var(--m-sp-6); }
+
+.fila {
+  align-items: center;
+  display: flex;
+  gap: var(--m-sp-3);
+}
+
+.fila--entre {
+  align-items: center;
+  display: flex;
+  gap: var(--m-sp-3);
+  justify-content: space-between;
+}
+
+.crece { flex: 1; min-width: 0; }
+.empuja { margin-top: auto; }
+
+/* ── Escala tipográfica ───────────────────────────────────── */
+
+.titulo-pantalla {
+  font: 500 28px/1.15 var(--ui-font-sans);
+  letter-spacing: -0.03em;
+  margin: 0;
+  text-wrap: balance;
+}
+
+.titulo-grande {
+  font: 500 34px/1.1 var(--ui-font-sans);
+  letter-spacing: -0.03em;
+  margin: 0;
+}
+
+.titulo-tarjeta {
+  font: 500 18px/1.15 var(--ui-font-sans);
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+.cuerpo {
+  color: var(--u-text-2);
+  font: 400 14.5px/1.5 var(--ui-font-sans);
+  margin: 0;
+  text-wrap: pretty;
+}
+
+.apoyo {
+  color: var(--u-text-3);
+  font: 400 13px/1.4 var(--ui-font-sans);
+  margin: 0;
+  text-wrap: pretty;
+}
+
+.rotulo {
+  color: var(--u-text-4);
+  font: 600 11.5px/1 var(--ui-font-sans);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+/* Toda cifra va en monoespaciada tabular: así no baila al cambiar de valor. */
+.mono {
+  font-family: var(--ui-font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.cifra-protagonista {
+  display: block;
+  font: 500 52px/1 var(--ui-font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.04em;
+}
+
+.cifra-tarjeta {
+  display: block;
+  font: 500 44px/1 var(--ui-font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.03em;
+}
+
+.cifra-media {
+  display: block;
+  font: 500 26px/1 var(--ui-font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+.tinta-ok { color: var(--c-ok); }
+.tinta-aviso { color: var(--c-warn); }
+.tinta-peligro { color: var(--c-danger); }
+.tinta-info { color: var(--c-info); }
+.tinta-acento { color: var(--brand-accent-ink); }
+.tinta-2 { color: var(--u-text-2); }
+.tinta-3 { color: var(--u-text-3); }
+.tinta-4 { color: var(--u-text-4); }
+
+/* Nota al pie: los avisos legales no son alertas, son letra pequeña. */
+.nota-al-pie {
+  color: var(--u-text-4);
+  font: 400 12.5px/1.5 var(--ui-font-sans);
+  margin: 0;
+  text-wrap: pretty;
+}
+
+/* Texto disponible solo para el lector de pantalla. */
+.solo-lectores {
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  height: 1px;
+  overflow: hidden;
+  position: absolute;
+  white-space: nowrap;
+  width: 1px;
+}
+
+/* ── Esqueletos de carga ──────────────────────────────────────
+   Reservan la forma del contenido en lugar de dejar la pantalla en blanco con
+   la palabra «Cargando». Sobre una conexión móvil lenta, la diferencia entre
+   las dos cosas es la que decide si el usuario espera. */
+
+.esqueleto {
+  animation: latido 1.4s ease-in-out infinite;
+  background: var(--adm-card);
+  border-radius: var(--radius-lg);
+}
+
+.esqueleto--titulo { height: 34px; max-width: 18rem; }
+.esqueleto--linea { height: 14px; }
+.esqueleto--tarjeta { border-radius: var(--radius-xl); height: 190px; }
+.esqueleto--fila { height: 62px; }
+
+@keyframes latido {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
+}
+
+/* ── Impresión ────────────────────────────────────────────────
+   El plan, el menú y la lista de compras se imprimen: no todos llevan el
+   teléfono al mercado o al gimnasio, y el papel no se queda sin batería ni sin
+   señal. */
+
+@media print {
+  .no-imprimir,
+  .barra-navegacion,
+  .barra-superior-escritorio,
+  .aviso-sesion,
+  .hoja-inferior,
+  .velo {
+    display: none !important;
+  }
+
+  html { background: #fff !important; }
+
+  body {
+    background: #fff !important;
+    color: #000 !important;
+    font-size: 11pt;
+  }
+
+  .contenido-principal {
+    max-width: none;
+    padding: 0 !important;
+  }
+
+  .tarjeta,
+  .lista {
+    /* Una tarjeta partida entre dos hojas obliga a alternar entre ellas para
+       leer un solo tiempo de comida. */
+    background: #fff !important;
+    border: 1px solid #999 !important;
+    box-shadow: none !important;
+    break-inside: avoid;
+    color: #000 !important;
+    page-break-inside: avoid;
+  }
+
+  .apoyo,
+  .nota-al-pie,
+  .rotulo {
+    color: #333 !important;
+  }
+
+  .titulo-pantalla,
+  .titulo-tarjeta,
+  .cifra-protagonista,
+  .cifra-tarjeta,
+  .cifra-media {
+    color: #000 !important;
+  }
+
+  a[href]::after { content: none !important; }
+}

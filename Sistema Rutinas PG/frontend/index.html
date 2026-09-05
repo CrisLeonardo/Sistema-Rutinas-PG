@@ -1,13 +1,39 @@
 <!doctype html>
-<html lang="es">
+<html lang="es" data-scheme="dark">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta
       name="description"
       content="Sistema web que genera planes de nutrición y rutinas de entrenamiento personalizadas."
     />
+    <meta name="theme-color" content="#0a0a0d" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preconnect" href="https://cdn.hugeicons.com" />
     <title>Sistema de rutinas y planes nutricionales</title>
+    <script>
+      // Se aplica el tema antes de pintar nada. Si esto esperara a que React
+      // monte, la pantalla aparecería un instante en claro y saltaría a oscuro.
+      // El mismo cálculo, en su versión larga, está en src/utilidades/tema.js.
+      (function () {
+        try {
+          var guardado = localStorage.getItem('rutinas.tema')
+          var tema =
+            guardado === 'dark' || guardado === 'light'
+              ? guardado
+              : window.matchMedia('(prefers-color-scheme: light)').matches
+                ? 'light'
+                : 'dark'
+          document.documentElement.setAttribute('data-scheme', tema)
+          document
+            .querySelector('meta[name="theme-color"]')
+            .setAttribute('content', tema === 'light' ? '#f4f4f6' : '#0a0a0d')
+        } catch (error) {
+          document.documentElement.setAttribute('data-scheme', 'dark')
+        }
+      })()
+    </script>
   </head>
   <body>
     <div id="raiz"></div>
