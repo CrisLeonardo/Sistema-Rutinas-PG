@@ -1,16 +1,27 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 
+import Icono from '../componentes/Icono.jsx'
 import { useSesion } from '../contexto/ContextoSesion.jsx'
 import { servicioAcceso } from '../servicios/api.js'
 
 const LONGITUD_MINIMA = 8
 
-/** Pantalla de registro de cuentas nuevas (historia HU-01). */
+/**
+ * Pantalla de registro de cuentas nuevas (historia HU-01).
+ *
+ * Se parte en dos pasos: tres campos primero, la confirmación después. Cuatro
+ * campos seguidos en un teléfono obligan a desplazarse para ver el botón, y el
+ * usuario llega al final sin saber si lo que escribió sirve.
+ *
+ * La regla de la contraseña se comprueba mientras se escribe: un punto que se
+ * enciende dice más, y antes, que un mensaje de error después de enviar.
+ */
 export default function Registro() {
   const { iniciarSesion } = useSesion()
   const navegar = useNavigate()
 
+  const [paso, setPaso] = useState(1)
   const [formulario, setFormulario] = useState({
     nombre: '',
     correo: '',
@@ -19,14 +30,21 @@ export default function Registro() {
   })
   const [error, setError] = useState(null)
   const [enviando, setEnviando] = useState(false)
+  const [visible, setVisible] = useState(false)
 
   const actualizar = (evento) => {
     const { name, value } = evento.target
     setFormulario((anterior) => ({ ...anterior, [name]: value }))
+    setError(null)
   }
 
+  const contrasenaValida =
+    formulario.contrasena.length >= LONGITUD_MINIMA &&
+    /[a-zA-Z]/.test(formulario.contrasena) &&
+    /\d/.test(formulario.contrasena)
+
   /** Reproduce en la interfaz las reglas que el servidor vuelve a verificar. */
-  const validar = () => {
+  const validarPrimerPaso = () => {
     if (formulario.nombre.trim().length < 2) {
       return 'Escriba su nombre completo.'
     }
@@ -36,17 +54,24 @@ export default function Registro() {
     if (!/[a-zA-Z]/.test(formulario.contrasena) || !/\d/.test(formulario.contrasena)) {
       return 'La contraseña debe combinar letras y números.'
     }
-    if (formulario.contrasena !== formulario.confirmacion) {
-      return 'Las contraseñas no coinciden.'
-    }
     return null
+  }
+
+  const continuar = (evento) => {
+    evento.preventDefault()
+    const problema = validarPrimerPaso()
+    if (problema) {
+      setError(problema)
+      return
+    }
+    setError(null)
+    setPaso(2)
   }
 
   const enviar = async (evento) => {
     evento.preventDefault()
-    const problema = validar()
-    if (problema) {
-      setError(problema)
+    if (formulario.contrasena !== formulario.confirmacion) {
+      setError('Las contraseñas no coinciden.')
       return
     }
 
@@ -64,109 +89,137 @@ export default function Registro() {
       navegar('/panel', { replace: true })
     } catch (fallo) {
       setError(fallo.message)
+      // Si el registro falla, el paso 1 es donde están los datos que hay que
+      // corregir: el correo repetido, el nombre demasiado corto.
+      setPaso(1)
     } finally {
       setEnviando(false)
     }
   }
 
   return (
-    <div className="d-flex justify-content-center">
-      <div className="card shadow-sm tarjeta-formulario">
-        <div className="card-body p-4">
-          <h1 className="h4 mb-1">Crear una cuenta</h1>
-          <p className="texto-ayuda mb-4">
-            El registro es gratuito y le permite guardar sus planes y consultarlos cuando
-            quiera.
-          </p>
-
-          {error && (
-            <div className="alert alert-danger" role="alert">
-              {error}
-            </div>
+    <div className="entrada">
+      <div className="pila-3">
+        <div className="fila">
+          {paso === 2 && (
+            <button
+              type="button"
+              className="cabecera-pantalla__volver"
+              onClick={() => setPaso(1)}
+              aria-label="Volver"
+            >
+              <Icono nombre="arrow-left-01" tamano={20} />
+            </button>
           )}
+          <span className="apoyo mono">Paso {paso} de 2</span>
+        </div>
+        <h1 className="titulo-grande">Crear una cuenta</h1>
+        <p className="apoyo">
+          El registro es gratuito y le permite guardar sus planes y consultarlos cuando
+          quiera.
+        </p>
+      </div>
 
-          <form onSubmit={enviar} noValidate>
-            <div className="mb-3">
-              <label className="form-label" htmlFor="nombre">
-                Nombre completo
-              </label>
+      {error && (
+        <p className="aviso aviso--peligro" role="alert">
+          {error}
+        </p>
+      )}
+
+      {paso === 1 ? (
+        <form onSubmit={continuar} noValidate className="pila-5">
+          <div className="pila-3">
+            <label className="campo">
+              <span className="campo__etiqueta">Nombre completo</span>
               <input
-                id="nombre"
                 name="nombre"
                 type="text"
-                className="form-control form-control-lg control-tactil"
+                className="campo__control"
                 value={formulario.nombre}
                 onChange={actualizar}
                 autoComplete="name"
                 required
               />
-            </div>
+            </label>
 
-            <div className="mb-3">
-              <label className="form-label" htmlFor="correo">
-                Correo electrónico
-              </label>
+            <label className="campo">
+              <span className="campo__etiqueta">Correo electrónico</span>
               <input
-                id="correo"
                 name="correo"
                 type="email"
-                className="form-control form-control-lg control-tactil"
+                className="campo__control"
                 value={formulario.correo}
                 onChange={actualizar}
                 autoComplete="email"
                 required
               />
-            </div>
+            </label>
 
-            <div className="mb-3">
-              <label className="form-label" htmlFor="contrasena">
+            <div className="campo">
+              <label className="campo__etiqueta" htmlFor="contrasena">
                 Contraseña
               </label>
-              <input
-                id="contrasena"
-                name="contrasena"
-                type="password"
-                className="form-control form-control-lg control-tactil"
-                value={formulario.contrasena}
-                onChange={actualizar}
-                autoComplete="new-password"
-                required
-              />
-              <div className="form-text">
-                Mínimo {LONGITUD_MINIMA} caracteres, combinando letras y números.
-              </div>
+              <span className="campo__envoltura">
+                <input
+                  id="contrasena"
+                  name="contrasena"
+                  type={visible ? 'text' : 'password'}
+                  className="campo__control"
+                  value={formulario.contrasena}
+                  onChange={actualizar}
+                  autoComplete="new-password"
+                  required
+                />
+                <button
+                  type="button"
+                  className="campo__accion"
+                  onClick={() => setVisible((anterior) => !anterior)}
+                  aria-label="Mostrar la contraseña"
+                  aria-pressed={visible}
+                >
+                  {visible ? 'Ocultar' : 'Ver'}
+                </button>
+              </span>
+              <span className={`pista${contrasenaValida ? ' pista--cumplida' : ''}`}>
+                <span className="pista__punto" />8 caracteres, con una letra y un número
+              </span>
             </div>
+          </div>
 
-            <div className="mb-4">
-              <label className="form-label" htmlFor="confirmacion">
-                Repita la contraseña
-              </label>
-              <input
-                id="confirmacion"
-                name="confirmacion"
-                type="password"
-                className="form-control form-control-lg control-tactil"
-                value={formulario.confirmacion}
-                onChange={actualizar}
-                autoComplete="new-password"
-                required
-              />
-            </div>
+          <button type="submit" className="boton boton--principal">
+            Continuar
+          </button>
+        </form>
+      ) : (
+        <form onSubmit={enviar} noValidate className="pila-5">
+          <label className="campo">
+            <span className="campo__etiqueta">Repita la contraseña</span>
+            <input
+              name="confirmacion"
+              type={visible ? 'text' : 'password'}
+              className="campo__control"
+              value={formulario.confirmacion}
+              onChange={actualizar}
+              autoComplete="new-password"
+              required
+              autoFocus
+            />
+          </label>
 
-            <button
-              type="submit"
-              className="btn btn-principal btn-lg w-100 control-tactil"
-              disabled={enviando}
-            >
-              {enviando ? 'Creando la cuenta…' : 'Registrarme'}
-            </button>
-          </form>
-
-          <p className="text-center mt-4 mb-0">
-            ¿Ya tiene cuenta? <Link to="/acceso">Inicie sesión</Link>
+          <p className="nota-al-pie">
+            Al crear su cuenta, sus medidas, su plan y su avance solo los ve usted. Ni el
+            administrador del sistema tiene acceso a ellos.
           </p>
-        </div>
-      </div>
+
+          <button type="submit" className="boton boton--principal" disabled={enviando}>
+            {enviando ? 'Creando la cuenta…' : 'Registrarme'}
+          </button>
+        </form>
+      )}
+
+      <p className="apoyo centrado">
+        ¿Ya tiene cuenta? <Link to="/acceso">Inicie sesión</Link>
+      </p>
     </div>
   )
 }

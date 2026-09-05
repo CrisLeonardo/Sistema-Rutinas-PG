@@ -316,6 +316,18 @@ select.campo__control {
   border-bottom: 0;
 }
 
+/* Lista dentro de una tarjeta: la tarjeta ya pone el fondo y el borde. */
+.lista--desnuda {
+  background: none;
+  border: 0;
+  border-radius: 0;
+  border-top: 1px solid var(--u-hair);
+}
+
+.lista--desnuda .lista__fila {
+  padding: 11px 0;
+}
+
 /* Solo las filas que llevan a algún sitio reaccionan al puntero. */
 a.lista__fila,
 button.lista__fila,
@@ -364,6 +376,11 @@ button.lista__fila:active {
   color: var(--u-text-4);
   font-size: 13px;
   font-weight: 400;
+}
+
+.lista__valor--pequeno {
+  color: var(--u-text-3);
+  font-size: 13px;
 }
 
 .lista__chevron {

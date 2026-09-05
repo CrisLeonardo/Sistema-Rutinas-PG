@@ -3,7 +3,13 @@ import { Link, useNavigate } from 'react-router-dom'
 
 import { useSesion } from '../contexto/ContextoSesion.jsx'
 
-/** Pantalla de inicio de sesión (historia HU-02). */
+/**
+ * Pantalla de inicio de sesión (historia HU-02).
+ *
+ * Dos campos y una acción. Nada de tarjeta con sombra sobre fondo gris: la
+ * pantalla entera es el formulario, centrada verticalmente, con la marca arriba
+ * para saber dónde se está antes de escribir nada.
+ */
 export default function Acceso() {
   const { iniciarSesion, expiroPorInactividad } = useSesion()
   const navegar = useNavigate()
@@ -11,6 +17,7 @@ export default function Acceso() {
   const [formulario, setFormulario] = useState({ correo: '', contrasena: '' })
   const [error, setError] = useState(null)
   const [enviando, setEnviando] = useState(false)
+  const [visible, setVisible] = useState(false)
 
   const actualizar = (evento) => {
     const { name, value } = evento.target
@@ -35,73 +42,78 @@ export default function Acceso() {
   }
 
   return (
-    <div className="d-flex justify-content-center">
-      <div className="card shadow-sm tarjeta-formulario">
-        <div className="card-body p-4">
-          <h1 className="h4 mb-1">Iniciar sesión</h1>
-          <p className="texto-ayuda mb-4">
-            Ingrese con la cuenta que registró para consultar sus planes.
-          </p>
+    <div className="entrada">
+      <div className="pila-5">
+        <span className="marca" aria-hidden="true">
+          P
+        </span>
+        <h1 className="titulo-grande">Entrar</h1>
+        <p className="apoyo">Ingrese con la cuenta que registró para consultar sus planes.</p>
+      </div>
 
-          {expiroPorInactividad && (
-            <div className="alert alert-warning" role="alert">
-              Su sesión se cerró automáticamente por inactividad.
-            </div>
-          )}
+      {expiroPorInactividad && (
+        <p className="aviso aviso--aviso" role="alert">
+          Su sesión se cerró automáticamente por inactividad.
+        </p>
+      )}
 
-          {error && (
-            <div className="alert alert-danger" role="alert">
-              {error}
-            </div>
-          )}
+      {error && (
+        <p className="aviso aviso--peligro" role="alert">
+          {error}
+        </p>
+      )}
 
-          <form onSubmit={enviar} noValidate>
-            <div className="mb-3">
-              <label className="form-label" htmlFor="correo">
-                Correo electrónico
-              </label>
-              <input
-                id="correo"
-                name="correo"
-                type="email"
-                className="form-control form-control-lg control-tactil"
-                value={formulario.correo}
-                onChange={actualizar}
-                autoComplete="email"
-                required
-              />
-            </div>
+      <form onSubmit={enviar} noValidate className="pila-5">
+        <div className="pila-3">
+          <label className="campo">
+            <span className="campo__etiqueta">Correo electrónico</span>
+            <input
+              name="correo"
+              type="email"
+              className="campo__control"
+              value={formulario.correo}
+              onChange={actualizar}
+              autoComplete="email"
+              required
+            />
+          </label>
 
-            <div className="mb-4">
-              <label className="form-label" htmlFor="contrasena">
-                Contraseña
-              </label>
+          <div className="campo">
+            <label className="campo__etiqueta" htmlFor="contrasena">
+              Contraseña
+            </label>
+            <span className="campo__envoltura">
               <input
                 id="contrasena"
                 name="contrasena"
-                type="password"
-                className="form-control form-control-lg control-tactil"
+                type={visible ? 'text' : 'password'}
+                className="campo__control"
                 value={formulario.contrasena}
                 onChange={actualizar}
                 autoComplete="current-password"
                 required
               />
-            </div>
-
-            <button
-              type="submit"
-              className="btn btn-principal btn-lg w-100 control-tactil"
-              disabled={enviando}
-            >
-              {enviando ? 'Verificando…' : 'Entrar'}
-            </button>
-          </form>
-
-          <p className="text-center mt-4 mb-0">
-            ¿Aún no tiene cuenta? <Link to="/registro">Regístrese aquí</Link>
-          </p>
+              <button
+                type="button"
+                className="campo__accion"
+                onClick={() => setVisible((anterior) => !anterior)}
+                aria-label="Mostrar la contraseña"
+                aria-pressed={visible}
+              >
+                {visible ? 'Ocultar' : 'Ver'}
+              </button>
+            </span>
+          </div>
         </div>
-      </div>
+
+        <button type="submit" className="boton boton--principal" disabled={enviando}>
+          {enviando ? 'Verificando…' : 'Entrar'}
+        </button>
+      </form>
+
+      <p className="apoyo centrado">
+        ¿Aún no tiene cuenta? <Link to="/registro">Regístrese</Link>
+      </p>
     </div>
   )
 }

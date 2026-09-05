@@ -93,6 +93,10 @@
 
 .crece { flex: 1; min-width: 0; }
 .empuja { margin-top: auto; }
+.centrado { text-align: center; }
+/* El día de la semana llega en minúscula desde toLocaleDateString. Se sube solo
+   la primera letra: `capitalize` pondría mayúscula también en «De». */
+.capitalizado::first-letter { text-transform: uppercase; }
 
 /* ── Escala tipográfica ───────────────────────────────────── */
 
@@ -161,6 +165,27 @@
   font: 500 26px/1 var(--ui-font-mono);
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.02em;
+}
+
+.cifra-pequena {
+  display: block;
+  font: 500 17px/1 var(--ui-font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Una cifra y su unidad comparten línea de base: «2 180 kcal», no dos bloques. */
+.cifra-con-unidad {
+  align-items: baseline;
+  display: flex;
+  gap: var(--m-sp-2);
+  margin: 0;
+}
+
+/* Nombre del grupo muscular: es la respuesta de la tarjeta, no su título. */
+.titulo-grupo {
+  font: 500 26px/1.1 var(--ui-font-sans);
+  letter-spacing: -0.02em;
+  margin: 0;
 }
 
 .tinta-ok { color: var(--c-ok); }
