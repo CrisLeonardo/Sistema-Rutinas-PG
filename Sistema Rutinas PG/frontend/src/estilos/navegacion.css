@@ -205,6 +205,33 @@
   font-weight: 600;
 }
 
+/* Quién está trabajando, al pie de la barra lateral. */
+.admin__cuenta {
+  align-items: center;
+  background: color-mix(in srgb, var(--u-text) 5%, transparent);
+  border-radius: 13px;
+  display: flex;
+  gap: 10px;
+  padding: 12px;
+}
+
+.admin__cuenta-avatar {
+  align-items: center;
+  background: color-mix(in srgb, var(--u-text) 12%, transparent);
+  border-radius: var(--radius-full);
+  color: var(--u-text-2);
+  display: flex;
+  flex-shrink: 0;
+  font: 600 12px/1 var(--ui-font-sans);
+  height: 30px;
+  justify-content: center;
+  width: 30px;
+}
+
+.admin__cuenta-nombre {
+  font: 500 12.5px/1.2 var(--ui-font-sans);
+}
+
 .admin__cuerpo {
   display: flex;
   flex: 1;
@@ -221,6 +248,48 @@
   justify-content: space-between;
   min-height: 64px;
   padding: 12px 24px;
+}
+
+/* La explicación es lo que cede el sitio cuando la barra se queda corta: baja a
+   su propia línea en vez de estrecharse hasta partir cada palabra. */
+.admin__explicacion {
+  flex: 1 1 260px;
+  min-width: 240px;
+}
+
+/* Título de una pantalla de administración: más pequeño que el de una de
+   teléfono, porque comparte la barra con la explicación y la acción. */
+.titulo-admin {
+  font: 500 22px/1.2 var(--ui-font-sans);
+  letter-spacing: -0.02em;
+  margin: 0;
+  white-space: nowrap;
+}
+
+/* Pestaña de la subbarra: la activa se levanta sobre el fondo en vez de
+   subrayarse. */
+.admin__pestana {
+  align-items: center;
+  background: none;
+  border: 0;
+  border-radius: 9px;
+  color: var(--u-text-3);
+  cursor: pointer;
+  display: inline-flex;
+  font: 600 13px/1 var(--ui-font-sans);
+  min-height: 36px;
+  padding: 0 13px;
+  transition: background-color 140ms var(--ease-out), color 140ms var(--ease-out);
+}
+
+.admin__pestana:hover {
+  color: var(--u-text-2);
+}
+
+.admin__pestana--activa {
+  background: var(--adm-card);
+  box-shadow: var(--adm-shadow-xs);
+  color: var(--u-text);
 }
 
 .admin__subbarra {
@@ -257,9 +326,57 @@
 .tabla__fila {
   align-items: center;
   display: grid;
-  gap: var(--m-sp-3);
-  min-width: 720px;
+  gap: var(--m-sp-4);
+  min-width: 760px;
   padding: 14px 20px;
+}
+
+/* Columnas de cifras: alineadas a la derecha para poder compararlas de un
+   vistazo, como en cualquier tabla de números. */
+.tabla__numero {
+  font: 500 13px/1 var(--ui-font-mono);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.tabla__nombre {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font: 400 14px/1.2 var(--ui-font-sans);
+}
+
+.tabla__detalle {
+  color: var(--u-text-4);
+  font: 400 11.5px/1 var(--ui-font-sans);
+}
+
+/* Buscador del catálogo: con ciento cuarenta alimentos, recorrer la tabla con
+   la vista no es una opción. */
+.buscador {
+  align-items: center;
+  background: var(--adm-card);
+  border: 1px solid var(--u-hair-2);
+  border-radius: var(--radius-lg);
+  display: flex;
+  gap: 10px;
+  max-width: 340px;
+  padding: 0 14px;
+}
+
+.buscador__campo {
+  background: none;
+  border: 0;
+  color: var(--u-text);
+  flex: 1;
+  font: 400 14px/1 var(--ui-font-sans);
+  min-height: 42px;
+  min-width: 0;
+  outline: none;
+}
+
+.buscador__campo::placeholder {
+  color: var(--u-text-4);
 }
 
 .tabla__cabecera {
@@ -285,6 +402,28 @@
 
 .tabla__fila--baja {
   opacity: 0.6;
+}
+
+/* Selector de rol dentro de una fila de la tabla: bajo, para no engordarla. */
+.selector-rol {
+  appearance: none;
+  background: var(--adm-card);
+  background-image: linear-gradient(45deg, transparent 50%, currentColor 50%),
+    linear-gradient(135deg, currentColor 50%, transparent 50%);
+  background-position: calc(100% - 17px) calc(50% + 1px), calc(100% - 12px) calc(50% + 1px);
+  background-repeat: no-repeat;
+  background-size: 5px 5px, 5px 5px;
+  border: 1px solid var(--u-hair-2);
+  border-radius: 9px;
+  color: var(--u-text);
+  font: 400 13px/1 var(--ui-font-sans);
+  min-height: 34px;
+  padding: 0 34px 0 12px;
+  width: 100%;
+}
+
+.selector-rol:disabled {
+  opacity: 0.55;
 }
 
 .tabla__acciones {

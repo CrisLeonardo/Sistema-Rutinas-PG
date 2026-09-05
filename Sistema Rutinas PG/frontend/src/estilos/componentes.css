@@ -724,6 +724,16 @@ button.aviso:active {
   color: var(--brand-on-accent);
 }
 
+/* Casilla nativa dentro de una fila de formulario: se le presta el acento del
+   sistema en vez de dibujar una propia, que aquí no aporta nada. */
+.lista__fila input[type='checkbox'] {
+  accent-color: var(--brand-accent);
+  flex-shrink: 0;
+  height: 20px;
+  margin: 0;
+  width: 20px;
+}
+
 /* ── Barra de macronutrientes ────────────────────────────── */
 
 .macros {

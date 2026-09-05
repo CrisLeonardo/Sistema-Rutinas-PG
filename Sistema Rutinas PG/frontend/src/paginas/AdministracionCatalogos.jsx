@@ -1,16 +1,29 @@
 /**
- * Pantalla de administración de los catálogos maestros (historia HU-11).
+ * Administración de los catálogos maestros (historia HU-11).
  *
  * Reservada al administrador. Permite dar de alta, modificar y dar de baja
  * alimentos y ejercicios. La baja es lógica: el elemento se marca como no
  * disponible y deja de proponerse en los planes nuevos, pero los planes ya
  * generados conservan su referencia.
+ *
+ * El formulario dejaba fija una columna entera de la pantalla, estuviera o no
+ * en uso, y la tabla se quedaba con el resto. Ahora «Agregar» y «Editar» abren
+ * un panel lateral que desaparece al cerrarlo, de modo que la tabla —que es a
+ * lo que se viene— ocupa el ancho completo.
+ *
+ * Se añaden dos cosas que la lista larga pedía: un buscador por nombre y unos
+ * chips para filtrar por categoría o ver solo lo dado de baja. Con ciento
+ * cuarenta alimentos, recorrer la tabla con la vista no es una opción.
  */
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 
+import ArmazonAdmin from '../componentes/ArmazonAdmin.jsx'
+import AvisoDeError from '../componentes/AvisoDeError.jsx'
+import Icono from '../componentes/Icono.jsx'
 import { useSesion } from '../contexto/ContextoSesion.jsx'
 import { servicioCatalogos } from '../servicios/api.js'
+import { quetzales } from '../utilidades/formatos.js'
 
 const CATEGORIAS = [
   { valor: 'cereal', etiqueta: 'Cereal' },
@@ -60,6 +73,21 @@ const EJERCICIO_VACIO = {
   disponible_localmente: true,
 }
 
+const COLUMNAS_ALIMENTOS = '2.4fr 1.2fr .8fr .8fr .8fr 1fr 1.1fr'
+const COLUMNAS_EJERCICIOS = '2.4fr 1fr 1fr 1.2fr 1fr 1.1fr'
+
+function etiquetaDeLista(opciones, valor) {
+  return opciones.find((opcion) => opcion.valor === valor)?.etiqueta ?? valor
+}
+
+/** Compara sin acentos ni mayúsculas: se busca «guisquil» y aparece «güisquil». */
+function normalizar(texto) {
+  return (texto ?? '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+}
+
 export default function AdministracionCatalogos() {
   const { token } = useSesion()
 
@@ -69,11 +97,14 @@ export default function AdministracionCatalogos() {
   const [cargando, setCargando] = useState(true)
   const [error, setError] = useState(null)
   const [aviso, setAviso] = useState(null)
+  const [busqueda, setBusqueda] = useState('')
+  const [filtro, setFiltro] = useState('todos')
 
   const [formularioAlimento, setFormularioAlimento] = useState(ALIMENTO_VACIO)
   const [formularioEjercicio, setFormularioEjercicio] = useState(EJERCICIO_VACIO)
   const [editandoAlimento, setEditandoAlimento] = useState(null)
   const [editandoEjercicio, setEditandoEjercicio] = useState(null)
+  const [panelAbierto, setPanelAbierto] = useState(false)
   const [guardando, setGuardando] = useState(false)
 
   const cargar = useCallback(async () => {
@@ -97,6 +128,14 @@ export default function AdministracionCatalogos() {
     cargar()
   }, [cargar])
 
+  // Al cambiar de pestaña, el filtro de la anterior no tiene sentido en la nueva.
+  const cambiarPestana = (siguiente) => {
+    setPestana(siguiente)
+    setFiltro('todos')
+    setBusqueda('')
+    setPanelAbierto(false)
+  }
+
   const actualizarAlimento = (evento) => {
     const { name, value, type, checked } = evento.target
     setFormularioAlimento((anterior) => ({
@@ -113,14 +152,20 @@ export default function AdministracionCatalogos() {
     }))
   }
 
-  const limpiarAlimento = () => {
+  const cerrarPanel = () => {
+    setPanelAbierto(false)
     setFormularioAlimento(ALIMENTO_VACIO)
+    setFormularioEjercicio(EJERCICIO_VACIO)
     setEditandoAlimento(null)
+    setEditandoEjercicio(null)
   }
 
-  const limpiarEjercicio = () => {
+  const abrirParaAgregar = () => {
+    setFormularioAlimento(ALIMENTO_VACIO)
     setFormularioEjercicio(EJERCICIO_VACIO)
+    setEditandoAlimento(null)
     setEditandoEjercicio(null)
+    setPanelAbierto(true)
   }
 
   const guardarAlimento = async (evento) => {
@@ -149,7 +194,7 @@ export default function AdministracionCatalogos() {
         await servicioCatalogos.crearAlimento(datos, token)
         setAviso(`Se agregó «${datos.nombre}» al catálogo.`)
       }
-      limpiarAlimento()
+      cerrarPanel()
       await cargar()
     } catch (fallo) {
       setError(fallo.message)
@@ -180,7 +225,7 @@ export default function AdministracionCatalogos() {
         await servicioCatalogos.crearEjercicio(datos, token)
         setAviso(`Se agregó «${datos.nombre}» al catálogo.`)
       }
-      limpiarEjercicio()
+      cerrarPanel()
       await cargar()
     } catch (fallo) {
       setError(fallo.message)
@@ -205,7 +250,7 @@ export default function AdministracionCatalogos() {
       medida_casera: alimento.medida_casera ?? '',
       disponible_localmente: alimento.disponible_localmente,
     })
-    window.scrollTo({ top: 0, behavior: 'smooth' })
+    setPanelAbierto(true)
   }
 
   const editarEjercicio = (ejercicio) => {
@@ -219,7 +264,7 @@ export default function AdministracionCatalogos() {
       es_compuesto: ejercicio.es_compuesto,
       disponible_localmente: ejercicio.disponible_localmente,
     })
-    window.scrollTo({ top: 0, behavior: 'smooth' })
+    setPanelAbierto(true)
   }
 
   const cambiarDisponibilidad = async (tipo, elemento) => {
@@ -250,481 +295,511 @@ export default function AdministracionCatalogos() {
     }
   }
 
+  const esAlimentos = pestana === 'alimentos'
+  const elementos = esAlimentos ? alimentos : ejercicios
+  const opcionesDeFiltro = esAlimentos ? CATEGORIAS : GRUPOS
+  const campoDeFiltro = esAlimentos ? 'categoria' : 'grupo_muscular'
+
+  const deBaja = elementos.filter((elemento) => !elemento.disponible_localmente).length
+
+  const visibles = useMemo(() => {
+    const texto = normalizar(busqueda)
+    return elementos.filter((elemento) => {
+      if (texto && !normalizar(elemento.nombre).includes(texto)) return false
+      if (filtro === 'todos') return true
+      if (filtro === 'de_baja') return !elemento.disponible_localmente
+      return elemento[campoDeFiltro] === filtro
+    })
+  }, [elementos, busqueda, filtro, campoDeFiltro])
+
   return (
-    <div className="row g-4">
-      <div className="col-12">
-        <h1 className="h3 mb-1">Catálogos del sistema</h1>
-        <p className="texto-ayuda mb-0">
-          Los alimentos y los ejercicios que el sistema propone en los planes. Dar de
-          baja un elemento no lo borra: deja de proponerse, pero los planes ya generados
-          lo conservan.
-        </p>
-      </div>
-
-      {error && (
-        <div className="col-12">
-          <div className="alert alert-danger" role="alert">
-            {error}
-          </div>
-        </div>
-      )}
-
+    <ArmazonAdmin
+      titulo="Catálogos"
+      explicacion="Los alimentos y los ejercicios que el sistema propone en los planes. Dar de baja un elemento no lo borra: deja de proponerse, pero los planes ya generados lo conservan."
+      accion={
+        <button
+          type="button"
+          className="boton boton--principal boton--compacto"
+          onClick={abrirParaAgregar}
+        >
+          {esAlimentos ? 'Agregar alimento' : 'Agregar ejercicio'}
+        </button>
+      }
+      subbarra={
+        <>
+          <button
+            type="button"
+            className={`admin__pestana${esAlimentos ? ' admin__pestana--activa' : ''}`}
+            onClick={() => cambiarPestana('alimentos')}
+            aria-pressed={esAlimentos}
+          >
+            Alimentos · {alimentos.length}
+          </button>
+          <button
+            type="button"
+            className={`admin__pestana${!esAlimentos ? ' admin__pestana--activa' : ''}`}
+            onClick={() => cambiarPestana('ejercicios')}
+            aria-pressed={!esAlimentos}
+          >
+            Ejercicios · {ejercicios.length}
+          </button>
+        </>
+      }
+    >
+      {error && <AvisoDeError mensaje={error} alReintentar={cargar} />}
       {aviso && (
-        <div className="col-12">
-          <div className="alert alert-success" role="status">
-            {aviso}
-          </div>
-        </div>
+        <p className="aviso aviso--ok" role="status">
+          {aviso}
+        </p>
       )}
 
-      <div className="col-12">
-        <ul className="nav nav-tabs">
-          <li className="nav-item">
-            <button
-              type="button"
-              className={`nav-link control-tactil ${pestana === 'alimentos' ? 'active' : ''}`}
-              onClick={() => setPestana('alimentos')}
-            >
-              Alimentos ({alimentos.length})
-            </button>
-          </li>
-          <li className="nav-item">
-            <button
-              type="button"
-              className={`nav-link control-tactil ${pestana === 'ejercicios' ? 'active' : ''}`}
-              onClick={() => setPestana('ejercicios')}
-            >
-              Ejercicios ({ejercicios.length})
-            </button>
-          </li>
-        </ul>
+      <div className="buscador">
+        <Icono nombre="search-01" tamano={15} className="tinta-4" />
+        <input
+          type="search"
+          className="buscador__campo"
+          placeholder={esAlimentos ? 'Buscar un alimento' : 'Buscar un ejercicio'}
+          value={busqueda}
+          onChange={(evento) => setBusqueda(evento.target.value)}
+          aria-label="Buscar en el catálogo"
+        />
       </div>
 
-      {cargando && (
-        <div className="col-12">
-          <p className="texto-ayuda">Cargando los catálogos…</p>
+      <div className="pildoras">
+        <button
+          type="button"
+          className={`chip${filtro === 'todos' ? ' chip--activo' : ''}`}
+          onClick={() => setFiltro('todos')}
+        >
+          Todos
+        </button>
+        {opcionesDeFiltro.map((opcion) => (
+          <button
+            key={opcion.valor}
+            type="button"
+            className={`chip${filtro === opcion.valor ? ' chip--activo' : ''}`}
+            onClick={() => setFiltro(opcion.valor)}
+          >
+            {opcion.etiqueta}
+          </button>
+        ))}
+        {deBaja > 0 && (
+          <button
+            type="button"
+            className={`chip${filtro === 'de_baja' ? ' chip--activo' : ''}`}
+            onClick={() => setFiltro('de_baja')}
+          >
+            De baja · {deBaja}
+          </button>
+        )}
+      </div>
+
+      {cargando ? (
+        <div className="pila-3" aria-busy="true">
+          <div className="esqueleto esqueleto--fila" />
+          <div className="esqueleto esqueleto--fila" />
+          <div className="esqueleto esqueleto--fila" />
+          <span className="solo-lectores">Cargando los catálogos…</span>
+        </div>
+      ) : visibles.length === 0 ? (
+        <div className="vacio">
+          <h2 className="vacio__titulo">No hay nada que coincida</h2>
+          <p className="cuerpo">Pruebe con otro nombre o quite el filtro de categoría.</p>
+        </div>
+      ) : (
+        <div className="tabla">
+          <div className="tabla__desplazamiento">
+            {esAlimentos ? (
+              <TablaAlimentos
+                alimentos={visibles}
+                alEditar={editarAlimento}
+                alCambiarDisponibilidad={(alimento) => cambiarDisponibilidad('alimento', alimento)}
+              />
+            ) : (
+              <TablaEjercicios
+                ejercicios={visibles}
+                alEditar={editarEjercicio}
+                alCambiarDisponibilidad={(ejercicio) =>
+                  cambiarDisponibilidad('ejercicio', ejercicio)
+                }
+              />
+            )}
+          </div>
         </div>
       )}
 
-      {!cargando && pestana === 'alimentos' && (
+      {panelAbierto && (
         <>
-          <div className="col-12 col-xl-4">
-            <div className="card shadow-sm">
-              <div className="card-body">
-                <h2 className="h5 card-title">
-                  {editandoAlimento ? 'Modificar alimento' : 'Agregar alimento'}
-                </h2>
-                <form onSubmit={guardarAlimento} noValidate>
-                  <div className="mb-3">
-                    <label className="form-label" htmlFor="nombre-alimento">
-                      Nombre
-                    </label>
-                    <input
-                      id="nombre-alimento"
-                      name="nombre"
-                      className="form-control control-tactil"
-                      value={formularioAlimento.nombre}
-                      onChange={actualizarAlimento}
-                      required
-                    />
-                  </div>
-
-                  <div className="mb-3">
-                    <label className="form-label" htmlFor="categoria-alimento">
-                      Categoría
-                    </label>
-                    <select
-                      id="categoria-alimento"
-                      name="categoria"
-                      className="form-select control-tactil"
-                      value={formularioAlimento.categoria}
-                      onChange={actualizarAlimento}
-                    >
-                      {CATEGORIAS.map((opcion) => (
-                        <option key={opcion.valor} value={opcion.valor}>
-                          {opcion.etiqueta}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <p className="texto-ayuda mb-2">Aporte por cada 100 gramos</p>
-                  <div className="row g-2 mb-3">
-                    {[
-                      ['energia_kcal_100g', 'Energía (kcal)'],
-                      ['proteina_g_100g', 'Proteína (g)'],
-                      ['carbohidrato_g_100g', 'Carbohidrato (g)'],
-                      ['grasa_g_100g', 'Grasa (g)'],
-                    ].map(([campo, etiqueta]) => (
-                      <div className="col-6" key={campo}>
-                        <label className="form-label texto-ayuda" htmlFor={campo}>
-                          {etiqueta}
-                        </label>
-                        <input
-                          id={campo}
-                          name={campo}
-                          type="number"
-                          step="0.1"
-                          min="0"
-                          className="form-control control-tactil"
-                          value={formularioAlimento[campo]}
-                          onChange={actualizarAlimento}
-                          required
-                        />
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="mb-3">
-                    <label className="form-label" htmlFor="medida_casera">
-                      Medida casera
-                    </label>
-                    <input
-                      id="medida_casera"
-                      name="medida_casera"
-                      className="form-control control-tactil"
-                      placeholder="1 taza ≈ 160 g"
-                      value={formularioAlimento.medida_casera}
-                      onChange={actualizarAlimento}
-                    />
-                    <div className="form-text">
-                      Escríbala como «1 taza ≈ 160 g» para que el sistema calcule las
-                      porciones.
-                    </div>
-                  </div>
-
-                  <div className="mb-3">
-                    <label className="form-label" htmlFor="costo_aproximado_quetzales">
-                      Costo aproximado (quetzales)
-                    </label>
-                    <input
-                      id="costo_aproximado_quetzales"
-                      name="costo_aproximado_quetzales"
-                      type="number"
-                      step="0.5"
-                      min="0"
-                      className="form-control control-tactil"
-                      value={formularioAlimento.costo_aproximado_quetzales}
-                      onChange={actualizarAlimento}
-                    />
-                  </div>
-
-                  <div className="form-check opcion-tactil mb-3">
-                    <input
-                      className="form-check-input"
-                      type="checkbox"
-                      id="disponible-alimento"
-                      name="disponible_localmente"
-                      checked={formularioAlimento.disponible_localmente}
-                      onChange={actualizarAlimento}
-                    />
-                    <label className="form-check-label" htmlFor="disponible-alimento">
-                      Se consigue en el municipio
-                    </label>
-                  </div>
-
-                  <div className="d-grid gap-2">
-                    <button
-                      type="submit"
-                      className="btn btn-principal control-tactil"
-                      disabled={guardando}
-                    >
-                      {guardando ? 'Guardando…' : editandoAlimento ? 'Guardar cambios' : 'Agregar'}
-                    </button>
-                    {editandoAlimento && (
-                      <button
-                        type="button"
-                        className="btn btn-outline-secondary control-tactil"
-                        onClick={limpiarAlimento}
-                      >
-                        Cancelar
-                      </button>
-                    )}
-                  </div>
-                </form>
-              </div>
+          <div className="velo no-imprimir" onClick={cerrarPanel} aria-hidden="true" />
+          <div
+            className="panel-lateral no-imprimir"
+            role="dialog"
+            aria-modal="true"
+            aria-label={esAlimentos ? 'Alimento del catálogo' : 'Ejercicio del catálogo'}
+          >
+            <div className="hoja-inferior__cabecera">
+              <h2 className="titulo-tarjeta">
+                {esAlimentos
+                  ? editandoAlimento
+                    ? 'Modificar alimento'
+                    : 'Agregar alimento'
+                  : editandoEjercicio
+                    ? 'Modificar ejercicio'
+                    : 'Agregar ejercicio'}
+              </h2>
+              <button
+                type="button"
+                className="boton boton--circular"
+                onClick={cerrarPanel}
+                aria-label="Cerrar"
+              >
+                <Icono nombre="cancel-01" tamano={18} />
+              </button>
             </div>
-          </div>
 
-          <div className="col-12 col-xl-8">
-            <div className="card shadow-sm">
-              <div className="card-body">
-                <h2 className="h5 card-title">Alimentos registrados</h2>
-                <div className="contenedor-tabla">
-                  <table className="table table-sm align-middle tabla-cuentas mb-0">
-                    <thead>
-                      <tr>
-                        <th scope="col">Alimento</th>
-                        <th scope="col">Categoría</th>
-                        <th scope="col" className="text-end">
-                          kcal/100 g
-                        </th>
-                        <th scope="col">Estado</th>
-                        <th scope="col">Acciones</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {alimentos.map((alimento) => (
-                        <tr key={alimento.id}>
-                          <td>
-                            {alimento.nombre}
-                            {alimento.medida_casera && (
-                              <span className="d-block texto-ayuda">
-                                {alimento.medida_casera}
-                              </span>
-                            )}
-                          </td>
-                          <td>{alimento.nombre_categoria}</td>
-                          <td className="text-end">{alimento.energia_kcal_100g}</td>
-                          <td>
-                            <span
-                              className={`badge ${
-                                alimento.disponible_localmente ? 'bg-success' : 'bg-secondary'
-                              }`}
-                            >
-                              {alimento.disponible_localmente ? 'Disponible' : 'De baja'}
-                            </span>
-                          </td>
-                          <td>
-                            <div className="d-flex gap-2">
-                              <button
-                                type="button"
-                                className="btn btn-sm btn-outline-secondary control-tactil"
-                                onClick={() => editarAlimento(alimento)}
-                              >
-                                Editar
-                              </button>
-                              <button
-                                type="button"
-                                className="btn btn-sm btn-outline-secondary control-tactil"
-                                onClick={() => cambiarDisponibilidad('alimento', alimento)}
-                              >
-                                {alimento.disponible_localmente ? 'Dar de baja' : 'Habilitar'}
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
+            {esAlimentos ? (
+              <FormularioAlimento
+                formulario={formularioAlimento}
+                alCambiar={actualizarAlimento}
+                alEnviar={guardarAlimento}
+                guardando={guardando}
+                editando={Boolean(editandoAlimento)}
+                alCancelar={cerrarPanel}
+              />
+            ) : (
+              <FormularioEjercicio
+                formulario={formularioEjercicio}
+                alCambiar={actualizarEjercicio}
+                alEnviar={guardarEjercicio}
+                guardando={guardando}
+                editando={Boolean(editandoEjercicio)}
+                alCancelar={cerrarPanel}
+              />
+            )}
           </div>
         </>
       )}
+    </ArmazonAdmin>
+  )
+}
 
-      {!cargando && pestana === 'ejercicios' && (
-        <>
-          <div className="col-12 col-xl-4">
-            <div className="card shadow-sm">
-              <div className="card-body">
-                <h2 className="h5 card-title">
-                  {editandoEjercicio ? 'Modificar ejercicio' : 'Agregar ejercicio'}
-                </h2>
-                <form onSubmit={guardarEjercicio} noValidate>
-                  <div className="mb-3">
-                    <label className="form-label" htmlFor="nombre-ejercicio">
-                      Nombre
-                    </label>
-                    <input
-                      id="nombre-ejercicio"
-                      name="nombre"
-                      className="form-control control-tactil"
-                      value={formularioEjercicio.nombre}
-                      onChange={actualizarEjercicio}
-                      required
-                    />
-                  </div>
+function TablaAlimentos({ alimentos, alEditar, alCambiarDisponibilidad }) {
+  const columnas = { gridTemplateColumns: COLUMNAS_ALIMENTOS }
 
-                  <div className="mb-3">
-                    <label className="form-label" htmlFor="grupo_muscular">
-                      Grupo muscular
-                    </label>
-                    <select
-                      id="grupo_muscular"
-                      name="grupo_muscular"
-                      className="form-select control-tactil"
-                      value={formularioEjercicio.grupo_muscular}
-                      onChange={actualizarEjercicio}
-                    >
-                      {GRUPOS.map((opcion) => (
-                        <option key={opcion.valor} value={opcion.valor}>
-                          {opcion.etiqueta}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+  return (
+    <>
+      <div className="tabla__cabecera" style={columnas}>
+        <span>Alimento</span>
+        <span>Categoría</span>
+        <span className="tabla__numero">kcal</span>
+        <span className="tabla__numero">Prot.</span>
+        <span className="tabla__numero">Costo</span>
+        <span>Estado</span>
+        <span className="tabla__numero">Acciones</span>
+      </div>
+      {alimentos.map((alimento) => (
+        <div
+          key={alimento.id}
+          className={`tabla__fila${alimento.disponible_localmente ? '' : ' tabla__fila--baja'}`}
+          style={columnas}
+        >
+          <span className="tabla__nombre">
+            <span>{alimento.nombre}</span>
+            {alimento.medida_casera && (
+              <span className="tabla__detalle">{alimento.medida_casera}</span>
+            )}
+          </span>
+          <span className="tinta-2">{etiquetaDeLista(CATEGORIAS, alimento.categoria)}</span>
+          <span className="tabla__numero">{alimento.energia_kcal_100g}</span>
+          <span className="tabla__numero">{alimento.proteina_g_100g} g</span>
+          <span className="tabla__numero">
+            {alimento.costo_aproximado_quetzales === null
+              ? '—'
+              : quetzales(alimento.costo_aproximado_quetzales)}
+          </span>
+          <span>
+            <span className={`chip ${alimento.disponible_localmente ? 'chip--ok' : 'chip--neutro'}`}>
+              {alimento.disponible_localmente ? 'Disponible' : 'De baja'}
+            </span>
+          </span>
+          <span className="tabla__acciones">
+            <button type="button" className="boton-texto" onClick={() => alEditar(alimento)}>
+              Editar
+            </button>
+            <button
+              type="button"
+              className="boton-texto boton-texto--tenue"
+              onClick={() => alCambiarDisponibilidad(alimento)}
+            >
+              {alimento.disponible_localmente ? 'Dar de baja' : 'Habilitar'}
+            </button>
+          </span>
+        </div>
+      ))}
+    </>
+  )
+}
 
-                  <div className="mb-3">
-                    <label className="form-label" htmlFor="nivel_minimo">
-                      Nivel mínimo
-                    </label>
-                    <select
-                      id="nivel_minimo"
-                      name="nivel_minimo"
-                      className="form-select control-tactil"
-                      value={formularioEjercicio.nivel_minimo}
-                      onChange={actualizarEjercicio}
-                    >
-                      {NIVELES.map((opcion) => (
-                        <option key={opcion.valor} value={opcion.valor}>
-                          {opcion.etiqueta}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+function TablaEjercicios({ ejercicios, alEditar, alCambiarDisponibilidad }) {
+  const columnas = { gridTemplateColumns: COLUMNAS_EJERCICIOS }
 
-                  <div className="mb-3">
-                    <label className="form-label" htmlFor="equipamiento">
-                      Equipamiento
-                    </label>
-                    <input
-                      id="equipamiento"
-                      name="equipamiento"
-                      className="form-control control-tactil"
-                      placeholder="Barra y discos"
-                      value={formularioEjercicio.equipamiento}
-                      onChange={actualizarEjercicio}
-                      required
-                    />
-                  </div>
+  return (
+    <>
+      <div className="tabla__cabecera" style={columnas}>
+        <span>Ejercicio</span>
+        <span>Grupo</span>
+        <span>Nivel</span>
+        <span>Equipamiento</span>
+        <span>Estado</span>
+        <span className="tabla__numero">Acciones</span>
+      </div>
+      {ejercicios.map((ejercicio) => (
+        <div
+          key={ejercicio.id}
+          className={`tabla__fila${ejercicio.disponible_localmente ? '' : ' tabla__fila--baja'}`}
+          style={columnas}
+        >
+          <span className="tabla__nombre">
+            <span>{ejercicio.nombre}</span>
+            {ejercicio.es_compuesto && <span className="tabla__detalle">Compuesto</span>}
+          </span>
+          <span className="tinta-2">{etiquetaDeLista(GRUPOS, ejercicio.grupo_muscular)}</span>
+          <span className="tinta-2">{etiquetaDeLista(NIVELES, ejercicio.nivel_minimo)}</span>
+          <span className="tinta-2">{ejercicio.equipamiento}</span>
+          <span>
+            <span
+              className={`chip ${ejercicio.disponible_localmente ? 'chip--ok' : 'chip--neutro'}`}
+            >
+              {ejercicio.disponible_localmente ? 'Disponible' : 'De baja'}
+            </span>
+          </span>
+          <span className="tabla__acciones">
+            <button type="button" className="boton-texto" onClick={() => alEditar(ejercicio)}>
+              Editar
+            </button>
+            <button
+              type="button"
+              className="boton-texto boton-texto--tenue"
+              onClick={() => alCambiarDisponibilidad(ejercicio)}
+            >
+              {ejercicio.disponible_localmente ? 'Dar de baja' : 'Habilitar'}
+            </button>
+          </span>
+        </div>
+      ))}
+    </>
+  )
+}
 
-                  <div className="mb-3">
-                    <label className="form-label" htmlFor="descripcion">
-                      Cómo se hace
-                    </label>
-                    <textarea
-                      id="descripcion"
-                      name="descripcion"
-                      rows="3"
-                      className="form-control"
-                      value={formularioEjercicio.descripcion}
-                      onChange={actualizarEjercicio}
-                    />
-                  </div>
+const APORTES = [
+  ['energia_kcal_100g', 'Energía (kcal)'],
+  ['proteina_g_100g', 'Proteína (g)'],
+  ['carbohidrato_g_100g', 'Carbohidrato (g)'],
+  ['grasa_g_100g', 'Grasa (g)'],
+]
 
-                  <div className="form-check opcion-tactil">
-                    <input
-                      className="form-check-input"
-                      type="checkbox"
-                      id="es_compuesto"
-                      name="es_compuesto"
-                      checked={formularioEjercicio.es_compuesto}
-                      onChange={actualizarEjercicio}
-                    />
-                    <label className="form-check-label" htmlFor="es_compuesto">
-                      Es un ejercicio compuesto
-                      <span className="d-block texto-ayuda">
-                        Involucra varias articulaciones; se prescribe al inicio de la sesión.
-                      </span>
-                    </label>
-                  </div>
+function FormularioAlimento({ formulario, alCambiar, alEnviar, guardando, editando, alCancelar }) {
+  return (
+    <form onSubmit={alEnviar} noValidate className="pila-4">
+      <label className="campo">
+        <span className="campo__etiqueta">Nombre</span>
+        <input
+          name="nombre"
+          type="text"
+          className="campo__control"
+          value={formulario.nombre}
+          onChange={alCambiar}
+          required
+        />
+      </label>
 
-                  <div className="form-check opcion-tactil mb-3">
-                    <input
-                      className="form-check-input"
-                      type="checkbox"
-                      id="disponible-ejercicio"
-                      name="disponible_localmente"
-                      checked={formularioEjercicio.disponible_localmente}
-                      onChange={actualizarEjercicio}
-                    />
-                    <label className="form-check-label" htmlFor="disponible-ejercicio">
-                      El gimnasio tiene el equipo
-                    </label>
-                  </div>
+      <label className="campo">
+        <span className="campo__etiqueta">Categoría</span>
+        <select
+          name="categoria"
+          className="campo__control"
+          value={formulario.categoria}
+          onChange={alCambiar}
+        >
+          {CATEGORIAS.map((opcion) => (
+            <option key={opcion.valor} value={opcion.valor}>
+              {opcion.etiqueta}
+            </option>
+          ))}
+        </select>
+      </label>
 
-                  <div className="d-grid gap-2">
-                    <button
-                      type="submit"
-                      className="btn btn-principal control-tactil"
-                      disabled={guardando}
-                    >
-                      {guardando
-                        ? 'Guardando…'
-                        : editandoEjercicio
-                          ? 'Guardar cambios'
-                          : 'Agregar'}
-                    </button>
-                    {editandoEjercicio && (
-                      <button
-                        type="button"
-                        className="btn btn-outline-secondary control-tactil"
-                        onClick={limpiarEjercicio}
-                      >
-                        Cancelar
-                      </button>
-                    )}
-                  </div>
-                </form>
-              </div>
-            </div>
-          </div>
+      <div className="pila-3">
+        <span className="rotulo">Aporte por cada 100 gramos</span>
+        <div className="campos-par">
+          {APORTES.map(([campo, etiqueta]) => (
+            <label className="campo" key={campo}>
+              <span className="campo__etiqueta">{etiqueta}</span>
+              <input
+                name={campo}
+                type="number"
+                step="0.1"
+                min="0"
+                className="campo__control campo__control--numero"
+                value={formulario[campo]}
+                onChange={alCambiar}
+                required
+              />
+            </label>
+          ))}
+        </div>
+      </div>
 
-          <div className="col-12 col-xl-8">
-            <div className="card shadow-sm">
-              <div className="card-body">
-                <h2 className="h5 card-title">Ejercicios registrados</h2>
-                <div className="contenedor-tabla">
-                  <table className="table table-sm align-middle tabla-cuentas mb-0">
-                    <thead>
-                      <tr>
-                        <th scope="col">Ejercicio</th>
-                        <th scope="col">Grupo</th>
-                        <th scope="col">Equipamiento</th>
-                        <th scope="col">Estado</th>
-                        <th scope="col">Acciones</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {ejercicios.map((ejercicio) => (
-                        <tr key={ejercicio.id}>
-                          <td>
-                            {ejercicio.nombre}
-                            {ejercicio.es_compuesto && (
-                              <span className="badge bg-light text-dark ms-2">Compuesto</span>
-                            )}
-                          </td>
-                          <td>{ejercicio.nombre_grupo}</td>
-                          <td>{ejercicio.equipamiento}</td>
-                          <td>
-                            <span
-                              className={`badge ${
-                                ejercicio.disponible_localmente ? 'bg-success' : 'bg-secondary'
-                              }`}
-                            >
-                              {ejercicio.disponible_localmente ? 'Disponible' : 'De baja'}
-                            </span>
-                          </td>
-                          <td>
-                            <div className="d-flex gap-2">
-                              <button
-                                type="button"
-                                className="btn btn-sm btn-outline-secondary control-tactil"
-                                onClick={() => editarEjercicio(ejercicio)}
-                              >
-                                Editar
-                              </button>
-                              <button
-                                type="button"
-                                className="btn btn-sm btn-outline-secondary control-tactil"
-                                onClick={() => cambiarDisponibilidad('ejercicio', ejercicio)}
-                              >
-                                {ejercicio.disponible_localmente ? 'Dar de baja' : 'Habilitar'}
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-          </div>
-        </>
-      )}
-    </div>
+      <label className="campo">
+        <span className="campo__etiqueta">Medida casera</span>
+        <input
+          name="medida_casera"
+          type="text"
+          className="campo__control"
+          value={formulario.medida_casera}
+          onChange={alCambiar}
+        />
+      </label>
+
+      <label className="campo">
+        <span className="campo__etiqueta">Costo aproximado (Q)</span>
+        <input
+          name="costo_aproximado_quetzales"
+          type="number"
+          step="0.5"
+          min="0"
+          className="campo__control campo__control--numero"
+          value={formulario.costo_aproximado_quetzales}
+          onChange={alCambiar}
+        />
+      </label>
+
+      <div className="lista">
+        <label className="lista__fila">
+          <input
+            type="checkbox"
+            name="disponible_localmente"
+            checked={formulario.disponible_localmente}
+            onChange={alCambiar}
+          />
+          <span className="lista__etiqueta crece">Se consigue en el municipio</span>
+        </label>
+      </div>
+
+      <button type="submit" className="boton boton--principal" disabled={guardando}>
+        {guardando ? 'Guardando…' : editando ? 'Guardar cambios' : 'Agregar'}
+      </button>
+      <button type="button" className="boton boton--secundario" onClick={alCancelar}>
+        Cancelar
+      </button>
+    </form>
+  )
+}
+
+function FormularioEjercicio({ formulario, alCambiar, alEnviar, guardando, editando, alCancelar }) {
+  return (
+    <form onSubmit={alEnviar} noValidate className="pila-4">
+      <label className="campo">
+        <span className="campo__etiqueta">Nombre</span>
+        <input
+          name="nombre"
+          type="text"
+          className="campo__control"
+          value={formulario.nombre}
+          onChange={alCambiar}
+          required
+        />
+      </label>
+
+      <div className="campos-par">
+        <label className="campo">
+          <span className="campo__etiqueta">Grupo muscular</span>
+          <select
+            name="grupo_muscular"
+            className="campo__control"
+            value={formulario.grupo_muscular}
+            onChange={alCambiar}
+          >
+            {GRUPOS.map((opcion) => (
+              <option key={opcion.valor} value={opcion.valor}>
+                {opcion.etiqueta}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="campo">
+          <span className="campo__etiqueta">Nivel mínimo</span>
+          <select
+            name="nivel_minimo"
+            className="campo__control"
+            value={formulario.nivel_minimo}
+            onChange={alCambiar}
+          >
+            {NIVELES.map((opcion) => (
+              <option key={opcion.valor} value={opcion.valor}>
+                {opcion.etiqueta}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+
+      <label className="campo">
+        <span className="campo__etiqueta">Equipamiento</span>
+        <input
+          name="equipamiento"
+          type="text"
+          className="campo__control"
+          value={formulario.equipamiento}
+          onChange={alCambiar}
+          required
+        />
+      </label>
+
+      <label className="campo">
+        <span className="campo__etiqueta">Descripción</span>
+        <textarea
+          name="descripcion"
+          rows="3"
+          className="campo__control"
+          value={formulario.descripcion}
+          onChange={alCambiar}
+        />
+      </label>
+
+      <div className="lista">
+        <label className="lista__fila">
+          <input
+            type="checkbox"
+            name="es_compuesto"
+            checked={formulario.es_compuesto}
+            onChange={alCambiar}
+          />
+          <span className="pila-2 crece">
+            <span className="lista__etiqueta">Es un ejercicio compuesto</span>
+            <span className="lista__detalle">
+              Involucra varias articulaciones; se prescribe al inicio de la sesión.
+            </span>
+          </span>
+        </label>
+        <label className="lista__fila">
+          <input
+            type="checkbox"
+            name="disponible_localmente"
+            checked={formulario.disponible_localmente}
+            onChange={alCambiar}
+          />
+          <span className="lista__etiqueta crece">El gimnasio tiene el equipo</span>
+        </label>
+      </div>
+
+      <button type="submit" className="boton boton--principal" disabled={guardando}>
+        {guardando ? 'Guardando…' : editando ? 'Guardar cambios' : 'Agregar'}
+      </button>
+      <button type="button" className="boton boton--secundario" onClick={alCancelar}>
+        Cancelar
+      </button>
+    </form>
   )
 }
