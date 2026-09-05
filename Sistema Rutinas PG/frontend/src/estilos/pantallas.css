@@ -161,6 +161,14 @@
   outline: none;
 }
 
+/* Quien llega con el teclado sigue viendo dónde está: el borde de acento le
+   basta al ratón, pero no dice cuál de los dos campos de la fila tiene el
+   foco. */
+.series__campo:focus-visible {
+  outline: 2px solid var(--brand-accent);
+  outline-offset: 2px;
+}
+
 .series__campo--hecha {
   background: color-mix(in srgb, var(--u-text) 5%, transparent);
   border-color: transparent;
@@ -267,6 +275,12 @@
   outline: none;
 }
 
+.control-peso__cifra:focus-visible {
+  outline: 2px solid var(--brand-accent);
+  outline-offset: 4px;
+  border-radius: var(--radius-md);
+}
+
 .control-peso__mandos {
   align-items: center;
   display: flex;
@@ -304,11 +318,13 @@
   transform: scale(0.94);
 }
 
-/* Deslizador de adherencia. */
+/* Deslizador de adherencia. La pista sigue midiendo 7 px; lo que crece es el
+   alto del control, que es lo que el dedo tiene que encontrar. */
 .deslizador {
   appearance: none;
   background: transparent;
-  height: 28px;
+  height: var(--m-tap);
+  margin: 0;
   width: 100%;
 }
 
@@ -426,6 +442,17 @@
 }
 
 /* ── Menú del día y lista de compras ─────────────────────── */
+
+/* Los tiempos de comida que la pantalla pliega. */
+.tiempos-plegados {
+  display: flex;
+  flex-direction: column;
+  gap: var(--m-sp-4);
+}
+
+.tiempos-plegados--ocultos {
+  display: none;
+}
 
 .porcion {
   align-items: baseline;

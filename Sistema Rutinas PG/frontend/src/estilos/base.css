@@ -343,6 +343,12 @@
     page-break-inside: avoid;
   }
 
+  /* Lo que la pantalla pliega, en papel se despliega: quien imprime el menú se
+     lo lleva a la cocina y necesita el día completo. */
+  .tiempos-plegados--ocultos {
+    display: flex !important;
+  }
+
   .apoyo,
   .nota-al-pie,
   .rotulo {

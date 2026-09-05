@@ -12,10 +12,19 @@ export function entero(valor) {
   return Math.round(valor).toLocaleString('es-GT')
 }
 
-/** Quetzales con dos decimales, como los precios del mercado. */
+/**
+ * Quetzales con dos decimales, como los precios del mercado.
+ *
+ * Con separador de millares: el costo semanal de una lista de compras pasa de
+ * mil quetzales, y «Q1033.03» junto a «Q4,427» se leían como dos monedas
+ * distintas.
+ */
 export function quetzales(valor) {
   if (valor === null || valor === undefined) return '—'
-  return `Q${Number(valor).toFixed(2)}`
+  return `Q${Number(valor).toLocaleString('es-GT', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`
 }
 
 /**

@@ -372,7 +372,13 @@
   font: 400 14px/1 var(--ui-font-sans);
   min-height: 42px;
   min-width: 0;
+  /* El anillo lo dibuja el contenedor, para que rodee la lupa y el campo. */
   outline: none;
+}
+
+.buscador:has(.buscador__campo:focus-visible) {
+  outline: 2px solid var(--brand-accent);
+  outline-offset: 2px;
 }
 
 .buscador__campo::placeholder {
@@ -527,10 +533,9 @@
     border-radius: var(--radius-2xl);
     bottom: 24px;
     left: auto;
-    margin-right: 24px;
     max-width: 420px;
     padding-bottom: 20px;
-    right: 0;
+    right: 24px;
     transform: none;
   }
 }

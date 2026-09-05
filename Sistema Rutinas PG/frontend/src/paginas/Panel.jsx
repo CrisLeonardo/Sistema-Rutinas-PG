@@ -266,7 +266,7 @@ function TarjetaEntrenar({ sesion, rutina, entrenamiento }) {
         <span className="rotulo">Entrenar hoy</span>
         {racha > 0 && (
           <span className="chip chip--ok">
-            {racha} {racha === 1 ? 'semana' : 'semanas'} seguidas
+            {racha} {racha === 1 ? 'semana seguida' : 'semanas seguidas'}
           </span>
         )}
       </div>

@@ -90,7 +90,7 @@ export default function MenuDiario() {
   const plegados = menu.tiempos.filter((tiempo) => tiempo.energia_kcal < promedio)
   const energiaPlegada = plegados.reduce((suma, tiempo) => suma + tiempo.energia_kcal, 0)
 
-  const visibles = restoDesplegado ? menu.tiempos : abiertos
+
 
   return (
     <div className="pila">
@@ -126,7 +126,7 @@ export default function MenuDiario() {
         </div>
       </div>
 
-      {visibles.map((tiempo) => (
+      {abiertos.map((tiempo) => (
         <TiempoDeComida
           key={tiempo.nombre}
           tiempo={tiempo}
@@ -134,15 +134,34 @@ export default function MenuDiario() {
         />
       ))}
 
-      {plegados.length > 0 && !restoDesplegado && (
-        <button
-          type="button"
-          className="fila-punteada no-imprimir"
-          onClick={() => setRestoDesplegado(true)}
-        >
-          <span className="apoyo crece">{plegados.map((tiempo) => tiempo.nombre).join(' · ')}</span>
-          <span className="apoyo mono">{entero(energiaPlegada)} kcal</span>
-        </button>
+      {plegados.length > 0 && (
+        <>
+          {/* Los tiempos plegados se ocultan con estilo y no dejando de
+              dibujarlos: en papel tienen que salir los cinco, porque quien
+              imprime el menú se lo lleva a la cocina para el día entero. */}
+          <div className={`tiempos-plegados${restoDesplegado ? '' : ' tiempos-plegados--ocultos'}`}>
+            {plegados.map((tiempo) => (
+              <TiempoDeComida
+                key={tiempo.nombre}
+                tiempo={tiempo}
+                alVerCambios={() => setTiempoConSustitutos(tiempo)}
+              />
+            ))}
+          </div>
+
+          {!restoDesplegado && (
+            <button
+              type="button"
+              className="fila-punteada no-imprimir"
+              onClick={() => setRestoDesplegado(true)}
+            >
+              <span className="apoyo crece">
+                {plegados.map((tiempo) => tiempo.nombre).join(' · ')}
+              </span>
+              <span className="apoyo mono">{entero(energiaPlegada)} kcal</span>
+            </button>
+          )}
+        </>
       )}
 
       <div className="pila-2">

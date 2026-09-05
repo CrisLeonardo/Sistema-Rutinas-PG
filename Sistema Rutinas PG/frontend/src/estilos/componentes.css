@@ -148,6 +148,26 @@
   transform: scale(0.97);
 }
 
+/* El diseño pinta estos controles más pequeños que el mínimo táctil de 44 px
+   que exige el requerimiento 4.5.3. En vez de engordarlos —lo que rompería la
+   composición— se les extiende el área que responde al dedo con un
+   pseudoelemento, que no ocupa sitio en la maquetación. */
+.boton-texto {
+  position: relative;
+}
+
+.boton-texto::after {
+  content: '';
+  inset: -15px -10px;
+  position: absolute;
+}
+
+/* En la tabla de administración las filas están demasiado juntas: ahí el área
+   extendida se solaparía con la fila de al lado. */
+.tabla__acciones .boton-texto::after {
+  display: none;
+}
+
 .boton-texto--peligro {
   color: var(--c-danger);
 }
@@ -800,6 +820,16 @@ button.aviso:active {
   white-space: nowrap;
 }
 
+.pildora {
+  position: relative;
+}
+
+.pildora::after {
+  content: '';
+  inset: -6px 0;
+  position: absolute;
+}
+
 .pildora:active {
   transform: scale(0.97);
 }
@@ -1006,6 +1036,16 @@ button.aviso:active {
 }
 
 /* En «Más» el avatar es el encabezado de la pantalla y va en acento pleno. */
+a.avatar {
+  position: relative;
+}
+
+a.avatar::after {
+  content: '';
+  inset: -2px;
+  position: absolute;
+}
+
 .avatar--grande {
   background: var(--brand-accent);
   border: 0;
