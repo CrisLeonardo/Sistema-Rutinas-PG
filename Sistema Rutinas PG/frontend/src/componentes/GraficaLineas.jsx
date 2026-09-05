@@ -62,7 +62,7 @@ export default function GraficaLineas({ puntos, etiquetaValor = '', descripcion 
       : [puntos[0], puntos[Math.floor((puntos.length - 1) / 2)], ultimo]
 
   return (
-    <figure className="pila-3" style={{ margin: 0 }}>
+    <figure className="pila-3 figura">
       <svg
         viewBox={`0 0 ${ANCHO} ${ALTO}`}
         preserveAspectRatio="xMidYMid meet"

@@ -54,8 +54,10 @@
     padding-top: 24px;
   }
 
+  /* La administración no lleva la barra de destinos en escritorio: no hay
+     nada arriba a lo que dejarle sitio. */
   .contenido-principal--administracion {
-    padding-top: 64px;
+    padding-top: 0;
   }
 }
 
@@ -274,11 +276,44 @@
    señal. */
 
 @media print {
+  /* El tema oscuro sobre papel sería tinta clara sobre blanco: para imprimir,
+     los tokens se reescriben en su versión de papel una sola vez y todo lo
+     demás —que solo lee variables— sale bien sin tocar una regla más. */
+  :root,
+  :root[data-scheme='dark'],
+  :root[data-scheme='light'] {
+    --brand-bg: #ffffff;
+    --brand-bg-2: #ffffff;
+    --adm-card: #ffffff;
+    --adm-card-hover: #ffffff;
+    --adm-overlay: #ffffff;
+    --brand-text: #000000;
+    --u-text: #000000;
+    --u-text-2: #1a1a1a;
+    --u-text-3: #333333;
+    --u-text-4: #444444;
+    --u-hair: rgba(0, 0, 0, 0.25);
+    --u-hair-2: rgba(0, 0, 0, 0.4);
+    --brand-accent: #14532d;
+    --brand-accent-ink: #14532d;
+    --brand-on-accent: #ffffff;
+    --c-ok: #14532d;
+    --c-warn: #78350f;
+    --c-danger: #991b1b;
+    --c-info: #1e40af;
+    --adm-shadow-xs: none;
+    --adm-shadow-sm: none;
+    --adm-shadow-md: none;
+    --adm-shadow-lg: none;
+  }
+
   .no-imprimir,
   .barra-navegacion,
-  .barra-superior-escritorio,
+  .admin__lateral,
   .aviso-sesion,
   .hoja-inferior,
+  .pie-fijo,
+  .panel-lateral,
   .velo {
     display: none !important;
   }

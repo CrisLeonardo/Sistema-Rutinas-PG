@@ -901,6 +901,11 @@ button.aviso:active {
    SVG propio: el requerimiento 4.5.5 pide que el sistema funcione sin
    complementos adicionales. */
 
+/* Un <figure> trae márgenes propios del navegador que romperían la pila. */
+.figura {
+  margin: 0;
+}
+
 .grafica {
   display: block;
   height: auto;

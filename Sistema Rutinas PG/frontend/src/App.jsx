@@ -65,7 +65,7 @@ export default function App() {
   if (esAdministracion) clases.push('contenido-principal--administracion')
 
   return (
-    <div className="armazon">
+    <div className={`armazon${esAdministracion ? ' armazon--administracion' : ''}`}>
       <main className={clases.join(' ')}>
         <Routes>
           <Route

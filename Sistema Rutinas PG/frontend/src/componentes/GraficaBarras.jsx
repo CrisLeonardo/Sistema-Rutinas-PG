@@ -25,7 +25,7 @@ export default function GraficaBarras({ puntos, etiquetaValor = '', descripcion 
       : [puntos[0], puntos[Math.floor((puntos.length - 1) / 2)], puntos[puntos.length - 1]]
 
   return (
-    <figure className="pila-3" style={{ margin: 0 }}>
+    <figure className="pila-3 figura">
       <div className="barras" role="img" aria-label={descripcion}>
         {puntos.map((punto, indice) => (
           <div

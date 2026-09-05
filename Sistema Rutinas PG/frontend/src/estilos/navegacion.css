@@ -465,7 +465,8 @@
 }
 
 /* Por debajo de 900 px la barra lateral se oculta y la navegación vuelve a la
-   barra inferior. */
+   barra inferior; a partir de ahí la administración se navega con su lateral y
+   la barra de cinco destinos sobra. */
 @media (min-width: 900px) {
   .admin__lateral {
     display: flex;
@@ -473,6 +474,10 @@
 
   .admin__contenido {
     padding-bottom: 24px;
+  }
+
+  .armazon--administracion .barra-navegacion {
+    display: none;
   }
 }
 
