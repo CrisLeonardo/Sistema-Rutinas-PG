@@ -63,7 +63,7 @@ function IconoAgregar() {
   )
 }
 
-export default function AvisoInstalacion() {
+export default function AvisoInstalacion({ conBarra = false }) {
   const [eventoDiferido, setEventoDiferido] = useState(null)
   const [visible, setVisible] = useState(false)
   const [mostrarGuiaIOS, setMostrarGuiaIOS] = useState(false)
@@ -119,7 +119,11 @@ export default function AvisoInstalacion() {
   }
 
   return (
-    <div className="aviso-instalacion no-imprimir" role="dialog" aria-label="Instalar la aplicación">
+    <div
+      className={`aviso-instalacion no-imprimir${conBarra ? '' : ' aviso-instalacion--sin-barra'}`}
+      role="dialog"
+      aria-label="Instalar la aplicación"
+    >
       <div className="aviso-instalacion__cabecera">
         <img src="/pwa-192x192.png" alt="" className="aviso-instalacion__logo" />
         <p className="cuerpo">

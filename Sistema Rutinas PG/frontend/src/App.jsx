@@ -227,7 +227,7 @@ export default function App() {
 
       {autenticado && !modoEnfoque && <BarraNavegacion />}
       <AvisoDeSesion />
-      {!modoEnfoque && <AvisoInstalacion />}
+      {!modoEnfoque && <AvisoInstalacion conBarra={autenticado} />}
     </div>
   )
 }

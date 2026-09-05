@@ -559,6 +559,12 @@
   z-index: 1140;
 }
 
+/* Sin la barra inferior de por medio —acceso, registro— el aviso no necesita
+   reservarle el sitio: si lo hiciera, se vería estirado y de más. */
+.aviso-instalacion--sin-barra {
+  padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+}
+
 .aviso-instalacion__cabecera {
   align-items: center;
   display: flex;
