@@ -7,84 +7,62 @@
  * que la gráfica sea legible en una pantalla de 320 píxeles, como pide el
  * criterio de la historia HU-10.
  *
- * El SVG se escala con `viewBox` y `preserveAspectRatio`, de modo que ocupe el
- * ancho disponible sin desbordarlo en ningún tamaño de pantalla.
+ * El rediseño le quita todo lo que no es la línea: los rótulos del eje vertical
+ * desaparecen —la cifra que importa ya está arriba, en grande— y quedan tres
+ * filetes horizontales para dar referencia. Las fechas van debajo, en texto
+ * normal, y no dentro del SVG: así se leen al mismo tamaño que el resto de la
+ * pantalla y no encogen con ella.
  */
+
+import { fechaBreve } from '../utilidades/formatos.js'
 
 const ANCHO = 320
-const ALTO = 180
-const MARGEN = { arriba: 16, derecha: 12, abajo: 28, izquierda: 40 }
+const ALTO = 120
+const MARGEN = { arriba: 12, abajo: 12, lados: 8 }
 
-/**
- * Elige las marcas del eje vertical.
- *
- * Se descartan las que quedarían con la misma etiqueta después de redondear: en
- * un rango estrecho, dos marcas distintas pueden rotularse igual y el eje
- * parecería repetido.
- */
-function marcasVerticales(minimo, maximo, decimales, cantidad = 4) {
-  if (minimo === maximo) return [minimo]
-  const paso = (maximo - minimo) / cantidad
-  const todas = Array.from({ length: cantidad + 1 }, (_, indice) => minimo + paso * indice)
-
-  const vistas = new Set()
-  return todas.filter((valor) => {
-    const etiqueta = valor.toFixed(decimales)
-    if (vistas.has(etiqueta)) return false
-    vistas.add(etiqueta)
-    return true
-  })
-}
-
-function fechaCorta(valor) {
-  return new Date(valor).toLocaleDateString('es-GT', { day: 'numeric', month: 'short' })
-}
-
-export default function GraficaLineas({
-  puntos,
-  etiquetaValor = '',
-  color = 'var(--color-principal)',
-  decimales = 1,
-  descripcion,
-}) {
+export default function GraficaLineas({ puntos, etiquetaValor = '', descripcion }) {
   if (!puntos || puntos.length === 0) {
-    return <p className="texto-ayuda mb-0">Todavía no hay datos que graficar.</p>
+    return <p className="apoyo">Todavía no hay datos que graficar.</p>
   }
 
   const valores = puntos.map((punto) => punto.valor)
   const maximoDato = Math.max(...valores)
   const minimoDato = Math.min(...valores)
 
-  // Se añade un margen del diez por ciento arriba y abajo para que la línea no
-  // quede pegada a los bordes; si todos los valores son iguales se abre un
-  // rango artificial, porque una escala de altura cero no se puede dibujar.
+  // Se abre un margen arriba y abajo para que la línea no quede pegada al
+  // borde; si todos los valores son iguales se abre un rango artificial, porque
+  // una escala de altura cero no se puede dibujar.
   const rango = maximoDato - minimoDato
-  const holgura = rango === 0 ? Math.max(maximoDato * 0.05, 1) : rango * 0.1
+  const holgura = rango === 0 ? Math.max(maximoDato * 0.05, 1) : rango * 0.14
   const maximo = maximoDato + holgura
   const minimo = minimoDato - holgura
 
-  const anchoUtil = ANCHO - MARGEN.izquierda - MARGEN.derecha
+  const anchoUtil = ANCHO - MARGEN.lados * 2
   const altoUtil = ALTO - MARGEN.arriba - MARGEN.abajo
 
   const coordenadaX = (indice) =>
     puntos.length === 1
-      ? MARGEN.izquierda + anchoUtil / 2
-      : MARGEN.izquierda + (indice / (puntos.length - 1)) * anchoUtil
+      ? MARGEN.lados + anchoUtil / 2
+      : MARGEN.lados + (indice / (puntos.length - 1)) * anchoUtil
 
   const coordenadaY = (valor) =>
     MARGEN.arriba + altoUtil - ((valor - minimo) / (maximo - minimo)) * altoUtil
 
   const trazo = puntos
-    .map((punto, indice) => `${indice === 0 ? 'M' : 'L'} ${coordenadaX(indice)} ${coordenadaY(punto.valor)}`)
+    .map((punto, indice) => `${coordenadaX(indice)},${coordenadaY(punto.valor)}`)
     .join(' ')
 
-  // Solo se rotulan el primer y el último punto del eje horizontal: con más
-  // etiquetas el texto se encima en una pantalla de teléfono.
-  const indicesRotulados =
-    puntos.length === 1 ? [0] : [0, puntos.length - 1]
+  const ultimo = puntos[puntos.length - 1]
+
+  // Tres fechas bastan para situar la línea: la primera, la del medio y la
+  // última. Con una por punto el texto se encima en un teléfono.
+  const rotulos =
+    puntos.length <= 3
+      ? puntos
+      : [puntos[0], puntos[Math.floor((puntos.length - 1) / 2)], ultimo]
 
   return (
-    <figure className="mb-0">
+    <figure className="pila-3" style={{ margin: 0 }}>
       <svg
         viewBox={`0 0 ${ANCHO} ${ALTO}`}
         preserveAspectRatio="xMidYMid meet"
@@ -92,55 +70,42 @@ export default function GraficaLineas({
         role="img"
         aria-label={descripcion}
       >
-        {marcasVerticales(minimo, maximo, decimales).map((valor) => (
-          <g key={valor}>
+        {[0, 0.5, 1].map((proporcion) => {
+          const y = MARGEN.arriba + altoUtil * proporcion
+          return (
             <line
-              x1={MARGEN.izquierda}
-              y1={coordenadaY(valor)}
-              x2={ANCHO - MARGEN.derecha}
-              y2={coordenadaY(valor)}
-              className="grafica-cuadricula"
+              key={proporcion}
+              x1={0}
+              y1={y}
+              x2={ANCHO}
+              y2={y}
+              className="grafica__cuadricula"
+              vectorEffect="non-scaling-stroke"
             />
-            <text
-              x={MARGEN.izquierda - 6}
-              y={coordenadaY(valor) + 3}
-              textAnchor="end"
-              className="grafica-texto"
-            >
-              {valor.toFixed(decimales)}
-            </text>
-          </g>
-        ))}
+          )
+        })}
 
-        <path d={trazo} fill="none" stroke={color} strokeWidth="2.5" strokeLinejoin="round" />
+        <polyline points={trazo} className="grafica__linea" vectorEffect="non-scaling-stroke" />
 
-        {puntos.map((punto, indice) => (
-          <circle
-            key={punto.etiqueta + indice}
-            cx={coordenadaX(indice)}
-            cy={coordenadaY(punto.valor)}
-            r="4"
-            fill={color}
-          >
-            <title>
-              {fechaCorta(punto.etiqueta)}: {punto.valor} {etiquetaValor}
-            </title>
-          </circle>
-        ))}
-
-        {indicesRotulados.map((indice) => (
-          <text
-            key={`eje-${indice}`}
-            x={coordenadaX(indice)}
-            y={ALTO - 8}
-            textAnchor={indice === 0 && puntos.length > 1 ? 'start' : indice === 0 ? 'middle' : 'end'}
-            className="grafica-texto"
-          >
-            {fechaCorta(puntos[indice].etiqueta)}
-          </text>
-        ))}
+        <circle
+          cx={coordenadaX(puntos.length - 1)}
+          cy={coordenadaY(ultimo.valor)}
+          r="5"
+          className="grafica__punto"
+        >
+          <title>
+            {fechaBreve(ultimo.etiqueta)}: {ultimo.valor} {etiquetaValor}
+          </title>
+        </circle>
       </svg>
-      {descripcion && <figcaption className="texto-ayuda mt-2">{descripcion}</figcaption>}
+
+      <div className="grafica__ejes">
+        {rotulos.map((punto, indice) => (
+          <span key={`${punto.etiqueta}-${indice}`}>{fechaBreve(punto.etiqueta)}</span>
+        ))}
+      </div>
+
+      {descripcion && <figcaption className="solo-lectores">{descripcion}</figcaption>}
     </figure>
   )
 }

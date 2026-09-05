@@ -8,10 +8,17 @@
  *
  * Arranca solo al confirmar una serie y se puede saltar. Al terminar avisa con
  * una vibración corta, porque en un gimnasio con música un sonido no se escucha
- * y la pantalla suele estar apagada.
+ * y la pantalla suele estar apagada. La vibración se puede apagar desde «Más»:
+ * no todos los teléfonos la hacen igual de discreta.
+ *
+ * Ocupa el ancho de la pantalla en acento pleno: es lo único que hay que mirar
+ * mientras dura, y se queda pegado arriba para seguir a la vista al recorrer la
+ * sesión.
  */
 
 import { useEffect, useRef, useState } from 'react'
+
+import { usePreferencias } from '../contexto/ContextoPreferencias.jsx'
 
 function comoReloj(segundos) {
   const minutos = Math.floor(segundos / 60)
@@ -20,6 +27,7 @@ function comoReloj(segundos) {
 }
 
 export default function CronometroDescanso({ segundos, alTerminar, alSaltar }) {
+  const { vibracion } = usePreferencias()
   const [restante, setRestante] = useState(segundos)
   const avisado = useRef(false)
 
@@ -37,40 +45,36 @@ export default function CronometroDescanso({ segundos, alTerminar, alSaltar }) {
   useEffect(() => {
     if (restante > 0 || avisado.current) return
     avisado.current = true
-    // La vibración es opcional: el escritorio no la implementa y algunos
-    // navegadores la exigen tras una interacción del usuario.
-    try {
-      navigator.vibrate?.([200, 100, 200])
-    } catch {
-      // Sin vibración, el aviso es visual y es suficiente.
+    if (vibracion) {
+      // La vibración es opcional: el escritorio no la implementa y algunos
+      // navegadores la exigen tras una interacción del usuario.
+      try {
+        navigator.vibrate?.([200, 100, 200])
+      } catch {
+        // Sin vibración, el aviso es visual y es suficiente.
+      }
     }
     alTerminar?.()
-  }, [restante, alTerminar])
+  }, [restante, alTerminar, vibracion])
 
   const terminado = restante <= 0
-  const proporcion = segundos > 0 ? Math.max(restante, 0) / segundos : 0
 
   return (
-    <div className={`cronometro ${terminado ? 'cronometro-listo' : ''}`} role="timer" aria-live="off">
-      <div className="cronometro-cuerpo">
-        <div>
-          <div className="cronometro-rotulo">
-            {terminado ? 'Descanso terminado' : 'Descanse antes de la siguiente serie'}
-          </div>
-          <div className="cronometro-cifra">{comoReloj(Math.max(restante, 0))}</div>
-        </div>
-        <button
-          type="button"
-          className="btn btn-light control-tactil flex-shrink-0"
-          onClick={alSaltar}
-        >
-          {terminado ? 'Listo' : 'Saltar'}
-        </button>
+    <div
+      className={`cronometro${terminado ? ' cronometro--terminado' : ''}`}
+      role="timer"
+      aria-live="off"
+    >
+      <div className="pila-2">
+        <span className="cronometro__rotulo">
+          {terminado ? 'Descanso terminado' : 'Descanso'}
+        </span>
+        <span className="cronometro__cifra">{comoReloj(Math.max(restante, 0))}</span>
       </div>
-      <div className="cronometro-barra">
-        <div className="cronometro-avance" style={{ width: `${proporcion * 100}%` }} />
-      </div>
-      <span className="visually-hidden">
+      <button type="button" className="cronometro__boton" onClick={alSaltar}>
+        {terminado ? 'Listo' : 'Saltar'}
+      </button>
+      <span className="solo-lectores">
         {terminado ? 'El descanso terminó.' : `Quedan ${restante} segundos de descanso.`}
       </span>
     </div>

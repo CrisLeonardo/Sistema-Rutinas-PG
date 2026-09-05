@@ -154,6 +154,18 @@
   color: var(--u-text-3);
 }
 
+/* Botón que no parece un botón: la fila entera que se despliega. */
+.boton-plano {
+  background: none;
+  border: 0;
+  color: inherit;
+  cursor: pointer;
+  font-family: var(--ui-font-sans);
+  padding: 0;
+  text-align: left;
+  width: 100%;
+}
+
 /* ── Campos de formulario ─────────────────────────────────── */
 
 .campo {
@@ -383,6 +395,16 @@ button.lista__fila:active {
   font-size: 13px;
 }
 
+/* Día de la semana a la izquierda de la fila: ancho fijo para que los nombres
+   de las sesiones queden alineados entre sí. */
+.lista__dia {
+  color: var(--u-text-4);
+  flex-shrink: 0;
+  font: 500 12px/1 var(--ui-font-mono);
+  text-transform: uppercase;
+  width: 42px;
+}
+
 .lista__chevron {
   color: var(--u-text-4);
   font-size: 17px;
@@ -544,6 +566,13 @@ button.chip.chip--activo {
 .aviso--info {
   background: color-mix(in srgb, var(--c-info-solid) 12%, transparent);
   color: var(--c-info);
+}
+
+/* Aviso sin color: la nota que acompaña a un dato y no anuncia nada. */
+.aviso--neutro {
+  background: color-mix(in srgb, var(--u-text) 5%, transparent);
+  color: var(--u-text-2);
+  font-weight: 400;
 }
 
 /* ── Barra de progreso ───────────────────────────────────── */

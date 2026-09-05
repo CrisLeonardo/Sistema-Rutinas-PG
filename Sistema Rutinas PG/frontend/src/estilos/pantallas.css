@@ -205,6 +205,12 @@
   vertical-align: 1px;
 }
 
+/* El contenido deja sitio al pie fijo para que la última tarjeta no quede
+   debajo del botón de guardar. */
+.con-pie-fijo {
+  padding-bottom: 124px;
+}
+
 /* Pie fijo de la sesión: la acción de cierre no se busca, está siempre ahí. */
 .pie-fijo {
   backdrop-filter: blur(18px) saturate(140%);

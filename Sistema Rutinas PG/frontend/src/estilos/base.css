@@ -91,12 +91,23 @@
   justify-content: space-between;
 }
 
+/* Cuando los dos lados de la fila tienen alturas distintas, se alinean por
+   arriba: el nombre del ejercicio y su carga sugerida empiezan a la misma
+   altura aunque uno ocupe dos líneas. */
+.fila--arriba {
+  align-items: flex-start;
+}
+
+.a-la-derecha {
+  align-items: flex-end;
+  flex-shrink: 0;
+  text-align: right;
+}
+
 .crece { flex: 1; min-width: 0; }
 .empuja { margin-top: auto; }
-.centrado { text-align: center; }
-/* El día de la semana llega en minúscula desde toLocaleDateString. Se sube solo
-   la primera letra: `capitalize` pondría mayúscula también en «De». */
-.capitalizado::first-letter { text-transform: uppercase; }
+/* Las utilidades de color, alineación y monoespaciada viven en
+   utilidades.css, que se importa el último. */
 
 /* ── Escala tipográfica ───────────────────────────────────── */
 
@@ -138,12 +149,6 @@
   font: 600 11.5px/1 var(--ui-font-sans);
   letter-spacing: 0.12em;
   text-transform: uppercase;
-}
-
-/* Toda cifra va en monoespaciada tabular: así no baila al cambiar de valor. */
-.mono {
-  font-family: var(--ui-font-mono);
-  font-variant-numeric: tabular-nums;
 }
 
 .cifra-protagonista {
@@ -188,14 +193,11 @@
   margin: 0;
 }
 
-.tinta-ok { color: var(--c-ok); }
-.tinta-aviso { color: var(--c-warn); }
-.tinta-peligro { color: var(--c-danger); }
-.tinta-info { color: var(--c-info); }
-.tinta-acento { color: var(--brand-accent-ink); }
-.tinta-2 { color: var(--u-text-2); }
-.tinta-3 { color: var(--u-text-3); }
-.tinta-4 { color: var(--u-text-4); }
+/* Nombre del ejercicio dentro de su tarjeta de la sesión. */
+.titulo-ejercicio {
+  font: 500 19px/1.15 var(--ui-font-sans);
+  margin: 0;
+}
 
 /* Nota al pie: los avisos legales no son alertas, son letra pequeña. */
 .nota-al-pie {
@@ -231,6 +233,7 @@
 .esqueleto--linea { height: 14px; }
 .esqueleto--tarjeta { border-radius: var(--radius-xl); height: 190px; }
 .esqueleto--fila { height: 62px; }
+.esqueleto--grafica { height: 120px; }
 
 @keyframes latido {
   0%, 100% { opacity: 1; }

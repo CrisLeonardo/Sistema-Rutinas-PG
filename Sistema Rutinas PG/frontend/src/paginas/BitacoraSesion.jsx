@@ -2,25 +2,37 @@
  * Bitácora de una sesión de entrenamiento.
  *
  * Es la pantalla que se usa dentro del gimnasio, con el teléfono en la mano
- * entre serie y serie. De eso salen sus tres decisiones de diseño:
+ * entre serie y serie. De eso salen sus decisiones de diseño:
  *
- * 1. Todo viene precargado. La carga que el sistema sugiere y las repeticiones
+ * 1. Es modo enfoque: sin barra de navegación. Salir a otra pantalla en mitad
+ *    de una serie es un accidente, no una intención; para irse está «Salir».
+ * 2. Todo viene precargado. La carga que el sistema sugiere y las repeticiones
  *    objetivo ya están escritas: confirmar una serie es un toque, no cuatro
  *    campos. Corregir sigue siendo posible, pero no es lo normal.
- * 2. Lo escrito se guarda en el dispositivo conforme se avanza. Un teléfono que
+ * 3. Lo escrito se guarda en el dispositivo conforme se avanza. Un teléfono que
  *    se bloquea a mitad de la sesión no debe costarle al usuario el
  *    entrenamiento entero.
- * 3. El descanso se cronometra solo. Es parte de la dosis prescrita, y hasta
+ * 4. El descanso se cronometra solo. Es parte de la dosis prescrita, y hasta
  *    ahora la pantalla lo declaraba en texto y confiaba en que alguien lo
  *    midiera.
+ * 5. La acción de cierre vive en un pie fijo. Al final de una sesión de cinco
+ *    ejercicios, el botón de guardar quedaba a un desplazamiento de distancia.
+ *
+ * La pregunta del esfuerzo percibido y las notas se preguntan al terminar, en
+ * una hoja: antes ocupaban una tarjeta entera en medio de los ejercicios, entre
+ * el usuario y el botón de guardar.
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
 
+import AvisoDeError from '../componentes/AvisoDeError.jsx'
 import CronometroDescanso from '../componentes/CronometroDescanso.jsx'
+import Hoja from '../componentes/Hoja.jsx'
+import Icono from '../componentes/Icono.jsx'
 import { useSesion } from '../contexto/ContextoSesion.jsx'
 import { ErrorApi, servicioEntrenamiento } from '../servicios/api.js'
+import { entero, fechaLarga } from '../utilidades/formatos.js'
 
 const ESFUERZOS = [
   { valor: 3, etiqueta: 'Suave', detalle: 'Terminé con mucho de sobra' },
@@ -34,10 +46,7 @@ const clave = (sesionId) => `rutinas.bitacora.${sesionId}`
 /** Fecha en el formato en que se lee, no en el que viaja. */
 function fechaCorta(valor) {
   if (!valor) return ''
-  return new Date(`${valor}T12:00:00`).toLocaleDateString('es-GT', {
-    day: 'numeric',
-    month: 'long',
-  })
+  return fechaLarga(`${valor}T12:00:00`).replace(/ de \d{4}$/, '')
 }
 
 /**
@@ -57,7 +66,7 @@ function resumirSeries(series) {
 
   if (todasIguales) {
     const carga = primera.peso_kg !== null ? ` con ${primera.peso_kg} kg` : ''
-    return `${series.length}×${primera.repeticiones} repeticiones${carga}`
+    return `${series.length}×${primera.repeticiones}${carga}`
   }
 
   return series
@@ -101,12 +110,17 @@ function filasIniciales(sesion) {
   sesion.ejercicios.forEach((ejercicio) => {
     const sugerida = ejercicio.recomendacion.carga_sugerida_kg
     const objetivo = ejercicio.recomendacion.repeticiones_objetivo
-    filas[ejercicio.ejercicio_id] = Array.from({ length: ejercicio.series }, (_, indice) => {
+    filas[ejercicio.ejercicio_id] = Array.from({ length: ejercicio.series }, (unused, indice) => {
       const previa = ejercicio.ultima_vez[indice]
       return {
         numero_serie: indice + 1,
         repeticiones: String(objetivo ?? ejercicio.repeticiones_min),
-        peso_kg: sugerida !== null ? String(sugerida) : previa?.peso_kg != null ? String(previa.peso_kg) : '',
+        peso_kg:
+          sugerida !== null
+            ? String(sugerida)
+            : previa?.peso_kg != null
+              ? String(previa.peso_kg)
+              : '',
         hecha: false,
       }
     })
@@ -117,7 +131,6 @@ function filasIniciales(sesion) {
 export default function BitacoraSesion() {
   const { sesionId } = useParams()
   const { token } = useSesion()
-  const navegar = useNavigate()
 
   const [sesion, setSesion] = useState(null)
   const [filas, setFilas] = useState({})
@@ -128,6 +141,7 @@ export default function BitacoraSesion() {
   const [descanso, setDescanso] = useState(null)
   const [esfuerzo, setEsfuerzo] = useState(6)
   const [notas, setNotas] = useState('')
+  const [hojaAbierta, setHojaAbierta] = useState(null)
 
   const iniciada = useRef(Date.now())
 
@@ -205,20 +219,39 @@ export default function BitacoraSesion() {
     [filas],
   )
 
-  const guardar = async () => {
-    const series = Object.entries(filas).flatMap(([ejercicioId, delEjercicio]) =>
-      delEjercicio
-        .filter((fila) => fila.hecha)
-        .map((fila) => ({
-          ejercicio_id: Number(ejercicioId),
-          numero_serie: fila.numero_serie,
-          repeticiones: Number(fila.repeticiones) || 0,
-          peso_kg: fila.peso_kg === '' ? null : Number(fila.peso_kg),
-        })),
+  /** El ejercicio en curso es el primero al que le faltan series por confirmar. */
+  const enCurso = useMemo(() => {
+    if (!sesion) return 1
+    const pendiente = sesion.ejercicios.findIndex((ejercicio) =>
+      (filas[ejercicio.ejercicio_id] ?? []).some((fila) => !fila.hecha),
     )
+    return pendiente === -1 ? sesion.ejercicios.length : pendiente + 1
+  }, [sesion, filas])
+
+  const guardar = async () => {
+    // El orden en que los ejercicios aparecen aquí es el mismo en que el
+    // servidor devuelve sus progresiones: se guarda para poder ponerle nombre a
+    // cada una en la pantalla de resultado, que es dato que la respuesta no trae.
+    const ejerciciosEnOrden = []
+    const series = Object.entries(filas).flatMap(([ejercicioId, delEjercicio]) => {
+      const hechas = delEjercicio.filter((fila) => fila.hecha)
+      if (hechas.length > 0) {
+        const ejercicio = sesion.ejercicios.find(
+          (candidato) => String(candidato.ejercicio_id) === ejercicioId,
+        )
+        ejerciciosEnOrden.push(ejercicio?.nombre ?? '')
+      }
+      return hechas.map((fila) => ({
+        ejercicio_id: Number(ejercicioId),
+        numero_serie: fila.numero_serie,
+        repeticiones: Number(fila.repeticiones) || 0,
+        peso_kg: fila.peso_kg === '' ? null : Number(fila.peso_kg),
+      }))
+    })
 
     if (series.length === 0) {
       setError('Marque al menos una serie como hecha antes de guardar.')
+      setHojaAbierta(null)
       return
     }
 
@@ -236,7 +269,8 @@ export default function BitacoraSesion() {
         token,
       )
       borrarAvance(sesionId)
-      setResultado(respuesta)
+      setHojaAbierta(null)
+      setResultado({ ...respuesta, nombres: ejerciciosEnOrden })
       window.scrollTo({ top: 0, behavior: 'smooth' })
     } catch (fallo) {
       setError(fallo instanceof ErrorApi ? fallo.message : 'No se pudo guardar la sesión.')
@@ -246,70 +280,60 @@ export default function BitacoraSesion() {
   }
 
   if (cargando) {
-    return <p className="texto-ayuda">Preparando su sesión…</p>
-  }
-
-  if (error && !sesion) {
     return (
-      <div className="alert alert-danger" role="alert">
-        {error}
-        <div className="mt-2">
-          <Link to="/rutina" className="btn btn-sm btn-principal control-tactil">
-            Volver a mi rutina
-          </Link>
-        </div>
+      <div className="pila" aria-busy="true">
+        <div className="esqueleto esqueleto--titulo" />
+        <div className="esqueleto esqueleto--tarjeta" />
+        <span className="solo-lectores">Preparando su sesión…</span>
       </div>
     )
   }
 
-  if (resultado) {
-    return <SesionGuardada resultado={resultado} alVolver={() => navegar('/rutina')} />
+  if (error && !sesion) {
+    return (
+      <div className="pila">
+        <AvisoDeError mensaje={error} />
+        <Link to="/entrenar" className="boton boton--principal">
+          Volver a mi semana
+        </Link>
+      </div>
+    )
   }
 
+  if (resultado) return <SesionGuardada resultado={resultado} />
+
   return (
-    <div className="row g-4">
-      <div className="col-12">
-        <div className="d-flex justify-content-between align-items-start gap-3">
-          <div>
-            <h1 className="h3 mb-1">{sesion.nombre_grupo}</h1>
-            <p className="texto-ayuda mb-0">
-              {sesion.nombre_dia} · {sesion.ejercicios.length} ejercicios ·{' '}
-              {sesion.duracion_estimada_minutos} minutos aproximados
-            </p>
-          </div>
-          <Link
-            to="/rutina"
-            className="btn btn-outline-secondary btn-sm control-tactil flex-shrink-0"
-          >
-            Salir
-          </Link>
+    <div className="pila con-pie-fijo">
+      <div className="fila--entre">
+        <div className="pila-2">
+          <h1 className="titulo-tarjeta">{sesion.nombre_grupo}</h1>
+          <p className="apoyo mono">
+            Ejercicio {enCurso} de {sesion.ejercicios.length}
+          </p>
         </div>
+        <Link to="/entrenar" className="boton boton--secundario boton--compacto">
+          Salir
+        </Link>
       </div>
 
       {sesion.ya_registrada_hoy && (
-        <div className="col-12">
-          <div className="alert alert-warning mb-0" role="alert">
-            Ya registró esta sesión hoy. Si la guarda otra vez, el entrenamiento se contará
-            dos veces y su progresión quedará distorsionada.
-          </div>
-        </div>
+        <p className="aviso aviso--aviso" role="alert">
+          Ya registró esta sesión hoy. Si la guarda otra vez, el entrenamiento se contará dos
+          veces y su progresión quedará distorsionada.
+        </p>
       )}
 
-      <div className="col-12">
-        <div className="marcador-sesion">
-          <div>
-            <span className="marcador-cifra">
-              {completadas} <span className="texto-ayuda">de {totales}</span>
-            </span>
-            <span className="texto-ayuda d-block">series hechas</span>
-          </div>
-          <div className="text-end">
-            <span className="marcador-cifra">{Math.round(volumen).toLocaleString('es-GT')}</span>
-            <span className="texto-ayuda d-block">kg de volumen</span>
-          </div>
+      <div className="pila-2">
+        <div className="fila--entre">
+          <span className="cifra-pequena">
+            {completadas} <span className="tinta-4">de {totales} series</span>
+          </span>
+          <span className="cifra-pequena">
+            {entero(volumen)} <span className="tinta-4">kg</span>
+          </span>
         </div>
         <div
-          className="progress mt-2"
+          className="progreso"
           role="progressbar"
           aria-label="Avance de la sesión"
           aria-valuenow={completadas}
@@ -317,104 +341,96 @@ export default function BitacoraSesion() {
           aria-valuemax={totales}
         >
           <div
-            className="progress-bar barra-avance"
+            className="progreso__relleno"
             style={{ width: `${totales ? (completadas / totales) * 100 : 0}%` }}
           />
         </div>
       </div>
 
       {descanso && (
-        <div className="col-12">
-          <CronometroDescanso
-            key={descanso.sello}
-            segundos={descanso.segundos}
-            alSaltar={() => setDescanso(null)}
-          />
-        </div>
+        <CronometroDescanso
+          key={descanso.sello}
+          segundos={descanso.segundos}
+          alSaltar={() => setDescanso(null)}
+        />
       )}
 
       {sesion.ejercicios.map((ejercicio) => (
-        <div className="col-12" key={ejercicio.ejercicio_id}>
-          <BloqueEjercicio
-            ejercicio={ejercicio}
-            filas={filas[ejercicio.ejercicio_id] ?? []}
-            alCambiar={(indice, campo, valor) =>
-              actualizarFila(ejercicio.ejercicio_id, indice, campo, valor)
-            }
-            alMarcar={(indice) => alternarHecha(ejercicio, indice)}
-          />
-        </div>
+        <BloqueEjercicio
+          key={ejercicio.ejercicio_id}
+          ejercicio={ejercicio}
+          filas={filas[ejercicio.ejercicio_id] ?? []}
+          alCambiar={(indice, campo, valor) =>
+            actualizarFila(ejercicio.ejercicio_id, indice, campo, valor)
+          }
+          alMarcar={(indice) => alternarHecha(ejercicio, indice)}
+        />
       ))}
 
-      <div className="col-12">
-        <div className="card shadow-sm">
-          <div className="card-body">
-            <h2 className="h5 card-title">¿Cómo le resultó la sesión?</h2>
-            <p className="texto-ayuda">
-              Sirve para distinguir un estancamiento por cansancio de uno por falta de
-              estímulo: piden respuestas opuestas.
-            </p>
-            <div className="d-flex flex-column gap-2">
-              {ESFUERZOS.map((opcion) => (
-                <div className="form-check opcion-tactil" key={opcion.valor}>
-                  <input
-                    className="form-check-input"
-                    type="radio"
-                    name="esfuerzo"
-                    id={`esfuerzo-${opcion.valor}`}
-                    checked={esfuerzo === opcion.valor}
-                    onChange={() => setEsfuerzo(opcion.valor)}
-                  />
-                  <label className="form-check-label" htmlFor={`esfuerzo-${opcion.valor}`}>
-                    <span className="fw-semibold">{opcion.etiqueta}</span>
-                    <span className="texto-ayuda d-block">{opcion.detalle}</span>
-                  </label>
-                </div>
-              ))}
-            </div>
+      {error && <AvisoDeError mensaje={error} />}
 
-            <div className="mt-3">
-              <label className="form-label" htmlFor="notas">
-                Notas <span className="texto-ayuda">(opcional)</span>
-              </label>
-              <textarea
-                id="notas"
-                className="form-control"
-                rows={2}
-                maxLength={500}
-                value={notas}
-                onChange={(evento) => setNotas(evento.target.value)}
-                placeholder="Por ejemplo: la máquina de pierna estaba ocupada, hice sentadilla."
-              />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {error && (
-        <div className="col-12">
-          <div className="alert alert-danger mb-0" role="alert">
-            {error}
-          </div>
-        </div>
-      )}
-
-      <div className="col-12">
+      <div className="pie-fijo no-imprimir">
         <button
           type="button"
-          className="btn btn-principal btn-lg w-100 control-tactil"
-          onClick={guardar}
-          disabled={guardando || completadas === 0}
+          className="boton boton--principal"
+          onClick={() => setHojaAbierta('esfuerzo')}
+          disabled={completadas === 0}
         >
-          {guardando
-            ? 'Guardando…'
-            : `Terminar y guardar ${completadas} ${completadas === 1 ? 'serie' : 'series'}`}
+          Terminar y guardar {completadas} {completadas === 1 ? 'serie' : 'series'}
         </button>
-        <p className="texto-ayuda text-center mt-2 mb-0">
-          Lo que va marcando se guarda en este teléfono: si se bloquea la pantalla, no
-          pierde la sesión.
-        </p>
+        <p className="nota-al-pie centrado">Se guarda en este teléfono mientras entrena</p>
       </div>
+
+      {hojaAbierta === 'esfuerzo' && (
+        <Hoja
+          titulo="¿Cómo le resultó la sesión?"
+          descripcion="Sirve para distinguir un estancamiento por cansancio de uno por falta de estímulo: piden respuestas opuestas."
+          alCerrar={() => setHojaAbierta(null)}
+        >
+          <div className="lista">
+            {ESFUERZOS.map((opcion) => (
+              <button
+                key={opcion.valor}
+                type="button"
+                className={`lista__fila${
+                  esfuerzo === opcion.valor ? ' lista__fila--seleccionada' : ''
+                }`}
+                onClick={() => setEsfuerzo(opcion.valor)}
+                aria-pressed={esfuerzo === opcion.valor}
+              >
+                <span className="pila-2 crece">
+                  <span className="lista__titulo">{opcion.etiqueta}</span>
+                  <span className="lista__detalle">{opcion.detalle}</span>
+                </span>
+                {esfuerzo === opcion.valor && (
+                  <Icono nombre="tick-02" tamano={18} className="tinta-acento" />
+                )}
+              </button>
+            ))}
+          </div>
+
+          <label className="campo">
+            <span className="campo__etiqueta">Notas (opcional)</span>
+            <textarea
+              className="campo__control"
+              rows={2}
+              maxLength={500}
+              value={notas}
+              onChange={(evento) => setNotas(evento.target.value)}
+              placeholder="Por ejemplo: la máquina de pierna estaba ocupada, hice sentadilla."
+            />
+          </label>
+
+          <button
+            type="button"
+            className="boton boton--principal"
+            onClick={guardar}
+            disabled={guardando}
+          >
+            {guardando ? 'Guardando…' : 'Guardar la sesión'}
+          </button>
+        </Hoja>
+      )}
     </div>
   )
 }
@@ -424,71 +440,68 @@ function BloqueEjercicio({ ejercicio, filas, alCambiar, alMarcar }) {
   const primeraVez = recomendacion.decision === 'primera_vez'
 
   return (
-    <div className="card shadow-sm">
-      <div className="card-body">
-        <div className="d-flex justify-content-between align-items-start gap-3">
-          <div>
-            <h2 className="h5 card-title mb-1">
-              {ejercicio.orden}. {ejercicio.nombre}
-            </h2>
-            <p className="texto-ayuda mb-0">
-              {ejercicio.prescripcion} · {ejercicio.equipamiento}
-            </p>
-          </div>
-          {recomendacion.carga_sugerida_kg !== null && (
-            <div className="text-end flex-shrink-0">
-              <div className="carga-sugerida">{recomendacion.carga_sugerida_kg} kg</div>
-              <div className="texto-ayuda">sugerido</div>
-            </div>
-          )}
-        </div>
-
-        <div className={`nota-progresion ${recomendacion.hay_incremento ? 'nota-sube' : ''}`}>
-          {recomendacion.hay_incremento && (
-            <span className="insignia-sube">Sube la carga</span>
-          )}
-          {recomendacion.explicacion}
-        </div>
-
-        {ejercicio.ultima_vez.length > 0 && (
-          <p className="texto-ayuda mb-2">
-            El {fechaCorta(ejercicio.fecha_ultima_vez)} hizo{' '}
-            {resumirSeries(ejercicio.ultima_vez)}.
+    <div className="tarjeta tarjeta--densa">
+      <div className="fila--entre fila--arriba">
+        <div className="pila-2">
+          <h2 className="titulo-ejercicio">{ejercicio.nombre}</h2>
+          <p className="lista__detalle mono">
+            {ejercicio.equipamiento} · {ejercicio.prescripcion}
           </p>
-        )}
-
-        <div className="cuadricula-series">
-          <div className="encabezado-serie texto-ayuda">Serie</div>
-          <div className="encabezado-serie texto-ayuda">Repeticiones</div>
-          <div className="encabezado-serie texto-ayuda">Peso (kg)</div>
-          <div className="encabezado-serie texto-ayuda">Hecha</div>
-
-          {filas.map((fila, indice) => (
-            <Fragmento
-              key={fila.numero_serie}
-              fila={fila}
-              indice={indice}
-              ejercicio={ejercicio}
-              primeraVez={primeraVez}
-              alCambiar={alCambiar}
-              alMarcar={alMarcar}
-            />
-          ))}
         </div>
+        {recomendacion.carga_sugerida_kg !== null && (
+          <div className="pila-2 a-la-derecha">
+            <span className="cifra-media tinta-acento">{recomendacion.carga_sugerida_kg}</span>
+            <span className="cifras__rotulo">kg sugerido</span>
+          </div>
+        )}
       </div>
+
+      <p className={`aviso ${recomendacion.hay_incremento ? 'aviso--ok' : 'aviso--neutro'}`}>
+        {recomendacion.hay_incremento && <span className="insignia-sube">SUBE</span>}
+        {recomendacion.explicacion}
+      </p>
+
+      <div className="pila-2">
+        <div className="series series__encabezado">
+          <span />
+          <span>Reps</span>
+          <span>Peso</span>
+          <span />
+        </div>
+
+        {filas.map((fila, indice) => (
+          <FilaDeSerie
+            key={fila.numero_serie}
+            fila={fila}
+            indice={indice}
+            ejercicio={ejercicio}
+            primeraVez={primeraVez}
+            alCambiar={alCambiar}
+            alMarcar={alMarcar}
+          />
+        ))}
+      </div>
+
+      {ejercicio.ultima_vez.length > 0 && (
+        <p className="nota-al-pie">
+          El {fechaCorta(ejercicio.fecha_ultima_vez)}: {resumirSeries(ejercicio.ultima_vez)}
+        </p>
+      )}
     </div>
   )
 }
 
-function Fragmento({ fila, indice, ejercicio, primeraVez, alCambiar, alMarcar }) {
+function FilaDeSerie({ fila, indice, ejercicio, primeraVez, alCambiar, alMarcar }) {
   const identificador = `${ejercicio.ejercicio_id}-${fila.numero_serie}`
+
   return (
-    <>
-      <div className={`numero-serie ${fila.hecha ? 'serie-hecha' : ''}`}>
+    <div className="series">
+      <span className={`series__numero${fila.hecha ? ' series__numero--hecha' : ''}`}>
         {fila.numero_serie}
-      </div>
-      <div>
-        <label className="visually-hidden" htmlFor={`reps-${identificador}`}>
+      </span>
+
+      <span>
+        <label className="solo-lectores" htmlFor={`reps-${identificador}`}>
           Repeticiones de la serie {fila.numero_serie} de {ejercicio.nombre}
         </label>
         <input
@@ -497,13 +510,14 @@ function Fragmento({ fila, indice, ejercicio, primeraVez, alCambiar, alMarcar })
           inputMode="numeric"
           min="0"
           max="100"
-          className="form-control control-tactil"
+          className={`series__campo${fila.hecha ? ' series__campo--hecha' : ''}`}
           value={fila.repeticiones}
           onChange={(evento) => alCambiar(indice, 'repeticiones', evento.target.value)}
         />
-      </div>
-      <div>
-        <label className="visually-hidden" htmlFor={`peso-${identificador}`}>
+      </span>
+
+      <span>
+        <label className="solo-lectores" htmlFor={`peso-${identificador}`}>
           Peso de la serie {fila.numero_serie} de {ejercicio.nombre}
         </label>
         <input
@@ -513,85 +527,94 @@ function Fragmento({ fila, indice, ejercicio, primeraVez, alCambiar, alMarcar })
           min="0"
           max="500"
           step="0.5"
-          className="form-control control-tactil"
+          className={`series__campo${fila.hecha ? ' series__campo--hecha' : ''}`}
           value={fila.peso_kg}
           placeholder={primeraVez ? '—' : ''}
           onChange={(evento) => alCambiar(indice, 'peso_kg', evento.target.value)}
         />
-      </div>
-      <div>
-        <button
-          type="button"
-          className={`btn control-tactil w-100 ${fila.hecha ? 'btn-principal' : 'btn-outline-secondary'}`}
-          onClick={() => alMarcar(indice)}
-          aria-pressed={fila.hecha}
-          aria-label={`Marcar la serie ${fila.numero_serie} como hecha`}
-        >
-          {fila.hecha ? '✓' : '○'}
-        </button>
-      </div>
-    </>
+      </span>
+
+      <button
+        type="button"
+        className={`series__confirmar${fila.hecha ? ' series__confirmar--hecha' : ''}`}
+        onClick={() => alMarcar(indice)}
+        aria-pressed={fila.hecha}
+        aria-label={`Marcar la serie ${fila.numero_serie} como hecha`}
+      >
+        <Icono nombre="tick-02" tamano={19} />
+      </button>
+    </div>
   )
 }
 
-function SesionGuardada({ resultado, alVolver }) {
-  const suben = resultado.progresiones.filter((p) => p.hay_incremento)
+/**
+ * Resultado de la sesión.
+ *
+ * El servidor devuelve las progresiones en el mismo orden en que los ejercicios
+ * aparecieron en las series enviadas, pero sin el nombre de cada ejercicio. Se
+ * emparejan aquí con los nombres que se guardaron al enviar; si por lo que sea
+ * las dos listas no coinciden en largo, se muestra la progresión sin nombre en
+ * vez de arriesgar a ponerle el de otro ejercicio.
+ */
+function SesionGuardada({ resultado }) {
+  const suben = resultado.progresiones
+    .map((progresion, indice) => ({
+      ...progresion,
+      nombre:
+        resultado.nombres?.length === resultado.progresiones.length
+          ? resultado.nombres[indice]
+          : null,
+    }))
+    .filter((progresion) => progresion.hay_incremento)
 
   return (
-    <div className="row g-4">
-      <div className="col-12">
-        <div className="card shadow-sm borde-destacado">
-          <div className="card-body p-4">
-            <h1 className="h4 card-title">Sesión guardada</h1>
-            <p className="mb-3">{resultado.mensaje}</p>
-            <div className="d-flex gap-4 flex-wrap">
-              <div>
-                <div className="cifra-panel">{resultado.sesion.series_totales}</div>
-                <div className="texto-ayuda">series</div>
-              </div>
-              <div>
-                <div className="cifra-panel">{resultado.sesion.repeticiones_totales}</div>
-                <div className="texto-ayuda">repeticiones</div>
-              </div>
-              <div>
-                <div className="cifra-panel">
-                  {Math.round(resultado.sesion.volumen_kg).toLocaleString('es-GT')}
-                </div>
-                <div className="texto-ayuda">kg de volumen</div>
-              </div>
-            </div>
-          </div>
+    <div className="pila-5">
+      <div className="resultado">
+        <span className="resultado__circulo">
+          <Icono nombre="tick-02" tamano={24} />
+        </span>
+        <h1 className="titulo-grande">Sesión guardada</h1>
+        <p className="cuerpo">{resultado.mensaje}</p>
+      </div>
+
+      <div className="cifras">
+        <div className="cifras__columna">
+          <span className="cifras__valor">{resultado.sesion.series_totales}</span>
+          <span className="cifras__rotulo">series</span>
+        </div>
+        <div className="cifras__columna">
+          <span className="cifras__valor">{resultado.sesion.repeticiones_totales}</span>
+          <span className="cifras__rotulo">reps</span>
+        </div>
+        <div className="cifras__columna">
+          <span className="cifras__valor">{entero(resultado.sesion.volumen_kg)}</span>
+          <span className="cifras__rotulo">kg</span>
         </div>
       </div>
 
       {suben.length > 0 && (
-        <div className="col-12">
-          <div className="card shadow-sm">
-            <div className="card-body">
-              <h2 className="h5 card-title">Para la próxima vez</h2>
-              <ul className="list-group list-group-flush">
-                {suben.map((progresion) => (
-                  <li
-                    key={`${progresion.carga_previa_kg}-${progresion.carga_sugerida_kg}-${progresion.explicacion.slice(0, 20)}`}
-                    className="list-group-item px-0"
-                  >
-                    <div className="fw-semibold">
-                      {progresion.carga_previa_kg} kg → {progresion.carga_sugerida_kg} kg
-                    </div>
-                    <div className="texto-ayuda">{progresion.explicacion}</div>
-                  </li>
-                ))}
-              </ul>
-            </div>
+        <div className="tarjeta tarjeta--densa">
+          <span className="rotulo">Para la próxima vez</span>
+          <div className="lista lista--desnuda">
+            {suben.map((progresion, indice) => (
+              <div key={`${progresion.carga_sugerida_kg}-${indice}`} className="lista__fila">
+                <span className="cuerpo crece">
+                  {progresion.nombre ?? progresion.explicacion}
+                </span>
+                <span className="lista__valor tinta-ok">
+                  {progresion.carga_previa_kg} → {progresion.carga_sugerida_kg} kg
+                </span>
+              </div>
+            ))}
           </div>
         </div>
       )}
 
-      <div className="col-12 d-flex flex-column flex-sm-row gap-2">
-        <button type="button" className="btn btn-principal control-tactil" onClick={alVolver}>
-          Volver a mi rutina
-        </button>
-        <Link to="/bitacora" className="btn btn-outline-secondary control-tactil">
+      <div className="pila-3">
+        <Link to="/entrenar" className="boton boton--principal">
+          Volver a mi semana
+        </Link>
+        <Link to="/entrenar/bitacora" className="boton boton--secundario">
           Ver mi bitácora
         </Link>
       </div>

@@ -1,21 +1,52 @@
 /**
- * Pantalla de consulta de la rutina semanal (historia HU-07).
+ * «Mi semana»: la rutina de la semana (historia HU-07).
  *
- * Muestra, para cada sesión, el ejercicio, las series, las repeticiones y las
- * repeticiones en reserva. La sigla técnica no aparece sola: cada cifra lleva su
- * explicación, conforme al requerimiento no funcional 4.5.3.
+ * El acordeón desaparece. Abrir un día para leer sus ejercicios y volver a
+ * cerrarlo era un trabajo que la pantalla imponía sin necesidad: lo que se
+ * quiere saber al abrirla es qué toca hoy, y eso ahora está arriba, en una
+ * tarjeta con el botón que empieza la sesión. El resto de la semana es una
+ * lista de filas, y tocar una lleva a esa sesión.
+ *
+ * Las explicaciones largas —cómo progresa la carga, por qué faltan grupos
+ * musculares, el aviso de técnica y el reparto de series— pasan a la hoja
+ * «Cómo progresar»: siguen estando, pero no entre el usuario y su sesión.
  */
 
 import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 
+import AvisoDeError from '../componentes/AvisoDeError.jsx'
+import Hoja from '../componentes/Hoja.jsx'
+import Icono from '../componentes/Icono.jsx'
+import Pildoras from '../componentes/Pildoras.jsx'
+import { PESTANAS_ENTRENAR } from '../datos/secciones.js'
 import { useSesion } from '../contexto/ContextoSesion.jsx'
 import { ErrorApi, servicioPlan, servicioRutina } from '../servicios/api.js'
 
 const ETIQUETAS_NIVEL = {
-  principiante: 'Principiante',
-  intermedio: 'Intermedio',
-  avanzado: 'Avanzado',
+  principiante: 'principiante',
+  intermedio: 'intermedio',
+  avanzado: 'avanzado',
+}
+
+/** Abreviatura de cada día, con lunes como 1: es como el sistema los numera. */
+const DIAS = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']
+
+function diaDeHoy() {
+  const dia = new Date().getDay()
+  return dia === 0 ? 7 : dia
+}
+
+/** La sesión de hoy; si hoy toca descanso, la siguiente que venga. */
+function sesionAlFrente(sesiones, hoy) {
+  const deHoy = sesiones.find((sesion) => sesion.dia === hoy)
+  if (deHoy) return { sesion: deHoy, esHoy: true }
+
+  const siguiente =
+    sesiones.find((sesion) => sesion.dia > hoy) ??
+    // Si ya no queda ninguna esta semana, la próxima es la primera de la que viene.
+    sesiones[0]
+  return siguiente ? { sesion: siguiente, esHoy: false } : { sesion: null, esHoy: false }
 }
 
 export default function Rutina() {
@@ -26,19 +57,18 @@ export default function Rutina() {
   const [generando, setGenerando] = useState(false)
   const [error, setError] = useState(null)
   const [sinPerfil, setSinPerfil] = useState(false)
-  const [sesionAbierta, setSesionAbierta] = useState(null)
+  const [hojaAbierta, setHojaAbierta] = useState(null)
 
   const cargar = useCallback(async () => {
     setCargando(true)
     try {
-      const obtenida = await servicioRutina.consultarVigente(token)
-      setRutina(obtenida)
-      setSesionAbierta(obtenida.sesiones[0]?.id ?? null)
+      setRutina(await servicioRutina.consultarVigente(token))
       setError(null)
     } catch (fallo) {
       // No tener rutina todavía es el estado inicial, no un error.
       if (fallo instanceof ErrorApi && fallo.codigo === 404) {
         setRutina(null)
+        setError(null)
       } else {
         setError(fallo.message)
       }
@@ -58,6 +88,7 @@ export default function Rutina() {
     setSinPerfil(false)
     try {
       await servicioPlan.generar(token)
+      setHojaAbierta(null)
       await cargar()
     } catch (fallo) {
       if (fallo instanceof ErrorApi && fallo.codigo === 409) setSinPerfil(true)
@@ -68,228 +99,163 @@ export default function Rutina() {
   }
 
   if (cargando) {
-    return <p className="texto-ayuda">Cargando su rutina…</p>
+    return (
+      <div className="pila" aria-busy="true">
+        <div className="esqueleto esqueleto--titulo" />
+        <div className="esqueleto esqueleto--tarjeta" />
+        <div className="esqueleto esqueleto--fila" />
+        <div className="esqueleto esqueleto--fila" />
+        <span className="solo-lectores">Cargando su rutina…</span>
+      </div>
+    )
   }
 
+  if (error && !rutina) {
+    return (
+      <div className="pila">
+        <AvisoDeError mensaje={error} alReintentar={cargar} />
+        {sinPerfil && (
+          <Link to="/avance/medidas/editar" className="boton boton--principal">
+            Registrar mis medidas
+          </Link>
+        )}
+      </div>
+    )
+  }
+
+  if (!rutina) {
+    return (
+      <div className="vacio">
+        <h1 className="vacio__titulo">Todavía no tiene rutina</h1>
+        <p className="cuerpo">Su rutina se arma junto con su plan de alimentación.</p>
+        <button
+          type="button"
+          className="boton boton--principal"
+          onClick={generar}
+          disabled={generando}
+        >
+          {generando ? 'Armando…' : 'Generar mi rutina'}
+        </button>
+      </div>
+    )
+  }
+
+  const hoy = diaDeHoy()
+  const { sesion: alFrente, esHoy } = sesionAlFrente(rutina.sesiones, hoy)
+  const resto = rutina.sesiones.length
+  const nivel = ETIQUETAS_NIVEL[rutina.nivel_experiencia] ?? rutina.nivel_experiencia
+
+  // Los siete días, menos el que ya está en la tarjeta de arriba.
+  const semana = DIAS.map((abreviatura, indice) => {
+    const dia = indice + 1
+    return {
+      dia,
+      abreviatura,
+      sesion: rutina.sesiones.find((sesion) => sesion.dia === dia) ?? null,
+    }
+  }).filter((fila) => fila.sesion?.id !== alFrente?.id)
+
   return (
-    <div className="row g-4">
-      <div className="col-12 d-flex flex-column flex-sm-row justify-content-between gap-3">
-        <div>
-          <h1 className="h3 mb-1">Mi rutina de la semana</h1>
-          <p className="texto-ayuda mb-0">
-            Armada con los ejercicios disponibles en el gimnasio y repartida para que
-            cada músculo alcance a recuperarse entre sesiones.
-          </p>
+    <div className="pila">
+      <div className="pila-2">
+        <h1 className="titulo-pantalla">Mi semana</h1>
+        <p className="apoyo">
+          {resto} {resto === 1 ? 'sesión' : 'sesiones'} · nivel {nivel}
+        </p>
+      </div>
+
+      <Pildoras etiquetaGrupo="Secciones de entrenamiento" opciones={PESTANAS_ENTRENAR} />
+
+      {alFrente && (
+        <div className="tarjeta tarjeta--destacada tarjeta--densa">
+          <div className="fila--entre">
+            <span className="chip chip--acento">
+              {esHoy ? 'HOY' : 'SIGUIENTE'} · {DIAS[alFrente.dia - 1].toUpperCase()}
+            </span>
+            <span className="apoyo mono">{alFrente.duracion_estimada_minutos} min</span>
+          </div>
+          <div className="pila-2">
+            <p className="titulo-grupo">{alFrente.nombre_grupo}</p>
+            <p className="apoyo mono">
+              {alFrente.ejercicios.length} ejercicios · {alFrente.series_totales} series
+            </p>
+          </div>
+          <Link to={`/entrenar/${alFrente.id}`} className="boton boton--principal">
+            Entrenar esta sesión
+          </Link>
         </div>
-        <div className="d-flex gap-2 align-self-start flex-shrink-0 flex-wrap">
-          {rutina && (
-            <>
-              <Link
-                to="/bitacora"
-                className="btn btn-outline-secondary control-tactil no-imprimir"
-              >
-                Mi bitácora
-              </Link>
-              <button
-                type="button"
-                className="btn btn-outline-secondary control-tactil no-imprimir"
-                onClick={() => window.print()}
-              >
-                Imprimir
-              </button>
-            </>
+      )}
+
+      <div className="lista">
+        {semana.map((fila) => {
+          if (!fila.sesion) {
+            return (
+              <div key={fila.dia} className="lista__fila lista__fila--tenue">
+                <span className="lista__dia">{fila.abreviatura}</span>
+                <span className="apoyo crece">Descanso</span>
+              </div>
+            )
+          }
+          return (
+            <Link key={fila.dia} to={`/entrenar/${fila.sesion.id}`} className="lista__fila">
+              <span className="lista__dia">{fila.abreviatura}</span>
+              <span className="pila-2 crece">
+                <span className="lista__etiqueta">{fila.sesion.nombre_grupo}</span>
+                <span className="lista__detalle mono">
+                  {fila.sesion.ejercicios.length} ejercicios ·{' '}
+                  {fila.sesion.duracion_estimada_minutos} min
+                </span>
+              </span>
+              <Icono nombre="arrow-right-01" tamano={17} className="lista__chevron" />
+            </Link>
+          )
+        })}
+      </div>
+
+      {rutina.cumple_separacion_de_grupos && (
+        <p className="aviso aviso--ok">Ningún músculo se entrena dos días seguidos.</p>
+      )}
+
+      {error && <AvisoDeError mensaje={error} />}
+
+      <button type="button" className="boton-texto" onClick={() => setHojaAbierta('progresar')}>
+        Cómo progresar
+      </button>
+
+      {hojaAbierta === 'progresar' && (
+        <Hoja titulo="Cómo progresar" alCerrar={() => setHojaAbierta(null)}>
+          <p className="cuerpo">{rutina.explicacion_progresion}</p>
+
+          {rutina.explicacion_grupos_ausentes && (
+            <div className="pila-2">
+              <h3 className="rotulo">Por qué no aparecen todos los músculos</h3>
+              <p className="cuerpo">{rutina.explicacion_grupos_ausentes}</p>
+            </div>
           )}
+
+          <div className="pila-2">
+            <h3 className="rotulo">Series por músculo en la semana</h3>
+            <div className="lista">
+              {Object.entries(rutina.series_efectivas_por_grupo).map(([grupo, series]) => (
+                <div key={grupo} className="lista__fila">
+                  <span className="lista__etiqueta crece">{grupo}</span>
+                  <span className="lista__valor">{series}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <p className="nota-al-pie">{rutina.aviso_tecnica}</p>
+
           <button
             type="button"
-            className="btn btn-principal control-tactil no-imprimir"
+            className="boton boton--secundario"
             onClick={generar}
             disabled={generando}
           >
-            {generando ? 'Armando…' : rutina ? 'Volver a armar' : 'Generar mi rutina'}
+            {generando ? 'Armando…' : 'Volver a armar'}
           </button>
-        </div>
-      </div>
-
-      {error && (
-        <div className="col-12">
-          <div className="alert alert-warning" role="alert">
-            {error}
-            {sinPerfil && (
-              <div className="mt-2">
-                <Link to="/perfil-biometrico" className="btn btn-sm btn-principal control-tactil">
-                  Registrar mis medidas
-                </Link>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {!rutina && !error && (
-        <div className="col-12">
-          <div className="card shadow-sm">
-            <div className="card-body text-center p-4">
-              <h2 className="h5">Todavía no tiene rutina</h2>
-              <p className="texto-ayuda mb-0">
-                Su rutina se arma junto con su plan de alimentación.
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {rutina && (
-        <>
-          <div className="col-12">
-            <div className="card shadow-sm">
-              <div className="card-body">
-                <div className="row g-3 text-center text-sm-start">
-                  <div className="col-6 col-sm-3">
-                    <div className="texto-ayuda">Sesiones por semana</div>
-                    <div className="h4 mb-0">{rutina.dias_entrenamiento_semana}</div>
-                  </div>
-                  <div className="col-6 col-sm-3">
-                    <div className="texto-ayuda">Series en la semana</div>
-                    <div className="h4 mb-0">{rutina.series_totales}</div>
-                  </div>
-                  <div className="col-6 col-sm-3">
-                    <div className="texto-ayuda">Series por músculo</div>
-                    <div className="h4 mb-0">{Math.round(rutina.series_objetivo_por_grupo)}</div>
-                  </div>
-                  <div className="col-6 col-sm-3">
-                    <div className="texto-ayuda">Su nivel</div>
-                    <div className="h4 mb-0">
-                      {ETIQUETAS_NIVEL[rutina.nivel_experiencia] ?? rutina.nivel_experiencia}
-                    </div>
-                  </div>
-                </div>
-                {rutina.cumple_separacion_de_grupos && (
-                  <p className="mt-3 mb-0">
-                    <span className="badge bg-success">
-                      Ningún músculo se entrena dos días seguidos
-                    </span>
-                  </p>
-                )}
-              </div>
-            </div>
-          </div>
-
-          <div className="col-12">
-            <div className="accordion" id="acordeon-rutina">
-              {rutina.sesiones.map((sesion) => {
-                const abierta = sesionAbierta === sesion.id
-                return (
-                  <div className="accordion-item" key={sesion.id}>
-                    <h2 className="accordion-header">
-                      <button
-                        className={`accordion-button control-tactil ${abierta ? '' : 'collapsed'}`}
-                        type="button"
-                        aria-expanded={abierta}
-                        onClick={() => setSesionAbierta(abierta ? null : sesion.id)}
-                      >
-                        <span className="d-flex flex-column flex-sm-row gap-1 gap-sm-3 w-100 pe-3">
-                          <span className="fw-semibold">{sesion.nombre_dia}</span>
-                          <span className="texto-ayuda">
-                            {sesion.nombre_grupo} · {sesion.ejercicios.length} ejercicios ·{' '}
-                            {sesion.duracion_estimada_minutos} min
-                          </span>
-                        </span>
-                      </button>
-                    </h2>
-                    <div className={`accordion-collapse collapse ${abierta ? 'show' : ''}`}>
-                      <div className="accordion-body p-0">
-                        <div className="p-3 border-bottom no-imprimir">
-                          <Link
-                            to={`/entrenar/${sesion.id}`}
-                            className="btn btn-principal control-tactil w-100"
-                          >
-                            Entrenar esta sesión
-                          </Link>
-                          <p className="texto-ayuda text-center mt-2 mb-0">
-                            Anote sus cargas y el sistema le dirá cuándo subir de peso.
-                          </p>
-                        </div>
-                        <ul className="list-group list-group-flush">
-                          {sesion.ejercicios.map((ejercicio) => (
-                            <li key={ejercicio.ejercicio_id} className="list-group-item">
-                              <div className="d-flex justify-content-between align-items-start gap-3">
-                                <div>
-                                  <div className="fw-semibold">
-                                    {ejercicio.orden}. {ejercicio.nombre}
-                                  </div>
-                                  <div className="texto-ayuda">{ejercicio.equipamiento}</div>
-                                </div>
-                                <div className="text-end flex-shrink-0">
-                                  <div className="fw-semibold">{ejercicio.series} series</div>
-                                  <div className="texto-ayuda">
-                                    {ejercicio.repeticiones_min}–{ejercicio.repeticiones_max} reps
-                                  </div>
-                                </div>
-                              </div>
-                              {ejercicio.descripcion && (
-                                <div className="texto-ayuda mt-2">{ejercicio.descripcion}</div>
-                              )}
-                              <div className="texto-ayuda mt-1">
-                                {ejercicio.explicacion_reserva} Descanse{' '}
-                                {Math.round(ejercicio.descanso_segundos / 60 * 10) / 10} minutos
-                                entre series.
-                              </div>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          </div>
-
-          <div className="col-12 col-lg-6">
-            <div className="card shadow-sm h-100">
-              <div className="card-body">
-                <h2 className="h5 card-title">Series por músculo en la semana</h2>
-                <p className="texto-ayuda">
-                  Es el trabajo que recibe cada grupo muscular sumando todas las sesiones.
-                </p>
-                <ul className="list-group list-group-flush">
-                  {Object.entries(rutina.series_efectivas_por_grupo).map(([grupo, series]) => (
-                    <li
-                      key={grupo}
-                      className="list-group-item d-flex justify-content-between px-0"
-                    >
-                      <span>{grupo}</span>
-                      <span className="fw-semibold">{series} series</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-          </div>
-
-          <div className="col-12 col-lg-6">
-            <div className="card shadow-sm h-100">
-              <div className="card-body">
-                <h2 className="h5 card-title">Cómo progresar</h2>
-                <p>{rutina.explicacion_progresion}</p>
-                {rutina.explicacion_grupos_ausentes && (
-                  <>
-                    <h2 className="h5 card-title mt-4">
-                      Por qué no aparecen todos los músculos
-                    </h2>
-                    <p className="mb-0">{rutina.explicacion_grupos_ausentes}</p>
-                  </>
-                )}
-              </div>
-            </div>
-          </div>
-
-          <div className="col-12">
-            <div className="alert alert-secondary mb-0" role="note">
-              <strong>Importante.</strong> {rutina.aviso_tecnica}
-            </div>
-          </div>
-        </>
+        </Hoja>
       )}
     </div>
   )

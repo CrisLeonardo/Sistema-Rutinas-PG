@@ -1,0 +1,30 @@
+/* ============================================================
+   Utilidades.
+
+   Se importan las últimas a propósito: son excepciones puntuales
+   —el color de una cifra que baja, una línea centrada— y tienen
+   que poder ganarle al color que ya trae el componente sin
+   recurrir a !important ni a selectores más específicos.
+   ============================================================ */
+
+.tinta-ok { color: var(--c-ok); }
+.tinta-aviso { color: var(--c-warn); }
+.tinta-peligro { color: var(--c-danger); }
+.tinta-info { color: var(--c-info); }
+.tinta-acento { color: var(--brand-accent-ink); }
+.tinta-1 { color: var(--u-text); }
+.tinta-2 { color: var(--u-text-2); }
+.tinta-3 { color: var(--u-text-3); }
+.tinta-4 { color: var(--u-text-4); }
+
+.centrado { text-align: center; }
+
+/* El día de la semana llega en minúscula desde toLocaleDateString. Se sube solo
+   la primera letra: `capitalize` pondría mayúscula también en «De». */
+.capitalizado::first-letter { text-transform: uppercase; }
+
+/* Toda cifra va en monoespaciada tabular: así no baila al cambiar de valor. */
+.mono {
+  font-family: var(--ui-font-mono);
+  font-variant-numeric: tabular-nums;
+}
