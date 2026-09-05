@@ -11,6 +11,10 @@
  * El aviso aparece dos minutos antes y ofrece continuar sin volver a escribir
  * las credenciales. No sustituye el cierre: si el usuario no responde, la sesión
  * caduca igual.
+ *
+ * Aparece como hoja sobre la barra de navegación y no como banda superior: en
+ * un teléfono, el aviso que hay que responder debe caer donde está el pulgar,
+ * no en el extremo opuesto de la pantalla.
  */
 
 import { useState } from 'react'
@@ -34,20 +38,18 @@ export default function AvisoDeSesion() {
 
   return (
     <div className="aviso-sesion no-imprimir" role="alertdialog" aria-live="assertive">
-      <div className="container d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-2 py-2">
-        <span>
-          <strong>Su sesión está por cerrarse</strong> por inactividad. Si sigue aquí,
-          continúe para no perder lo que haya escrito.
-        </span>
-        <button
-          type="button"
-          className="btn btn-light btn-sm control-tactil flex-shrink-0"
-          onClick={continuar}
-          disabled={continuando}
-        >
-          {continuando ? 'Continuando…' : 'Seguir conectado'}
-        </button>
-      </div>
+      <p className="cuerpo">
+        <strong>Su sesión está por cerrarse</strong> por inactividad. Si sigue aquí, continúe
+        para no perder lo que haya escrito.
+      </p>
+      <button
+        type="button"
+        className="boton boton--principal"
+        onClick={continuar}
+        disabled={continuando}
+      >
+        {continuando ? 'Continuando…' : 'Seguir conectado'}
+      </button>
     </div>
   )
 }

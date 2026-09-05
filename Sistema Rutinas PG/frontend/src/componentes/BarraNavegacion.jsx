@@ -1,169 +1,82 @@
 /**
  * Navegación de la aplicación.
  *
- * Se resuelve en dos piezas porque los dos tamaños de pantalla se usan de forma
- * distinta. En computadora, la barra superior de siempre. En teléfono, una barra
- * inferior fija con los cinco destinos que se visitan a diario: el estudio del
- * Capítulo I encontró que el 72.2 % de la población accede desde un teléfono, y
- * en un teléfono el borde inferior es lo que el pulgar alcanza sin recolocar la
- * mano. El menú desplegable se conserva para el resto de los destinos.
+ * Una sola barra de cinco destinos, fija en el borde inferior en todos los
+ * tamaños de pantalla. El estudio del Capítulo I encontró que el 72.2 % de la
+ * población accede desde un teléfono, y en un teléfono el borde inferior es lo
+ * que el pulgar alcanza sin recolocar la mano. Desde 1025 px la misma barra se
+ * pasa arriba —eso lo resuelve la hoja de estilos— porque en una pantalla
+ * grande el borde inferior ya no es el sitio donde se mira.
  *
- * La sección para registrar el avance no aparecía en ninguna parte de la
- * navegación: la ruta existía y solo se alcanzaba escribiendo la dirección.
+ * Las dieciséis rutas sueltas de antes se agrupan en cinco secciones: lo que
+ * antes obligaba a recordar una dirección ahora está a un toque. El destino
+ * central, «Hoy», sobresale de la barra: es la pantalla que se abre a diario.
+ *
+ * La barra desaparece durante la sesión de entrenamiento, que es modo enfoque,
+ * y mientras no hay sesión iniciada.
  */
 
-import { Link, NavLink, useNavigate } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 
-import { useSesion } from '../contexto/ContextoSesion.jsx'
-import {
-  IconoAvance,
-  IconoComer,
-  IconoEntrenar,
-  IconoEvolucion,
-  IconoInicio,
-} from './Iconos.jsx'
+import Icono from './Icono.jsx'
+import { IconoAvance, IconoComer, IconoEntrenar, IconoInicio } from './Iconos.jsx'
 
-/** Destinos del uso diario. Son los que ocupan la barra inferior en teléfono. */
-const DESTINOS_PRINCIPALES = [
-  { ruta: '/panel', etiqueta: 'Inicio', Icono: IconoInicio },
-  { ruta: '/menu', etiqueta: 'Comer', Icono: IconoComer },
-  { ruta: '/rutina', etiqueta: 'Entrenar', Icono: IconoEntrenar },
-  { ruta: '/progreso', etiqueta: 'Avance', Icono: IconoAvance },
-  { ruta: '/reportes', etiqueta: 'Evolución', Icono: IconoEvolucion },
+/** Los cinco destinos, en el orden en que se dibujan. */
+const DESTINOS = [
+  { ruta: '/comer', etiqueta: 'Comer', Icono: IconoComer, prefijos: ['/comer'] },
+  { ruta: '/entrenar', etiqueta: 'Entrenar', Icono: IconoEntrenar, prefijos: ['/entrenar'] },
+  { ruta: '/panel', etiqueta: 'HOY', Icono: IconoInicio, prefijos: ['/panel'], centro: true },
+  { ruta: '/avance', etiqueta: 'Avance', Icono: IconoAvance, prefijos: ['/avance'] },
+  { ruta: '/mas', etiqueta: 'Más', hugeicon: 'more-horizontal', prefijos: ['/mas', '/admin'] },
 ]
 
-/** Destinos de consulta ocasional. Viven en el menú desplegable. */
-const DESTINOS_SECUNDARIOS = [
-  { ruta: '/bitacora', etiqueta: 'Mi bitácora' },
-  { ruta: '/plan-nutricional', etiqueta: 'Mi plan' },
-  { ruta: '/compras', etiqueta: 'Lista de compras' },
-  { ruta: '/historial-medidas', etiqueta: 'Mis medidas' },
-  { ruta: '/perfil-biometrico', etiqueta: 'Actualizar medidas' },
-  { ruta: '/cuenta', etiqueta: 'Mi cuenta' },
-]
-
-const DESTINOS_ADMINISTRACION = [
-  { ruta: '/catalogos', etiqueta: 'Catálogos' },
-  { ruta: '/cuentas', etiqueta: 'Cuentas' },
-]
+/** Una ruta pertenece a la sección si es la sección o cuelga de ella. */
+function perteneceA(ruta, prefijos) {
+  return prefijos.some((prefijo) => ruta === prefijo || ruta.startsWith(`${prefijo}/`))
+}
 
 export default function BarraNavegacion() {
-  const { autenticado, esAdministrador, usuario, cerrarSesion } = useSesion()
-  const navegar = useNavigate()
-
-  const salir = () => {
-    cerrarSesion()
-    navegar('/acceso', { replace: true })
-  }
+  const { pathname } = useLocation()
 
   return (
-    <>
-      <nav className="navbar navbar-expand-lg navbar-dark barra-superior no-imprimir">
-        <div className="container">
-          <Link className="navbar-brand marca-sistema" to="/">
-            Planes y Rutinas
-          </Link>
+    <nav className="barra-navegacion no-imprimir" aria-label="Navegación principal">
+      {DESTINOS.map((destino) => {
+        const activo = perteneceA(pathname, destino.prefijos)
 
-          {autenticado && (
-            <>
-              <button
-                className="navbar-toggler control-tactil"
-                type="button"
-                data-bs-toggle="collapse"
-                data-bs-target="#menu-principal"
-                aria-controls="menu-principal"
-                aria-expanded="false"
-                aria-label="Mostrar u ocultar el menú"
-              >
-                <span className="navbar-toggler-icon" />
-              </button>
-
-              <div className="collapse navbar-collapse" id="menu-principal">
-                <ul className="navbar-nav me-auto">
-                  {/* En teléfono estos cinco ya están en la barra inferior, de
-                      modo que el desplegable solo repite lo indispensable. */}
-                  {DESTINOS_PRINCIPALES.map((destino) => (
-                    <li className="nav-item d-none d-lg-block" key={destino.ruta}>
-                      <NavLink className="nav-link" to={destino.ruta}>
-                        {destino.etiqueta}
-                      </NavLink>
-                    </li>
-                  ))}
-                  {DESTINOS_SECUNDARIOS.map((destino) => (
-                    <li className="nav-item d-lg-none" key={destino.ruta}>
-                      <NavLink className="nav-link" to={destino.ruta}>
-                        {destino.etiqueta}
-                      </NavLink>
-                    </li>
-                  ))}
-
-                  <li className="nav-item dropdown d-none d-lg-block">
-                    <button
-                      className="nav-link dropdown-toggle btn btn-link"
-                      type="button"
-                      data-bs-toggle="dropdown"
-                      aria-expanded="false"
-                    >
-                      Más
-                    </button>
-                    <ul className="dropdown-menu">
-                      {DESTINOS_SECUNDARIOS.map((destino) => (
-                        <li key={destino.ruta}>
-                          <NavLink className="dropdown-item" to={destino.ruta}>
-                            {destino.etiqueta}
-                          </NavLink>
-                        </li>
-                      ))}
-                    </ul>
-                  </li>
-
-                  {esAdministrador &&
-                    DESTINOS_ADMINISTRACION.map((destino) => (
-                      <li className="nav-item" key={destino.ruta}>
-                        <NavLink className="nav-link" to={destino.ruta}>
-                          {destino.etiqueta}
-                        </NavLink>
-                      </li>
-                    ))}
-                </ul>
-
-                <div className="d-flex flex-column flex-lg-row align-items-lg-center gap-2 py-2 py-lg-0">
-                  <span className="text-white-50 small text-truncate">
-                    {usuario?.correo}
-                  </span>
-                  <button
-                    type="button"
-                    className="btn btn-outline-light btn-sm control-tactil"
-                    onClick={salir}
-                  >
-                    Cerrar sesión
-                  </button>
-                </div>
-              </div>
-            </>
-          )}
-        </div>
-      </nav>
-
-      {autenticado && (
-        <nav
-          className="barra-inferior d-lg-none no-imprimir"
-          aria-label="Navegación principal"
-        >
-          {DESTINOS_PRINCIPALES.map((destino) => (
-            <NavLink
+        if (destino.centro) {
+          return (
+            <Link
               key={destino.ruta}
               to={destino.ruta}
-              className={({ isActive }) =>
-                `destino-inferior ${isActive ? 'destino-activo' : ''}`
-              }
+              className="barra-navegacion__destino barra-navegacion__destino--centro"
+              aria-current={activo ? 'page' : undefined}
             >
-              <destino.Icono />
-              <span className="etiqueta-destino">{destino.etiqueta}</span>
-            </NavLink>
-          ))}
-        </nav>
-      )}
-    </>
+              <span className="barra-navegacion__circulo">
+                <destino.Icono tamano={20} grosor={2} />
+                <span className="barra-navegacion__circulo-texto">{destino.etiqueta}</span>
+              </span>
+            </Link>
+          )
+        }
+
+        return (
+          <Link
+            key={destino.ruta}
+            to={destino.ruta}
+            className={`barra-navegacion__destino${
+              activo ? ' barra-navegacion__destino--activo' : ''
+            }`}
+            aria-current={activo ? 'page' : undefined}
+          >
+            {destino.hugeicon ? (
+              <Icono nombre={destino.hugeicon} tamano={22} />
+            ) : (
+              <destino.Icono tamano={22} grosor={activo ? 2 : 1.8} />
+            )}
+            <span className="barra-navegacion__etiqueta">{destino.etiqueta}</span>
+          </Link>
+        )
+      })}
+    </nav>
   )
 }

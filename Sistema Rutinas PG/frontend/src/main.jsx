@@ -7,14 +7,17 @@ import { BrowserRouter } from 'react-router-dom'
 import './estilos/index.css'
 
 import App from './App.jsx'
+import { ProveedorPreferencias } from './contexto/ContextoPreferencias.jsx'
 import { ProveedorSesion } from './contexto/ContextoSesion.jsx'
 
 createRoot(document.getElementById('raiz')).render(
   <StrictMode>
     <BrowserRouter>
-      <ProveedorSesion>
-        <App />
-      </ProveedorSesion>
+      <ProveedorPreferencias>
+        <ProveedorSesion>
+          <App />
+        </ProveedorSesion>
+      </ProveedorPreferencias>
     </BrowserRouter>
   </StrictMode>,
 )

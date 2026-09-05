@@ -1,4 +1,4 @@
-import { Navigate, Route, Routes } from 'react-router-dom'
+import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 
 import BarraNavegacion from './componentes/BarraNavegacion.jsx'
 import RutaProtegida from './componentes/RutaProtegida.jsx'
@@ -9,6 +9,7 @@ import AdministracionCatalogos from './paginas/AdministracionCatalogos.jsx'
 import AdministracionCuentas from './paginas/AdministracionCuentas.jsx'
 import AjustesCuenta from './paginas/AjustesCuenta.jsx'
 import BitacoraSesion from './paginas/BitacoraSesion.jsx'
+import CambioContrasena from './paginas/CambioContrasena.jsx'
 import HistorialEntrenamiento from './paginas/HistorialEntrenamiento.jsx'
 import HistorialMedidas from './paginas/HistorialMedidas.jsx'
 import ListaDeCompras from './paginas/ListaDeCompras.jsx'
@@ -21,14 +22,51 @@ import RegistroProgreso from './paginas/RegistroProgreso.jsx'
 import Reportes from './paginas/Reportes.jsx'
 import Rutina from './paginas/Rutina.jsx'
 
+/**
+ * Direcciones de la versión anterior. Se conservan como redirecciones porque
+ * hay usuarios que las tienen guardadas en el navegador y compartidas por
+ * mensaje: una dirección que deja de existir es un error que el usuario no
+ * puede corregir.
+ */
+const RUTAS_ANTERIORES = [
+  ['/menu', '/comer'],
+  ['/plan-nutricional', '/comer/plan'],
+  ['/compras', '/comer/compras'],
+  ['/rutina', '/entrenar'],
+  ['/bitacora', '/entrenar/bitacora'],
+  ['/progreso', '/avance'],
+  ['/reportes', '/avance/evolucion'],
+  ['/historial-medidas', '/avance/medidas'],
+  ['/perfil-biometrico', '/avance/medidas/editar'],
+  ['/cuenta', '/mas'],
+  ['/catalogos', '/admin/catalogos'],
+  ['/cuentas', '/admin/cuentas'],
+]
+
+/**
+ * La sesión de entrenamiento en curso es modo enfoque: sin barra de navegación,
+ * porque salir a otra pantalla en mitad de una serie es un accidente, no una
+ * intención. Las dos pestañas de la sección sí la conservan.
+ */
+function esSesionEnCurso(ruta) {
+  return /^\/entrenar\/(?!bitacora$|marcas$)[^/]+$/.test(ruta)
+}
+
 export default function App() {
   const { autenticado } = useSesion()
+  const { pathname } = useLocation()
+
+  const modoEnfoque = esSesionEnCurso(pathname)
+  const esAdministracion = pathname.startsWith('/admin')
+  const sinBarra = modoEnfoque || !autenticado
+
+  const clases = ['contenido-principal']
+  if (sinBarra) clases.push('contenido-principal--enfoque')
+  if (esAdministracion) clases.push('contenido-principal--administracion')
 
   return (
-    <>
-      <BarraNavegacion />
-      <AvisoDeSesion />
-      <main className="container py-4 contenido-principal">
+    <div className="armazon">
+      <main className={clases.join(' ')}>
         <Routes>
           <Route
             path="/acceso"
@@ -38,6 +76,8 @@ export default function App() {
             path="/registro"
             element={autenticado ? <Navigate to="/panel" replace /> : <Registro />}
           />
+
+          {/* Hoy */}
           <Route
             path="/panel"
             element={
@@ -46,24 +86,18 @@ export default function App() {
               </RutaProtegida>
             }
           />
+
+          {/* Comer */}
           <Route
-            path="/perfil-biometrico"
+            path="/comer"
             element={
               <RutaProtegida>
-                <PerfilBiometrico />
+                <MenuDiario />
               </RutaProtegida>
             }
           />
           <Route
-            path="/historial-medidas"
-            element={
-              <RutaProtegida>
-                <HistorialMedidas />
-              </RutaProtegida>
-            }
-          />
-          <Route
-            path="/plan-nutricional"
+            path="/comer/plan"
             element={
               <RutaProtegida>
                 <PlanNutricional />
@@ -71,7 +105,17 @@ export default function App() {
             }
           />
           <Route
-            path="/rutina"
+            path="/comer/compras"
+            element={
+              <RutaProtegida>
+                <ListaDeCompras />
+              </RutaProtegida>
+            }
+          />
+
+          {/* Entrenar */}
+          <Route
+            path="/entrenar"
             element={
               <RutaProtegida>
                 <Rutina />
@@ -79,26 +123,18 @@ export default function App() {
             }
           />
           <Route
-            path="/progreso"
+            path="/entrenar/bitacora"
             element={
               <RutaProtegida>
-                <RegistroProgreso />
+                <HistorialEntrenamiento vista="bitacora" />
               </RutaProtegida>
             }
           />
           <Route
-            path="/reportes"
+            path="/entrenar/marcas"
             element={
               <RutaProtegida>
-                <Reportes />
-              </RutaProtegida>
-            }
-          />
-          <Route
-            path="/menu"
-            element={
-              <RutaProtegida>
-                <MenuDiario />
+                <HistorialEntrenamiento vista="marcas" />
               </RutaProtegida>
             }
           />
@@ -110,24 +146,44 @@ export default function App() {
               </RutaProtegida>
             }
           />
+
+          {/* Avance */}
           <Route
-            path="/bitacora"
+            path="/avance"
             element={
               <RutaProtegida>
-                <HistorialEntrenamiento />
+                <RegistroProgreso />
               </RutaProtegida>
             }
           />
           <Route
-            path="/compras"
+            path="/avance/evolucion"
             element={
               <RutaProtegida>
-                <ListaDeCompras />
+                <Reportes />
               </RutaProtegida>
             }
           />
           <Route
-            path="/cuenta"
+            path="/avance/medidas"
+            element={
+              <RutaProtegida>
+                <HistorialMedidas />
+              </RutaProtegida>
+            }
+          />
+          <Route
+            path="/avance/medidas/editar"
+            element={
+              <RutaProtegida>
+                <PerfilBiometrico />
+              </RutaProtegida>
+            }
+          />
+
+          {/* Más */}
+          <Route
+            path="/mas"
             element={
               <RutaProtegida>
                 <AjustesCuenta />
@@ -135,7 +191,15 @@ export default function App() {
             }
           />
           <Route
-            path="/catalogos"
+            path="/mas/contrasena"
+            element={
+              <RutaProtegida>
+                <CambioContrasena />
+              </RutaProtegida>
+            }
+          />
+          <Route
+            path="/admin/catalogos"
             element={
               <RutaProtegida soloAdministrador>
                 <AdministracionCatalogos />
@@ -143,17 +207,25 @@ export default function App() {
             }
           />
           <Route
-            path="/cuentas"
+            path="/admin/cuentas"
             element={
               <RutaProtegida soloAdministrador>
                 <AdministracionCuentas />
               </RutaProtegida>
             }
           />
+
+          {RUTAS_ANTERIORES.map(([anterior, nueva]) => (
+            <Route key={anterior} path={anterior} element={<Navigate to={nueva} replace />} />
+          ))}
+
           <Route path="/" element={<Navigate to={autenticado ? '/panel' : '/acceso'} replace />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
-    </>
+
+      {autenticado && !modoEnfoque && <BarraNavegacion />}
+      <AvisoDeSesion />
+    </div>
   )
 }

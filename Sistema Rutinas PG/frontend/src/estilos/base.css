@@ -21,7 +21,7 @@
   display: flex;
   flex: 1;
   flex-direction: column;
-  padding: 8px 20px 96px;
+  padding: 6px 20px 96px;
   width: 100%;
 }
 
@@ -40,11 +40,22 @@
   }
 }
 
+/* Desde 1025 px la barra de navegación pasa arriba: el contenido le deja
+   sitio y recupera el espacio de abajo. */
 @media (min-width: 1025px) {
   .contenido-principal {
     max-width: 1140px;
     padding-bottom: 64px;
+    padding-top: 88px;
+  }
+
+  .contenido-principal--enfoque {
+    padding-bottom: 0;
     padding-top: 24px;
+  }
+
+  .contenido-principal--administracion {
+    padding-top: 64px;
   }
 }
 

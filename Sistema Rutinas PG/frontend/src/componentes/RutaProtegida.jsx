@@ -17,9 +17,9 @@ export default function RutaProtegida({ children, soloAdministrador = false }) {
 
   if (soloAdministrador && !esAdministrador) {
     return (
-      <div className="alert alert-warning" role="alert">
+      <p className="aviso aviso--aviso" role="alert">
         Esta sección está reservada a las cuentas con rol de administrador.
-      </div>
+      </p>
     )
   }
 
