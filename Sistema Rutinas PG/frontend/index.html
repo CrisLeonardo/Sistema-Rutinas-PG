@@ -11,6 +11,17 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="preconnect" href="https://cdn.hugeicons.com" />
+
+    <!-- Icono e instalación como aplicación (Android/escritorio vía manifest,
+         iOS vía las etiquetas apple-*: Safari ignora el manifest para esto). -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="96x96" href="/favicon-96x96.png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Rutinas" />
+
     <title>Sistema de rutinas y planes nutricionales</title>
     <script>
       // Se aplica el tema antes de pintar nada. Si esto esperara a que React

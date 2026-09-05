@@ -4,6 +4,7 @@ import BarraNavegacion from './componentes/BarraNavegacion.jsx'
 import RutaProtegida from './componentes/RutaProtegida.jsx'
 import { useSesion } from './contexto/ContextoSesion.jsx'
 import AvisoDeSesion from './componentes/AvisoDeSesion.jsx'
+import AvisoInstalacion from './componentes/AvisoInstalacion.jsx'
 import Acceso from './paginas/Acceso.jsx'
 import AdministracionCatalogos from './paginas/AdministracionCatalogos.jsx'
 import AdministracionCuentas from './paginas/AdministracionCuentas.jsx'
@@ -226,6 +227,7 @@ export default function App() {
 
       {autenticado && !modoEnfoque && <BarraNavegacion />}
       <AvisoDeSesion />
+      {!modoEnfoque && <AvisoInstalacion />}
     </div>
   )
 }

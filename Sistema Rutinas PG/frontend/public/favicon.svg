@@ -1,0 +1,31 @@
+<svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="tinta" gradientUnits="userSpaceOnUse" x1="150" y1="0" x2="150" y2="258">
+      <stop offset="0" stop-color="#86efac" />
+      <stop offset="1" stop-color="#4ade80" />
+    </linearGradient>
+    <filter id="brillo" filterUnits="userSpaceOnUse" x="0" y="0" width="512" height="512">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="8" result="difuminado" />
+      <feMerge>
+        <feMergeNode in="difuminado" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+  </defs>
+
+  <rect width="512" height="512" fill="#070a08" />
+
+  <g transform="translate(106,127)" filter="url(#brillo)" fill="none" stroke="url(#tinta)"
+     stroke-width="15" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M150 8 268 92" />
+    <path d="M150 8 32 92" />
+    <path d="M22 98h256" />
+    <path d="M64 122v92" />
+    <path d="M96 122v92" />
+    <path d="M134 122v92" />
+    <path d="M166 122v92" />
+    <path d="M204 122v92" />
+    <path d="M236 122v92" />
+    <path d="M12 250h266" />
+  </g>
+</svg>

@@ -1057,14 +1057,10 @@ a.avatar::after {
 
 /* Marca: la letra «P» en Unbounded dentro de un cuadrado de acento. */
 .marca {
-  align-items: center;
-  background: var(--brand-accent);
   border-radius: var(--radius-lg);
-  color: var(--brand-on-accent);
-  display: flex;
-  font: 600 18px/1 var(--font-display);
+  display: block;
   height: 46px;
-  justify-content: center;
+  object-fit: cover;
   width: 46px;
 }
 

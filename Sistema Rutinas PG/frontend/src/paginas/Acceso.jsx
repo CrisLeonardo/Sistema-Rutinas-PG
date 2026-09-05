@@ -44,9 +44,7 @@ export default function Acceso() {
   return (
     <div className="entrada">
       <div className="pila-5">
-        <span className="marca" aria-hidden="true">
-          P
-        </span>
+        <img src="/pwa-192x192.png" alt="" className="marca" />
         <h1 className="titulo-grande">Entrar</h1>
         <p className="apoyo">Ingrese con la cuenta que registró para consultar sus planes.</p>
       </div>
