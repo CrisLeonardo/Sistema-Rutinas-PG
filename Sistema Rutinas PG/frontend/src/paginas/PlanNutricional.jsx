@@ -1,30 +1,35 @@
 /**
- * Pantalla de consulta del plan nutricional (historia HU-06).
+ * Mi plan de alimentación (historia HU-06).
  *
  * Cada cifra técnica va acompañada de una explicación en lenguaje sencillo, tal
  * como exige el requerimiento no funcional 4.5.3, y todo plan muestra el aviso
  * de consulta profesional de la regla del negocio *e*.
+ *
+ * La pantalla tenía cinco tarjetas y dos tablas, y la cifra que de verdad
+ * importa —cuánta energía comer— competía con la comparación contra las
+ * fórmulas clínicas. Ahora la energía diaria es la tarjeta protagonista; la
+ * comprobación se resume en una línea y su tabla completa vive en una hoja, y
+ * la explicación de cada macronutriente se abre desde su propia fila.
  */
 
 import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 
+import AvisoDeError from '../componentes/AvisoDeError.jsx'
+import CabeceraPantalla from '../componentes/CabeceraPantalla.jsx'
+import Hoja from '../componentes/Hoja.jsx'
+import Icono from '../componentes/Icono.jsx'
+import Pildoras from '../componentes/Pildoras.jsx'
+import { PESTANAS_COMER } from '../datos/secciones.js'
 import { useSesion } from '../contexto/ContextoSesion.jsx'
 import { ErrorApi, servicioPlan } from '../servicios/api.js'
+import { entero, fechaYHora } from '../utilidades/formatos.js'
 
-const COLORES_MACRONUTRIENTE = {
-  Proteína: 'var(--color-principal)',
-  Carbohidrato: 'var(--color-acento)',
-  Grasa: '#0369a1',
-}
-
-function fechaLegible(valor) {
-  if (!valor) return '—'
-  return new Date(valor).toLocaleString('es-GT', { dateStyle: 'long', timeStyle: 'short' })
-}
-
-function entero(valor) {
-  return Math.round(valor).toLocaleString('es-GT')
+/** El color de cada macronutriente es el mismo en la barra y en la leyenda. */
+const CLASES_MACRO = {
+  Proteína: 'proteina',
+  Carbohidrato: 'carbohidrato',
+  Grasa: 'grasa',
 }
 
 export default function PlanNutricional() {
@@ -35,6 +40,8 @@ export default function PlanNutricional() {
   const [generando, setGenerando] = useState(false)
   const [error, setError] = useState(null)
   const [sinPerfil, setSinPerfil] = useState(false)
+  const [hojaAbierta, setHojaAbierta] = useState(null)
+  const [macroAbierto, setMacroAbierto] = useState(null)
 
   const cargar = useCallback(async () => {
     setCargando(true)
@@ -45,6 +52,7 @@ export default function PlanNutricional() {
       // Que todavía no exista un plan no es un error: es el estado inicial.
       if (fallo instanceof ErrorApi && fallo.codigo === 404) {
         setPlan(null)
+        setError(null)
       } else {
         setError(fallo.message)
       }
@@ -74,251 +82,235 @@ export default function PlanNutricional() {
   }
 
   if (cargando) {
-    return <p className="texto-ayuda">Cargando su plan…</p>
+    return (
+      <div className="pila" aria-busy="true">
+        <div className="esqueleto esqueleto--titulo" />
+        <div className="esqueleto esqueleto--tarjeta" />
+        <div className="esqueleto esqueleto--fila" />
+        <span className="solo-lectores">Cargando su plan…</span>
+      </div>
+    )
   }
 
-  return (
-    <div className="row g-4">
-      <div className="col-12 d-flex flex-column flex-sm-row justify-content-between gap-3">
-        <div>
-          <h1 className="h3 mb-1">Mi plan de alimentación</h1>
-          <p className="texto-ayuda mb-0">
-            Calculado a partir de sus medidas con un modelo de red neuronal, y
-            comparado con dos fórmulas médicas de referencia.
-          </p>
-        </div>
-        <div className="d-flex gap-2 align-self-start flex-shrink-0">
-          {plan && (
+  if (!plan) {
+    return (
+      <div className="pila">
+        <Pildoras etiquetaGrupo="Secciones de alimentación" opciones={PESTANAS_COMER} />
+        {error && <AvisoDeError mensaje={error} />}
+        <div className="vacio">
+          <h1 className="vacio__titulo">Todavía no ha generado su plan</h1>
+          <p className="cuerpo">Con sus medidas ya registradas, el cálculo toma unos segundos.</p>
+          {sinPerfil ? (
+            <Link to="/avance/medidas/editar" className="boton boton--principal">
+              Registrar mis medidas
+            </Link>
+          ) : (
             <button
               type="button"
-              className="btn btn-outline-secondary control-tactil no-imprimir"
-              onClick={() => window.print()}
+              className="boton boton--principal"
+              onClick={generar}
+              disabled={generando}
             >
-              Imprimir
+              {generando ? 'Calculando…' : 'Generar mi plan'}
             </button>
           )}
+        </div>
+      </div>
+    )
+  }
+
+  const macros = plan.macronutrientes
+  const totalPorcentaje = macros.reduce((suma, macro) => suma + macro.porcentaje, 0) || 100
+
+  return (
+    <div className="pila">
+      <CabeceraPantalla
+        titulo="Mi plan de alimentación"
+        hacia="/comer"
+        compacta
+        accion={
           <button
             type="button"
-            className="btn btn-principal control-tactil no-imprimir"
-            onClick={generar}
-            disabled={generando}
+            className="boton boton--circular no-imprimir"
+            onClick={() => window.print()}
+            aria-label="Imprimir el plan"
           >
-            {generando ? 'Calculando…' : plan ? 'Volver a calcular' : 'Generar mi plan'}
+            <Icono nombre="printer" tamano={19} />
           </button>
+        }
+      />
+
+      <Pildoras etiquetaGrupo="Secciones de alimentación" opciones={PESTANAS_COMER} />
+
+      {plan.advertencias_de_salud?.length > 0 && (
+        <div className="aviso aviso--aviso" role="alert">
+          {plan.advertencias_de_salud.map((advertencia) => (
+            <p key={advertencia}>{advertencia}</p>
+          ))}
+        </div>
+      )}
+
+      <div className="tarjeta tarjeta--protagonista">
+        <span className="rotulo">Su energía diaria</span>
+        <p className="cifra-con-unidad">
+          <span className="cifra-protagonista">{entero(plan.calorias_objetivo)}</span>
+          <span className="apoyo">kcal</span>
+        </p>
+        <p className="cuerpo">{plan.explicacion_objetivo}</p>
+      </div>
+
+      <div className="lista">
+        <div className="lista__fila">
+          <span className="lista__etiqueta crece">Gasto en reposo</span>
+          <span className="lista__valor">{entero(plan.tasa_metabolica_basal)} kcal</span>
+        </div>
+        <div className="lista__fila">
+          <span className="lista__etiqueta crece">Gasto con su actividad</span>
+          <span className="lista__valor">{entero(plan.gasto_energetico_total)} kcal</span>
+        </div>
+        <div className="lista__fila">
+          <span className="lista__etiqueta crece">Agua sugerida</span>
+          <span className="lista__valor">{(plan.agua_ml / 1000).toFixed(1)} litros</span>
         </div>
       </div>
 
-      {error && (
-        <div className="col-12">
-          <div className="alert alert-warning" role="alert">
-            {error}
-            {sinPerfil && (
-              <div className="mt-2">
-                <Link to="/perfil-biometrico" className="btn btn-sm btn-principal control-tactil">
-                  Registrar mis medidas
-                </Link>
+      <div className="tarjeta tarjeta--densa">
+        <span className="rotulo">Cómo repartirla</span>
+
+        <div className="macros" role="img" aria-label="Reparto de macronutrientes">
+          {macros.map((macro) => (
+            <span
+              key={macro.nombre}
+              className={`macros__segmento macros__segmento--${CLASES_MACRO[macro.nombre] ?? 'carbohidrato'}`}
+              style={{ width: `${(macro.porcentaje / totalPorcentaje) * 100}%` }}
+            />
+          ))}
+        </div>
+
+        <div className="lista lista--desnuda">
+          {macros.map((macro) => (
+            <button
+              key={macro.nombre}
+              type="button"
+              className="lista__fila"
+              onClick={() => setMacroAbierto(macro)}
+            >
+              <span
+                className={`macros__punto macros__segmento--${CLASES_MACRO[macro.nombre] ?? 'carbohidrato'}`}
+              />
+              <span className="lista__etiqueta crece">{macro.nombre}</span>
+              <span className="lista__valor">
+                {macro.gramos} g · {macro.porcentaje} %
+              </span>
+            </button>
+          ))}
+        </div>
+
+        <p className="nota-al-pie">
+          Los tres suman {entero(plan.energia_de_los_macronutrientes)} kcal, que es exactamente
+          su energía diaria.
+        </p>
+      </div>
+
+      <button
+        type="button"
+        className={`aviso ${plan.dentro_del_margen_admitido ? 'aviso--ok' : 'aviso--aviso'} centrado`}
+        onClick={() => setHojaAbierta('comprobacion')}
+      >
+        Comprobado contra Mifflin-St Jeor y Harris-Benedict:{' '}
+        {plan.margen_error_porcentaje.toFixed(2)} % de diferencia.
+      </button>
+
+      {plan.correcciones_de_seguridad?.length > 0 && (
+        <div className="tarjeta tarjeta--densa">
+          <span className="rotulo">Ajustes que hizo el sistema</span>
+          <p className="apoyo">
+            Su plan no es el resultado crudo del cálculo. Estas son las correcciones que se le
+            aplicaron para que sea seguro seguirlo, y por qué.
+          </p>
+          <div className="lista lista--desnuda">
+            {plan.correcciones_de_seguridad.map((correccion) => (
+              <div key={correccion} className="lista__fila">
+                <span className="cuerpo">{correccion}</span>
               </div>
-            )}
+            ))}
           </div>
         </div>
       )}
 
-      {!plan && !error && (
-        <div className="col-12">
-          <div className="card shadow-sm">
-            <div className="card-body text-center p-4">
-              <h2 className="h5">Todavía no ha generado su plan</h2>
-              <p className="texto-ayuda mb-0">
-                Con sus medidas ya registradas, el cálculo toma unos segundos.
-              </p>
+      {error && <AvisoDeError mensaje={error} />}
+
+      <div className="pila-2">
+        <p className="nota-al-pie">
+          <strong>Importante.</strong> {plan.aviso_profesional}
+        </p>
+        <p className="nota-al-pie">
+          Plan generado el {fechaYHora(plan.fecha_generacion)} · Si actualiza sus medidas, vuelva
+          a calcularlo para que se ajuste a su peso actual.
+        </p>
+      </div>
+
+      <button
+        type="button"
+        className="boton boton--secundario no-imprimir"
+        onClick={generar}
+        disabled={generando}
+      >
+        {generando ? 'Calculando…' : 'Volver a calcular'}
+      </button>
+
+      {hojaAbierta === 'comprobacion' && (
+        <Hoja
+          titulo="Cómo se comprobó"
+          descripcion={`El plan lo calculó ${
+            plan.origen_calculo === 'red_neuronal'
+              ? 'el modelo de red neuronal del sistema'
+              : 'la fórmula de referencia del sistema'
+          }, y se comparó con dos fórmulas usadas en nutrición clínica.`}
+          alCerrar={() => setHojaAbierta(null)}
+        >
+          <div className="lista">
+            <div className="lista__fila">
+              <span className="lista__etiqueta crece">Fórmula de Mifflin-St Jeor</span>
+              <span className="lista__valor">{entero(plan.referencia_mifflin)} kcal</span>
+            </div>
+            <div className="lista__fila">
+              <span className="lista__etiqueta crece">Fórmula de Harris-Benedict</span>
+              <span className="lista__valor">
+                {entero(plan.referencia_harris_benedict)} kcal
+              </span>
+            </div>
+            <div className="lista__fila">
+              <span className="lista__etiqueta crece">Su plan</span>
+              <span className="lista__valor">{entero(plan.calorias_objetivo)} kcal</span>
+            </div>
+            <div className="lista__fila">
+              <span className="lista__etiqueta crece">Diferencia con su plan</span>
+              <span
+                className={`lista__valor ${
+                  plan.dentro_del_margen_admitido ? 'tinta-ok' : 'tinta-peligro'
+                }`}
+              >
+                {plan.margen_error_porcentaje.toFixed(2)} %
+              </span>
             </div>
           </div>
-        </div>
+          <p className="apoyo">
+            {plan.dentro_del_margen_admitido
+              ? 'Dentro del margen admitido del 5 %'
+              : 'Fuera del margen admitido del 5 %'}
+          </p>
+        </Hoja>
       )}
 
-      {plan?.advertencias_de_salud?.length > 0 && (
-        <div className="col-12">
-          <div className="alert alert-warning mb-0" role="alert">
-            <strong>Antes de seguir este plan.</strong>
-            <ul className="mb-0 mt-2 ps-3">
-              {plan.advertencias_de_salud.map((aviso) => (
-                <li key={aviso}>{aviso}</li>
-              ))}
-            </ul>
-          </div>
-        </div>
-      )}
-
-      {plan && (
-        <>
-          <div className="col-12 col-lg-5">
-            <div className="card shadow-sm h-100">
-              <div className="card-body">
-                <h2 className="h5 card-title">Su energía diaria</h2>
-                <p className="cifra-principal mb-0">{entero(plan.calorias_objetivo)}</p>
-                <p className="texto-ayuda">kilocalorías al día</p>
-                <p className="texto-ayuda">{plan.explicacion_objetivo}</p>
-
-                <dl className="row mb-0 border-top pt-3">
-                  <dt className="col-7">Gasto de energía en reposo</dt>
-                  <dd className="col-5 text-end">{entero(plan.tasa_metabolica_basal)} kcal</dd>
-
-                  <dt className="col-7">Gasto total con su actividad</dt>
-                  <dd className="col-5 text-end">{entero(plan.gasto_energetico_total)} kcal</dd>
-
-                  <dt className="col-7">Agua sugerida</dt>
-                  <dd className="col-5 text-end mb-0">
-                    {(plan.agua_ml / 1000).toFixed(1)} litros
-                  </dd>
-                </dl>
-                <p className="texto-ayuda mt-3 mb-0">
-                  El gasto en reposo es la energía que su cuerpo consume sin hacer nada;
-                  el gasto total le suma su actividad diaria.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="col-12 col-lg-7">
-            <div className="card shadow-sm h-100">
-              <div className="card-body">
-                <h2 className="h5 card-title">Cómo repartir esa energía</h2>
-                <p className="texto-ayuda">
-                  Son las cantidades diarias de cada tipo de alimento, en gramos.
-                </p>
-
-                <div className="barra-macronutrientes" role="img" aria-label="Reparto de macronutrientes">
-                  {plan.macronutrientes.map((macro) => (
-                    <div
-                      key={macro.nombre}
-                      className="segmento-macronutriente"
-                      style={{
-                        width: `${macro.porcentaje}%`,
-                        backgroundColor: COLORES_MACRONUTRIENTE[macro.nombre],
-                      }}
-                      title={`${macro.nombre}: ${macro.porcentaje} %`}
-                    />
-                  ))}
-                </div>
-
-                <ul className="list-group list-group-flush">
-                  {plan.macronutrientes.map((macro) => (
-                    <li key={macro.nombre} className="list-group-item px-0">
-                      <div className="d-flex justify-content-between align-items-start gap-3">
-                        <div className="fw-semibold">
-                          <span
-                            className="punto-color"
-                            style={{ backgroundColor: COLORES_MACRONUTRIENTE[macro.nombre] }}
-                          />
-                          {macro.nombre}
-                        </div>
-                        <div className="text-end flex-shrink-0">
-                          <div className="fw-semibold">{macro.gramos} g</div>
-                          <div className="texto-ayuda">
-                            {macro.porcentaje} % · {entero(macro.kilocalorias)} kcal
-                          </div>
-                        </div>
-                      </div>
-                      <div className="texto-ayuda">{macro.explicacion}</div>
-                    </li>
-                  ))}
-                </ul>
-
-                <p className="texto-ayuda mt-3 mb-0">
-                  Los tres suman {entero(plan.energia_de_los_macronutrientes)} kcal, que es
-                  exactamente su energía diaria.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="col-12">
-            <div className="card shadow-sm">
-              <div className="card-body">
-                <h2 className="h5 card-title">Cómo se comprobó este cálculo</h2>
-                <p className="texto-ayuda">
-                  El plan lo calculó{' '}
-                  {plan.origen_calculo === 'red_neuronal'
-                    ? 'el modelo de red neuronal del sistema'
-                    : 'la fórmula de referencia del sistema'}
-                  , y se comparó con dos fórmulas usadas en nutrición clínica.
-                </p>
-                <div className="contenedor-tabla">
-                  <table className="table table-sm align-middle mb-0">
-                    <tbody>
-                      <tr>
-                        <th scope="row" className="fw-normal">
-                          Fórmula de Mifflin-St Jeor
-                        </th>
-                        <td className="text-end">{entero(plan.referencia_mifflin)} kcal</td>
-                      </tr>
-                      <tr>
-                        <th scope="row" className="fw-normal">
-                          Fórmula de Harris-Benedict
-                        </th>
-                        <td className="text-end">
-                          {entero(plan.referencia_harris_benedict)} kcal
-                        </td>
-                      </tr>
-                      <tr>
-                        <th scope="row">Diferencia con su plan</th>
-                        <td className="text-end fw-semibold">
-                          {plan.margen_error_porcentaje.toFixed(2)} %
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-                <p className="mt-3 mb-0">
-                  <span
-                    className={`badge ${
-                      plan.dentro_del_margen_admitido ? 'bg-success' : 'bg-danger'
-                    }`}
-                  >
-                    {plan.dentro_del_margen_admitido
-                      ? 'Dentro del margen admitido del 5 %'
-                      : 'Fuera del margen admitido del 5 %'}
-                  </span>
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {plan.correcciones_de_seguridad?.length > 0 && (
-            <div className="col-12">
-              <div className="card shadow-sm borde-destacado">
-                <div className="card-body">
-                  <h2 className="h5 card-title">Ajustes que hizo el sistema</h2>
-                  <p className="texto-ayuda">
-                    Su plan no es el resultado crudo del cálculo. Estas son las
-                    correcciones que se le aplicaron para que sea seguro seguirlo, y por
-                    qué.
-                  </p>
-                  <ul className="mb-0 ps-3">
-                    {plan.correcciones_de_seguridad.map((correccion) => (
-                      <li key={correccion} className="mb-2">
-                        {correccion}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-            </div>
-          )}
-
-          <div className="col-12">
-            <div className="alert alert-secondary mb-0" role="note">
-              <strong>Importante.</strong> {plan.aviso_profesional}
-            </div>
-          </div>
-
-          <div className="col-12">
-            <p className="texto-ayuda mb-0">
-              Plan generado el {fechaLegible(plan.fecha_generacion)} · Si actualiza sus
-              medidas, vuelva a calcularlo para que se ajuste a su peso actual.
-            </p>
-          </div>
-        </>
+      {macroAbierto && (
+        <Hoja
+          titulo={macroAbierto.nombre}
+          descripcion={`${macroAbierto.gramos} g al día · ${macroAbierto.porcentaje} % de su energía · ${entero(macroAbierto.kilocalorias)} kcal`}
+          alCerrar={() => setMacroAbierto(null)}
+        >
+          <p className="cuerpo">{macroAbierto.explicacion}</p>
+        </Hoja>
       )}
     </div>
   )

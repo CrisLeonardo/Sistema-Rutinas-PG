@@ -12,13 +12,23 @@
  * Los renglones se pueden ir marcando conforme se recorren los puestos. La
  * marca vive en el navegador y no en el servidor: es una ayuda para el rato que
  * dura la compra, no un dato del plan.
+ *
+ * La casilla deja de ser la del navegador y pasa a ser un cuadrado de 24 px con
+ * su fila entera como área de toque: se marca de pie en un puesto, con una mano
+ * ocupada.
  */
 
 import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 
+import AvisoDeError from '../componentes/AvisoDeError.jsx'
+import CabeceraPantalla from '../componentes/CabeceraPantalla.jsx'
+import Icono from '../componentes/Icono.jsx'
+import Pildoras from '../componentes/Pildoras.jsx'
+import { PESTANAS_COMER } from '../datos/secciones.js'
 import { useSesion } from '../contexto/ContextoSesion.jsx'
 import { ErrorApi, servicioPlan } from '../servicios/api.js'
+import { quetzales, quetzalesEnteros } from '../utilidades/formatos.js'
 
 const CLAVE_MARCADOS = 'rutinas.compras.marcados'
 
@@ -84,29 +94,26 @@ export default function ListaDeCompras() {
   }
 
   if (cargando) {
-    return <p className="texto-ayuda">Cargando su lista…</p>
-  }
-
-  if (error) {
     return (
-      <div className="alert alert-danger" role="alert">
-        {error}
+      <div className="pila" aria-busy="true">
+        <div className="esqueleto esqueleto--titulo" />
+        <div className="esqueleto esqueleto--tarjeta" />
+        <div className="esqueleto esqueleto--tarjeta" />
+        <span className="solo-lectores">Cargando su lista…</span>
       </div>
     )
   }
 
+  if (error) return <AvisoDeError mensaje={error} alReintentar={cargar} />
+
   if (!lista) {
     return (
-      <div className="card shadow-sm">
-        <div className="card-body text-center p-4">
-          <h1 className="h5">Todavía no tiene lista de compras</h1>
-          <p className="texto-ayuda">
-            La lista se arma con el menú de su plan de alimentación.
-          </p>
-          <Link to="/plan-nutricional" className="btn btn-principal control-tactil">
-            Generar mi plan
-          </Link>
-        </div>
+      <div className="vacio">
+        <h1 className="vacio__titulo">Todavía no tiene lista de compras</h1>
+        <p className="cuerpo">La lista se arma con el menú de su plan de alimentación.</p>
+        <Link to="/comer/plan" className="boton boton--principal">
+          Generar mi plan
+        </Link>
       </div>
     )
   }
@@ -117,141 +124,104 @@ export default function ListaDeCompras() {
       suma + grupo.renglones.filter((renglon) => marcados.has(renglon.alimento_id)).length,
     0,
   )
+  const porcentaje = totalRenglones ? Math.round((completados / totalRenglones) * 100) : 0
 
   return (
-    <div className="row g-4">
-      <div className="col-12 d-flex flex-column flex-sm-row justify-content-between gap-3">
-        <div>
-          <h1 className="h3 mb-1">Lista de compras</h1>
-          <p className="texto-ayuda mb-0">
-            Todo lo que su plan necesita para una semana, agrupado por puesto.
-          </p>
+    <div className="pila">
+      <CabeceraPantalla
+        titulo="Lista de compras"
+        hacia="/comer"
+        compacta
+        accion={
+          <button
+            type="button"
+            className="boton boton--circular no-imprimir"
+            onClick={() => window.print()}
+            aria-label="Imprimir la lista"
+          >
+            <Icono nombre="printer" tamano={19} />
+          </button>
+        }
+      />
+
+      <Pildoras etiquetaGrupo="Secciones de alimentación" opciones={PESTANAS_COMER} />
+
+      <div className="tarjeta tarjeta--protagonista">
+        <div className="fila--entre fila--abajo">
+          <div className="pila-2">
+            <span className="rotulo">Semana completa</span>
+            <span className="cifra-costo">{quetzales(lista.costo_total_quetzales)}</span>
+          </div>
+          <span className="apoyo mono a-la-derecha">
+            {quetzalesEnteros(lista.costo_mensual_quetzales)}
+            <br />
+            al mes
+          </span>
         </div>
-        <button
-          type="button"
-          className="btn btn-outline-secondary control-tactil align-self-start no-imprimir"
-          onClick={() => window.print()}
-        >
-          Imprimir
-        </button>
-      </div>
 
-      <div className="col-12">
-        <div className="card shadow-sm">
-          <div className="card-body">
-            <div className="row g-3 text-center text-sm-start">
-              <div className="col-6 col-sm-4">
-                <div className="texto-ayuda">Costo de la semana</div>
-                <div className="h4 mb-0">
-                  Q{lista.costo_total_quetzales.toFixed(2)}
-                </div>
-              </div>
-              <div className="col-6 col-sm-4">
-                <div className="texto-ayuda">Al mes</div>
-                <div className="h4 mb-0">
-                  Q{Math.round(lista.costo_mensual_quetzales).toLocaleString('es-GT')}
-                </div>
-              </div>
-              <div className="col-12 col-sm-4">
-                <div className="texto-ayuda">Alimentos</div>
-                <div className="h4 mb-0">
-                  {completados} de {totalRenglones} comprados
-                </div>
-              </div>
-            </div>
-
-            <div
-              className="progress mt-3 no-imprimir"
-              role="progressbar"
-              aria-label="Avance de la compra"
-              aria-valuenow={completados}
-              aria-valuemin={0}
-              aria-valuemax={totalRenglones}
-            >
-              <div
-                className="progress-bar barra-avance"
-                style={{
-                  width: `${totalRenglones ? (completados / totalRenglones) * 100 : 0}%`,
-                }}
-              />
-            </div>
-
-            <p className="texto-ayuda mt-3 mb-0">{lista.aviso_costo}</p>
+        <div className="pila-2 no-imprimir">
+          <div className="fila--entre">
+            <span className="apoyo">
+              {completados} de {totalRenglones} comprados
+            </span>
+            <span className="apoyo mono">{porcentaje} %</span>
+          </div>
+          <div
+            className="progreso"
+            role="progressbar"
+            aria-label="Avance de la compra"
+            aria-valuenow={completados}
+            aria-valuemin={0}
+            aria-valuemax={totalRenglones}
+          >
+            <div className="progreso__relleno" style={{ width: `${porcentaje}%` }} />
           </div>
         </div>
       </div>
 
       {lista.grupos.map((grupo) => (
-        <div className="col-12 col-lg-6" key={grupo.categoria}>
-          <div className="card shadow-sm h-100">
-            <div className="card-body">
-              <div className="d-flex justify-content-between align-items-baseline gap-2">
-                <h2 className="h5 card-title mb-0">{grupo.nombre_categoria}</h2>
-                <span className="texto-ayuda flex-shrink-0">
-                  Q{grupo.costo_quetzales.toFixed(2)}
-                </span>
-              </div>
+        <div className="tarjeta tarjeta--densa" key={grupo.categoria}>
+          <div className="tarjeta__cabecera">
+            <h2 className="titulo-tarjeta">{grupo.nombre_categoria}</h2>
+            <span className="apoyo mono">{quetzales(grupo.costo_quetzales)}</span>
+          </div>
 
-              <ul className="list-group list-group-flush mt-3">
-                {grupo.renglones.map((renglon) => {
-                  const comprado = marcados.has(renglon.alimento_id)
-                  const identificador = `compra-${renglon.alimento_id}`
-                  return (
-                    <li key={renglon.alimento_id} className="list-group-item px-0">
-                      <div className="form-check d-flex gap-3 align-items-start opcion-tactil mb-0">
-                        <input
-                          className="form-check-input flex-shrink-0"
-                          type="checkbox"
-                          id={identificador}
-                          checked={comprado}
-                          onChange={() => alternar(renglon.alimento_id)}
-                        />
-                        <label
-                          className={`form-check-label w-100 ${comprado ? 'renglon-comprado' : ''}`}
-                          htmlFor={identificador}
-                        >
-                          <div className="d-flex justify-content-between gap-3">
-                            <span className="fw-semibold">{renglon.nombre}</span>
-                            <span className="text-end flex-shrink-0">
-                              <span className="fw-semibold d-block">
-                                {renglon.cantidad_de_mercado}
-                              </span>
-                              <span className="texto-ayuda">
-                                {renglon.costo_quetzales === null
-                                  ? 'sin precio'
-                                  : `Q${renglon.costo_quetzales.toFixed(2)}`}
-                              </span>
-                            </span>
-                          </div>
-                        </label>
-                      </div>
-                    </li>
-                  )
-                })}
-              </ul>
-            </div>
+          <div className="lista lista--desnuda">
+            {grupo.renglones.map((renglon) => {
+              const comprado = marcados.has(renglon.alimento_id)
+              return (
+                <button
+                  key={renglon.alimento_id}
+                  type="button"
+                  className={`lista__fila${comprado ? ' renglon-comprado' : ''}`}
+                  onClick={() => alternar(renglon.alimento_id)}
+                  aria-pressed={comprado}
+                >
+                  <span className={`casilla${comprado ? ' casilla--marcada' : ''}`} aria-hidden="true">
+                    {comprado && <Icono nombre="tick-02" tamano={15} />}
+                  </span>
+                  <span className="lista__titulo crece">{renglon.nombre}</span>
+                  <span className="lista__valor">{renglon.cantidad_de_mercado}</span>
+                </button>
+              )
+            })}
           </div>
         </div>
       ))}
 
       {completados > 0 && (
-        <div className="col-12 no-imprimir">
-          <button
-            type="button"
-            className="btn btn-outline-secondary control-tactil"
-            onClick={limpiar}
-          >
-            Desmarcar todo
-          </button>
-        </div>
+        <button type="button" className="boton boton--secundario no-imprimir" onClick={limpiar}>
+          Desmarcar todo
+        </button>
       )}
 
-      <div className="col-12">
-        <div className="alert alert-secondary mb-0" role="note">
-          <strong>Cómo usarla.</strong> Marque cada alimento conforme lo compre. Las
-          cantidades alcanzan para siete días siguiendo el menú completo; si comparte la
-          comida con su familia, multiplique por las personas que van a comer lo mismo.
-        </div>
+      <div className="pila-2">
+        <p className="nota-al-pie">{lista.aviso_costo}</p>
+        <p className="nota-al-pie">
+          <strong>Cómo usarla.</strong> Marque cada alimento conforme lo compre. Las cantidades
+          alcanzan para siete días siguiendo el menú completo; si comparte la comida con su
+          familia, multiplique por las personas que van a comer lo mismo.
+        </p>
       </div>
     </div>
   )

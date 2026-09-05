@@ -98,6 +98,11 @@
   align-items: flex-start;
 }
 
+/* O por abajo, cuando lo que tiene que coincidir es la última línea. */
+.fila--abajo {
+  align-items: flex-end;
+}
+
 .a-la-derecha {
   align-items: flex-end;
   flex-shrink: 0;
@@ -161,6 +166,14 @@
 .cifra-tarjeta {
   display: block;
   font: 500 44px/1 var(--ui-font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.03em;
+}
+
+/* Costo de la semana: cifra grande, pero menos que la de una pantalla entera. */
+.cifra-costo {
+  display: block;
+  font: 500 38px/1 var(--ui-font-mono);
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.03em;
 }

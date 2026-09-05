@@ -133,12 +133,14 @@
 
 /* Botón sin apariencia de botón, para enlaces y acciones dentro de una fila. */
 .boton-texto {
+  align-self: flex-start;
   background: none;
   border: 0;
   color: var(--brand-accent-ink);
   cursor: pointer;
   font: 500 13.5px/1 var(--ui-font-sans);
   padding: 0;
+  text-align: left;
   transition: transform 90ms var(--ease-out);
 }
 
@@ -566,6 +568,20 @@ button.chip.chip--activo {
 .aviso--info {
   background: color-mix(in srgb, var(--c-info-solid) 12%, transparent);
   color: var(--c-info);
+}
+
+/* Un aviso puede además abrir una hoja: la comprobación del plan lleva a su
+   tabla completa. Sigue siendo un aviso, no un botón. */
+button.aviso {
+  border: 0;
+  cursor: pointer;
+  font-family: var(--ui-font-sans);
+  transition: transform 90ms var(--ease-out);
+  width: 100%;
+}
+
+button.aviso:active {
+  transform: scale(0.99);
 }
 
 /* Aviso sin color: la nota que acompaña a un dato y no anuncia nada. */

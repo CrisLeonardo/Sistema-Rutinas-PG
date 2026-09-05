@@ -18,6 +18,18 @@ export function quetzales(valor) {
   return `Q${Number(valor).toFixed(2)}`
 }
 
+/**
+ * Quetzales redondeados al entero.
+ *
+ * Los costos mensuales son una estimación de tres cifras: escribir los
+ * centavos de una proyección a treinta días finge una precisión que el dato no
+ * tiene.
+ */
+export function quetzalesEnteros(valor) {
+  if (valor === null || valor === undefined) return '—'
+  return `Q${entero(valor)}`
+}
+
 /** Fecha larga: 4 de septiembre de 2026. */
 export function fechaLarga(valor) {
   if (!valor) return '—'
