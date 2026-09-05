@@ -573,7 +573,7 @@ function SesionGuardada({ resultado }) {
         <span className="resultado__circulo">
           <Icono nombre="tick-02" tamano={24} />
         </span>
-        <h1 className="titulo-grande">Sesión guardada</h1>
+        <h1 className="titulo-resultado">Sesión guardada</h1>
         <p className="cuerpo">{resultado.mensaje}</p>
       </div>
 

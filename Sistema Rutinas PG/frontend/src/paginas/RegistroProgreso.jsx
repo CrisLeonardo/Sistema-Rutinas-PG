@@ -355,7 +355,7 @@ function AvanceRegistrado({ resultado, alRegistrarOtro }) {
         <span className="resultado__circulo">
           <Icono nombre="tick-02" tamano={24} />
         </span>
-        <h1 className="titulo-grande">Avance registrado</h1>
+        <h1 className="titulo-resultado">Avance registrado</h1>
       </div>
 
       <p className={`aviso ${resultado.reajusto_el_plan ? 'aviso--ok' : 'aviso--neutro'}`} role="status">

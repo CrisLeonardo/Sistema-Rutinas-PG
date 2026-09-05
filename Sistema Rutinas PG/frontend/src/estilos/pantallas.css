@@ -385,7 +385,7 @@
   flex: 1;
   font: 500 15px/1 var(--ui-font-sans);
   justify-content: center;
-  min-height: var(--m-tap);
+  min-height: 46px;
   min-width: 0;
   transition: transform 90ms var(--ease-out), background-color 140ms var(--ease-out),
     border-color 140ms var(--ease-out);

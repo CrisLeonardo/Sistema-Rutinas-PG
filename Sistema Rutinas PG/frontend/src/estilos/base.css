@@ -131,6 +131,14 @@
   margin: 0;
 }
 
+/* Título de una pantalla de resultado: algo menor que el de entrada, porque
+   debajo lleva el mensaje del servidor y no un formulario. */
+.titulo-resultado {
+  font: 500 32px/1.1 var(--ui-font-sans);
+  letter-spacing: -0.03em;
+  margin: 0;
+}
+
 .titulo-tarjeta {
   font: 500 18px/1.15 var(--ui-font-sans);
   letter-spacing: -0.01em;
@@ -227,6 +235,12 @@
 .titulo-ejercicio {
   font: 500 19px/1.15 var(--ui-font-sans);
   margin: 0;
+}
+
+/* La nota que el usuario escribió en su sesión: es su voz, no la del sistema. */
+.cita {
+  color: var(--u-text-4);
+  font: italic 400 12.5px/1.5 var(--ui-font-sans);
 }
 
 /* Nota al pie: los avisos legales no son alertas, son letra pequeña. */

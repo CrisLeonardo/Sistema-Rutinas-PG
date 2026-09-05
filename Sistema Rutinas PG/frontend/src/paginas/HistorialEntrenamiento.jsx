@@ -212,7 +212,7 @@ function Sesiones({ sesiones }) {
                 {fechaBreve(`${sesion.fecha}T12:00:00`)} · {sesion.series_totales} series
                 {sesion.duracion_minutos ? ` · ${sesion.duracion_minutos} min` : ''}
               </span>
-              {sesion.notas && <span className="nota-al-pie">«{sesion.notas}»</span>}
+              {sesion.notas && <span className="cita">«{sesion.notas}»</span>}
             </span>
             <span className="lista__valor">{entero(sesion.volumen_kg)} kg</span>
           </div>
