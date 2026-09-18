@@ -7,6 +7,7 @@ obtenido, tal como exige el criterio de aceptacion de la historia HU-06.
 """
 
 import logging
+from threading import Lock
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -53,8 +54,14 @@ class PerfilIncompleto(Exception):
 
 # El motor se carga una sola vez por proceso. Cargarlo en cada peticion tardaria
 # mas que los tres segundos que admite el criterio de aceptacion de HU-06.
+#
+# El cerrojo importa desde que el arranque calienta el modelo en un hilo aparte:
+# ese hilo y la primera peticion que llegue pueden entrar aqui a la vez, y sin
+# el cerrojo los dos cargarian el modelo. Serian dos copias de TensorFlow en una
+# instancia de 512 MB, que es justamente lo que no cabe.
 _motor: MotorNeuronal | None = None
 _carga_intentada = False
+_cerrojo_del_motor = Lock()
 
 
 def obtener_motor() -> MotorNeuronal | None:
@@ -65,19 +72,20 @@ def obtener_motor() -> MotorNeuronal | None:
     usuario sin plan.
     """
     global _motor, _carga_intentada
-    if _motor is None and not _carga_intentada:
-        _carga_intentada = True
-        try:
-            _motor = MotorNeuronal.cargar()
-            bitacora.info("Modelo neuronal cargado. Métricas: %s", _motor.metricas)
-        except ModeloNoEntrenado:
-            bitacora.warning(
-                "No hay modelo neuronal entrenado. Los planes se calcularán con las "
-                "fórmulas de referencia. Ejecute: uv run python entrenar_modelo.py"
-            )
-        except Exception:  # pragma: no cover - depende del entorno de ejecucion
-            bitacora.exception("No fue posible cargar el modelo neuronal.")
-    return _motor
+    with _cerrojo_del_motor:
+        if _motor is None and not _carga_intentada:
+            _carga_intentada = True
+            try:
+                _motor = MotorNeuronal.cargar()
+                bitacora.info("Modelo neuronal cargado. Métricas: %s", _motor.metricas)
+            except ModeloNoEntrenado:
+                bitacora.warning(
+                    "No hay modelo neuronal entrenado. Los planes se calcularán con las "
+                    "fórmulas de referencia. Ejecute: uv run python entrenar_modelo.py"
+                )
+            except Exception:  # pragma: no cover - depende del entorno de ejecucion
+                bitacora.exception("No fue posible cargar el modelo neuronal.")
+        return _motor
 
 
 def reiniciar_motor() -> None:
@@ -87,8 +95,9 @@ def reiniciar_motor() -> None:
     funcional 4.5.6.
     """
     global _motor, _carga_intentada
-    _motor = None
-    _carga_intentada = False
+    with _cerrojo_del_motor:
+        _motor = None
+        _carga_intentada = False
 
 
 def generar_plan(sesion: Session, usuario: Usuario) -> Plan:

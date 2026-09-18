@@ -1,6 +1,7 @@
 """Tareas de inicializacion que se ejecutan al levantar el servicio."""
 
 import logging
+import threading
 
 from sqlalchemy import inspect
 from sqlalchemy.exc import IntegrityError, OperationalError, ProgrammingError
@@ -143,25 +144,59 @@ def asegurar_catalogos_iniciales() -> None:
                 )
 
 
-def precargar_modelo_neuronal() -> None:
-    """Carga el modelo entrenado antes de atender la primera peticion.
+def precargar_modelo_neuronal() -> threading.Thread:
+    """Empieza a cargar el modelo entrenado sin detener el arranque.
 
-    Sin esta precarga, el primer usuario en pedir su plan pagaria el costo de
-    importar TensorFlow y leer el modelo del disco —varios segundos— y el sistema
-    incumpliria el criterio de aceptacion de la historia HU-06, que exige generar
-    el plan en menos de tres segundos.
+    El primer usuario en pedir su plan no deberia pagar el costo de importar
+    TensorFlow y leer el modelo del disco —varios segundos—, porque el criterio
+    de aceptacion de la historia HU-06 exige generar el plan en menos de tres
+    segundos. De ahi que el modelo se cargue por adelantado.
 
-    Si el modelo aun no se ha entrenado, el arranque continua: los planes se
-    calcularan con las formulas de referencia hasta que se ejecute
+    Lo que cambio es QUIEN espera esa carga. Antes ocurria dentro del ciclo de
+    vida de la aplicacion, de modo que uvicorn no empezaba a atender hasta que
+    TensorFlow terminara de importarse. En una instancia con una decima de
+    procesador eso puede tardar minutos, y la consecuencia no es un arranque
+    lento sino un servicio que nunca llega a existir: la comprobacion de salud
+    que Render consulta en `healthCheckPath` vence, el despliegue se cancela y
+    el reenvio se queda aceptando conexiones que nadie contesta. Es un fallo que
+    no se parece a su causa —el sintoma es «no inicia sesion»— y por eso costo
+    encontrarlo.
+
+    Ahora la carga corre en un hilo aparte. El servicio responde en segundos y
+    se declara sano; el modelo termina de calentarse mientras tanto. Si llegara
+    una peticion de plan antes de que acabe, `obtener_motor` la hace esperar con
+    su cerrojo en vez de cargar una segunda copia.
+
+    El hilo es de servicio —daemon— para que no impida cerrar el proceso: una
+    carga a medias no es motivo para retrasar un apagado.
+
+    Si el modelo aun no se ha entrenado, no pasa nada: los planes se calcularan
+    con las formulas de referencia hasta que se ejecute
     `uv run python entrenar_modelo.py`.
-    """
-    from app.servicios.plan import obtener_motor
 
-    if obtener_motor() is None:
-        bitacora.warning(
-            "El sistema arrancó sin modelo neuronal entrenado. "
-            "Ejecute: uv run python entrenar_modelo.py"
-        )
+    Devuelve el hilo. El arranque no lo espera —ese es justamente el objetivo—,
+    pero quien necesite que la carga haya terminado, como las pruebas, puede
+    esperarlo sin recurrir a una pausa a ciegas.
+    """
+
+    def calentar() -> None:
+        from app.servicios.plan import obtener_motor
+
+        try:
+            if obtener_motor() is None:
+                bitacora.warning(
+                    "El sistema arrancó sin modelo neuronal entrenado. "
+                    "Ejecute: uv run python entrenar_modelo.py"
+                )
+        except Exception:  # noqa: BLE001
+            # Ya se registra dentro de `obtener_motor`; aqui solo se evita que
+            # una excepcion muera en silencio en un hilo suelto.
+            bitacora.exception("Falló la precarga del modelo neuronal.")
+
+    hilo = threading.Thread(target=calentar, name="precarga-del-modelo", daemon=True)
+    hilo.start()
+    bitacora.info("Precarga del modelo neuronal lanzada en segundo plano.")
+    return hilo
 
 
 class CredencialesPredeterminadas(Exception):

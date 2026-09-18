@@ -93,14 +93,47 @@ def test_el_arranque_deja_el_modelo_listo_para_la_primera_peticion():
 
     Sin esta precarga el primer usuario esperaría varios segundos y el sistema
     incumpliría el criterio de aceptación de la historia HU-06.
+
+    La precarga corre en un hilo aparte para no retener el arranque —importar
+    TensorFlow en una instancia pequeña tarda lo suficiente como para que la
+    comprobación de salud del proveedor venza—, de modo que la prueba espera a
+    ese hilo en vez de dar por hecho que ya terminó.
     """
     from app.nucleo.arranque import precargar_modelo_neuronal
     from app.servicios import plan as servicio_plan
 
     servicio_plan.reiniciar_motor()
-    precargar_modelo_neuronal()
+    hilo = precargar_modelo_neuronal()
+    hilo.join(timeout=120)
 
+    assert not hilo.is_alive(), "La precarga del modelo no terminó a tiempo."
     assert servicio_plan._carga_intentada is True
+
+
+def test_la_precarga_no_retiene_el_arranque():
+    """Arrancar no puede quedarse esperando a que TensorFlow se importe.
+
+    Es la causa de un fallo real en producción: la carga ocurría dentro del ciclo
+    de vida de la aplicación, el servidor no empezaba a atender hasta terminarla,
+    la comprobación de salud del proveedor vencía y el despliegue se quedaba sin
+    ninguna instancia sana. El síntoma que veía el usuario no se parecía a la
+    causa: la aplicación cargaba y el inicio de sesión se quedaba colgado.
+    """
+    import time
+
+    from app.nucleo.arranque import precargar_modelo_neuronal
+    from app.servicios import plan as servicio_plan
+
+    servicio_plan.reiniciar_motor()
+
+    inicio = time.perf_counter()
+    hilo = precargar_modelo_neuronal()
+    transcurrido = time.perf_counter() - inicio
+
+    assert transcurrido < 0.5, (
+        f"Lanzar la precarga tardó {transcurrido:.2f} s: está cargando en el arranque."
+    )
+    hilo.join(timeout=120)
 
 
 def test_el_plan_no_difiere_mas_del_cinco_por_ciento_de_las_formulas(cliente, con_perfil):
