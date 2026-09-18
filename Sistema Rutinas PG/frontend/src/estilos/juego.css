@@ -1,0 +1,496 @@
+/* ============================================================
+   La senda: mascota, nivel, insignias y camino recorrido.
+
+   Hoja aparte porque es una sección nueva y no un añadido a las
+   existentes: mezclarla en componentes.css dejaría mil doscientas
+   líneas donde ya cuesta encontrar una clase. Importa DESPUÉS de
+   tokens.css, de donde toma el acento y las superficies.
+   ============================================================ */
+
+:root {
+  /* Paleta de la mascota. Va aquí y no en tokens.css porque es la
+     librea de un personaje y no parte del sistema de diseño: el
+     gris del pelaje y el azul de la túnica no los usa nada más.
+     Los ojos sí son el verde del producto, que es lo que la ata
+     a la aplicación en lugar de dejarla como una pegatina. */
+  --mascota-pelaje: #9aa4b0;
+  --mascota-pelaje-claro: #e7ebef;
+  --mascota-contorno: #5b6572;
+  --mascota-toga: #4272a8;
+  --mascota-toga-sombra: #355c8a;
+  --mascota-oro: #d9b26c;
+  --mascota-oro-sombra: #b08c4a;
+  --mascota-ojo: var(--brand-accent);
+  --mascota-lengua: #e98b95;
+  --mascota-blanco: #ffffff;
+  --mascota-capa: #2f4f78;
+  --mascota-capa-borde: #d9b26c;
+  --mascota-sombra: rgba(0, 0, 0, 0.26);
+}
+
+/* En tema claro el contorno baja de tono: sobre un fondo casi blanco,
+   un gris medio deja la silueta sin filo. */
+[data-scheme="light"] {
+  --mascota-contorno: #3f4753;
+  --mascota-sombra: rgba(23, 22, 26, 0.12);
+}
+
+/* ── Mascota ───────────────────────────────────────────────── */
+
+.mascota {
+  display: block;
+  overflow: visible;
+}
+
+/* Respira. Es la única animación que lleva en reposo: sin ella el
+   dibujo parece una ilustración pegada; con ella, alguien que espera.
+   El origen está en los pies para que el pecho suba y el suelo no. */
+.mascota__cuerpo {
+  transform-origin: 60px 131px;
+  animation: mascota-respira 4s var(--ease-out) infinite;
+}
+
+.mascota--dormido .mascota__cuerpo {
+  animation-duration: 6.5s;
+}
+
+.mascota__cuerpo--salta {
+  animation: mascota-respira 4s var(--ease-out) infinite,
+    mascota-salta 1.5s var(--ease-out) infinite;
+}
+
+@keyframes mascota-respira {
+  0%, 100% { transform: scaleY(1) scaleX(1); }
+  50% { transform: scaleY(1.018) scaleX(0.994); }
+}
+
+@keyframes mascota-salta {
+  0%, 62%, 100% { translate: 0 0; }
+  30% { translate: 0 -5px; }
+}
+
+/* La cola se mueve desde su nacimiento, junto al cuerpo, no desde su punta. */
+.mascota__cola {
+  transform-origin: 45px 97px;
+  animation: mascota-cola 1.7s var(--ease-out) infinite;
+}
+
+.mascota--animando .mascota__cola,
+.mascota--celebrando .mascota__cola {
+  animation-duration: 0.7s;
+}
+
+@keyframes mascota-cola {
+  0%, 100% { rotate: -5deg; }
+  50% { rotate: 6deg; }
+}
+
+/* Cada estado inclina la cabeza un poco. Es lo que separa ocho poses
+   de ocho dibujos con la misma cabeza encima. */
+.mascota__cabeza {
+  transform-origin: 60px 55px;
+}
+
+.mascota--descanso .mascota__cabeza,
+.mascota--dormido .mascota__cabeza { rotate: 6deg; }
+.mascota--pensando .mascota__cabeza { rotate: -5deg; }
+.mascota--alerta .mascota__cabeza { rotate: -3deg; }
+.mascota--entrenando .mascota__cabeza { rotate: 2deg; }
+
+.mascota__capa {
+  transform-origin: 60px 56px;
+  animation: mascota-capa 3.4s var(--ease-out) infinite;
+}
+
+@keyframes mascota-capa {
+  0%, 100% { transform: skewX(0deg); }
+  50% { transform: skewX(-2.2deg); }
+}
+
+.mascota__halo {
+  transform-origin: 60px -4px;
+  animation: mascota-halo 3s var(--ease-out) infinite;
+}
+
+@keyframes mascota-halo {
+  0%, 100% { opacity: 0.75; translate: 0 0; }
+  50% { opacity: 1; translate: 0 -2px; }
+}
+
+.mascota__ronquido {
+  animation: mascota-ronquido 3s var(--ease-out) infinite;
+  opacity: 0;
+}
+
+.mascota__ronquido--2 { animation-delay: 1s; }
+.mascota__ronquido--3 { animation-delay: 2s; }
+
+@keyframes mascota-ronquido {
+  0% { opacity: 0; translate: 0 6px; }
+  40% { opacity: 0.9; }
+  100% { opacity: 0; translate: 0 -8px; }
+}
+
+.mascota__aviso {
+  transform-origin: 18px 20px;
+  animation: mascota-aviso 1.8s var(--ease-out) infinite;
+}
+
+@keyframes mascota-aviso {
+  0%, 70%, 100% { rotate: 0deg; }
+  78% { rotate: -9deg; }
+  86% { rotate: 9deg; }
+}
+
+.mascota__destello {
+  transform-origin: center;
+  animation: mascota-destello 1.9s var(--ease-out) infinite;
+}
+
+.mascota__destello--2 { animation-delay: 0.45s; }
+.mascota__destello--3 { animation-delay: 0.9s; }
+
+@keyframes mascota-destello {
+  0%, 100% { opacity: 0; scale: 0.4; }
+  50% { opacity: 1; scale: 1; }
+}
+
+.mascota__papelillo {
+  animation: mascota-papelillo 2.6s linear infinite;
+}
+
+.mascota__papelillo--2 { animation-delay: 0.35s; }
+.mascota__papelillo--3 { animation-delay: 0.7s; }
+.mascota__papelillo--4 { animation-delay: 1.05s; }
+.mascota__papelillo--5 { animation-delay: 1.4s; }
+
+@keyframes mascota-papelillo {
+  0% { opacity: 0; translate: 0 -6px; rotate: 0deg; }
+  15% { opacity: 1; }
+  85% { opacity: 1; }
+  100% { opacity: 0; translate: 0 130px; rotate: 220deg; }
+}
+
+/* ── Anillo de nivel ──────────────────────────────────────── */
+
+.anillo {
+  display: grid;
+  place-items: center;
+  position: relative;
+}
+
+.anillo__svg {
+  display: block;
+  /* El anillo empieza arriba y avanza en el sentido del reloj, que es
+     como se lee un progreso. */
+  rotate: -90deg;
+}
+
+.anillo__pista {
+  fill: none;
+  stroke: var(--u-hair-2);
+}
+
+.anillo__recorrido {
+  fill: none;
+  stroke: var(--brand-accent);
+  stroke-linecap: round;
+  transition: stroke-dashoffset 900ms var(--ease-entry);
+}
+
+.anillo__contenido {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+}
+
+/* ── Cabecera de la senda ─────────────────────────────────── */
+
+.senda-cabecera {
+  display: flex;
+  align-items: center;
+  gap: var(--m-sp-4);
+  padding: var(--m-sp-5);
+  background: var(--adm-card);
+  border: 1px solid var(--u-hair);
+  border-radius: var(--radius-2xl);
+}
+
+.senda-cabecera__texto {
+  display: flex;
+  flex-direction: column;
+  gap: var(--m-sp-2);
+  min-width: 0;
+}
+
+.senda-cabecera__nivel {
+  font-family: var(--ui-font-mono);
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--u-text-4);
+}
+
+.senda-cabecera__nombre {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 500;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+}
+
+.senda-cabecera__lema {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.4;
+  color: var(--u-text-3);
+}
+
+@media (max-width: 480px) {
+  .senda-cabecera {
+    flex-direction: column;
+    text-align: center;
+    padding: var(--m-sp-4);
+  }
+
+  .senda-cabecera__texto { align-items: center; }
+}
+
+/* Barra de puntos hacia el nivel siguiente. Se declara en bloque porque se usa
+   tanto en un div como en un span dentro de un enlace, y un span en línea
+   ignoraría el alto. */
+.barra-nivel {
+  display: block;
+  height: 8px;
+  border-radius: var(--radius-full);
+  background: var(--u-hair-2);
+  overflow: hidden;
+}
+
+.barra-nivel__relleno {
+  display: block;
+  height: 100%;
+  border-radius: var(--radius-full);
+  background: var(--brand-accent);
+  transition: width 900ms var(--ease-entry);
+}
+
+/* ── Insignias ────────────────────────────────────────────── */
+
+.insignias {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: var(--m-sp-3);
+}
+
+.insignia {
+  display: flex;
+  flex-direction: column;
+  gap: var(--m-sp-2);
+  padding: var(--m-sp-4);
+  background: var(--adm-card);
+  border: 1px solid var(--u-hair);
+  border-radius: var(--radius-lg);
+}
+
+/* La conseguida se distingue por el filete de acento y no por el color de
+   fondo: con ocho insignias conseguidas, ocho fondos verdes son una mancha. */
+.insignia--obtenida {
+  border-color: color-mix(in srgb, var(--brand-accent) 45%, transparent);
+}
+
+.insignia--bloqueada { opacity: 0.66; }
+
+.insignia__marca {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-full);
+  background: var(--u-hair);
+  color: var(--u-text-4);
+}
+
+.insignia--obtenida .insignia__marca {
+  background: color-mix(in srgb, var(--brand-accent) 22%, transparent);
+  color: var(--brand-accent-ink);
+}
+
+.insignia__nombre {
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.25;
+}
+
+.insignia__texto {
+  font-size: 12.5px;
+  line-height: 1.4;
+  color: var(--u-text-3);
+}
+
+.insignia__puntos {
+  font-family: var(--ui-font-mono);
+  font-size: 12px;
+  color: var(--u-text-4);
+}
+
+/* ── Camino recorrido ─────────────────────────────────────── */
+
+.camino {
+  display: flex;
+  flex-direction: column;
+  /* Sin separación entre hitos: la línea vertical que los une tiene que ser
+     continua, y un hueco la partiría en trozos. */
+  gap: 0;
+}
+
+.hito {
+  display: grid;
+  grid-template-columns: 34px 1fr;
+  gap: var(--m-sp-3);
+  padding-bottom: var(--m-sp-4);
+  position: relative;
+}
+
+/* La línea baja desde el punto de un hito hasta el del siguiente. El último
+   no la lleva, porque no hay nada más abajo a lo que unirse. */
+.hito:not(:last-child)::before {
+  content: '';
+  position: absolute;
+  left: 16px;
+  top: 30px;
+  bottom: 0;
+  width: 2px;
+  background: var(--u-hair);
+}
+
+.hito__punto {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-full);
+  background: var(--adm-card);
+  border: 1px solid var(--u-hair-2);
+  color: var(--u-text-3);
+  z-index: 1;
+}
+
+.hito--nivel .hito__punto {
+  background: color-mix(in srgb, var(--brand-accent) 20%, var(--adm-card));
+  border-color: color-mix(in srgb, var(--brand-accent) 50%, transparent);
+  color: var(--brand-accent-ink);
+}
+
+.hito--logro .hito__punto { color: var(--c-warn); }
+
+.hito__texto {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  padding-top: 5px;
+}
+
+.hito__titulo {
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.25;
+}
+
+.hito__detalle {
+  font-size: 12.5px;
+  line-height: 1.4;
+  color: var(--u-text-3);
+}
+
+.hito__fecha {
+  font-family: var(--ui-font-mono);
+  font-size: 12px;
+  color: var(--u-text-4);
+}
+
+/* ── Franja del panel ─────────────────────────────────────── */
+
+/* Fila del panel que abre la senda. Sigue la forma de `fila-punteada`, pero
+   con la mascota a la izquierda y la barra de puntos debajo del texto. */
+.franja-senda {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: var(--m-sp-3);
+  padding: var(--m-sp-3) var(--m-sp-4);
+  background: var(--adm-card);
+  border: 1px solid var(--u-hair);
+  border-radius: var(--radius-xl);
+  color: inherit;
+}
+
+.franja-senda:hover {
+  background: var(--adm-card-hover);
+  color: inherit;
+}
+
+.franja-senda__texto {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.franja-senda__cabecera {
+  display: flex;
+  align-items: baseline;
+  gap: var(--m-sp-2);
+  flex-wrap: wrap;
+}
+
+.franja-senda__nivel {
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.franja-senda__puntos {
+  font-family: var(--ui-font-mono);
+  font-size: 12.5px;
+  color: var(--u-text-3);
+}
+
+/* ── Puntos ganados tras una acción ───────────────────────── */
+
+.ganancia {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--m-sp-2);
+  padding: var(--m-sp-5) var(--m-sp-4);
+  background: var(--adm-card);
+  border: 1px solid color-mix(in srgb, var(--brand-accent) 35%, transparent);
+  border-radius: var(--radius-2xl);
+  text-align: center;
+}
+
+.ganancia__cifra {
+  font-family: var(--ui-font-mono);
+  font-size: 44px;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  color: var(--brand-accent-ink);
+}
+
+.ganancia__subida {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: var(--radius-full);
+  background: color-mix(in srgb, var(--brand-accent) 20%, transparent);
+  color: var(--brand-accent-ink);
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}

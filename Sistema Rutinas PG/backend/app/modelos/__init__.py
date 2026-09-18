@@ -15,6 +15,7 @@ from app.modelos.enumeraciones import (
     RolUsuario,
     Sexo,
 )
+from app.modelos.juego import EventoJuego, LogroObtenido
 from app.modelos.perfil import PerfilBiometrico, RegistroProgreso
 from app.modelos.plan import ComidaPlan, EjercicioSesion, Plan, SesionEntrenamiento
 from app.modelos.usuario import Usuario
@@ -25,7 +26,9 @@ __all__ = [
     "ComidaPlan",
     "Ejercicio",
     "EjercicioSesion",
+    "EventoJuego",
     "GrupoMuscular",
+    "LogroObtenido",
     "NivelActividad",
     "NivelExperiencia",
     "Objetivo",

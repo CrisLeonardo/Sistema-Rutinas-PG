@@ -15,7 +15,8 @@ import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 
 import AvisoDeError from '../componentes/AvisoDeError.jsx'
-import CabeceraPantalla from '../componentes/CabeceraPantalla.jsx'
+import Pildoras from '../componentes/Pildoras.jsx'
+import { PESTANAS_AVANCE } from '../datos/secciones.js'
 import {
   NIVELES_ACTIVIDAD,
   NIVELES_EXPERIENCIA,
@@ -101,7 +102,12 @@ export default function HistorialMedidas() {
 
   return (
     <div className="pila">
-      <CabeceraPantalla titulo="Mis medidas" hacia="/avance" compacta />
+      <div className="pila-2">
+        <h1 className="titulo-pantalla">Mis medidas</h1>
+        <p className="apoyo">Las que el sistema usa para calcular su plan.</p>
+      </div>
+
+      <Pildoras etiquetaGrupo="Secciones de avance" opciones={PESTANAS_AVANCE} />
 
       <div className="tarjeta tarjeta--protagonista">
         <div className="fila--entre">

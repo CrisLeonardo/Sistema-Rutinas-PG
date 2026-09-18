@@ -22,6 +22,7 @@ import Registro from './paginas/Registro.jsx'
 import RegistroProgreso from './paginas/RegistroProgreso.jsx'
 import Reportes from './paginas/Reportes.jsx'
 import Rutina from './paginas/Rutina.jsx'
+import Senda from './paginas/Senda.jsx'
 
 /**
  * Direcciones de la versión anterior. Se conservan como redirecciones porque
@@ -154,6 +155,14 @@ export default function App() {
             element={
               <RutaProtegida>
                 <RegistroProgreso />
+              </RutaProtegida>
+            }
+          />
+          <Route
+            path="/avance/senda"
+            element={
+              <RutaProtegida>
+                <Senda />
               </RutaProtegida>
             }
           />

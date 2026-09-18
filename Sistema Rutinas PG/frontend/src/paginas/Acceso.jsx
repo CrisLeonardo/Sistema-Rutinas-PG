@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 
 import { useSesion } from '../contexto/ContextoSesion.jsx'
@@ -9,7 +9,15 @@ import { useSesion } from '../contexto/ContextoSesion.jsx'
  * Dos campos y una acción. Nada de tarjeta con sombra sobre fondo gris: la
  * pantalla entera es el formulario, centrada verticalmente, con la marca arriba
  * para saber dónde se está antes de escribir nada.
+ *
+ * Lleva un aviso que aparece cuando la verificación se alarga. El despliegue
+ * gratuito duerme el servicio tras un rato sin tráfico, y el primer acceso del
+ * día paga el arranque: sin el aviso, el botón se queda en «Verificando…» y no
+ * hay forma de distinguir un servidor que despierta de una aplicación colgada.
  */
+
+/** Segundos tras los cuales la espera deja de parecer normal y se explica. */
+const SEGUNDOS_PARA_AVISAR = 6
 export default function Acceso() {
   const { iniciarSesion, expiroPorInactividad } = useSesion()
   const navegar = useNavigate()
@@ -18,6 +26,16 @@ export default function Acceso() {
   const [error, setError] = useState(null)
   const [enviando, setEnviando] = useState(false)
   const [visible, setVisible] = useState(false)
+  const [tardando, setTardando] = useState(false)
+
+  useEffect(() => {
+    if (!enviando) {
+      setTardando(false)
+      return undefined
+    }
+    const reloj = setTimeout(() => setTardando(true), SEGUNDOS_PARA_AVISAR * 1000)
+    return () => clearTimeout(reloj)
+  }, [enviando])
 
   const actualizar = (evento) => {
     const { name, value } = evento.target
@@ -58,6 +76,13 @@ export default function Acceso() {
       {error && (
         <p className="aviso aviso--peligro" role="alert">
           {error}
+        </p>
+      )}
+
+      {enviando && tardando && (
+        <p className="aviso aviso--neutro" role="status">
+          El servidor está iniciando. El primer acceso tras un rato sin uso puede
+          tardar hasta medio minuto.
         </p>
       )}
 

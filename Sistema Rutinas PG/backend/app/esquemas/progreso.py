@@ -10,6 +10,7 @@ from datetime import date, datetime
 
 from pydantic import BaseModel, ConfigDict, Field, computed_field, field_validator
 
+from app.esquemas.juego import RecompensaPublica
 from app.esquemas.perfil import PESO_MAXIMO_KG, PESO_MINIMO_KG
 
 PERIMETRO_MINIMO_CM = 40.0
@@ -113,10 +114,17 @@ class ResultadoReajuste(BaseModel):
 
 
 class RespuestaProgreso(BaseModel):
-    """Registro guardado junto con el efecto que produjo sobre el plan."""
+    """Registro guardado junto con el efecto que produjo sobre el plan.
+
+    Lleva también lo que el pesaje le valió en puntos, por lo mismo que la
+    respuesta de la bitácora: la señal sirve en el momento en que se gana. Es
+    opcional porque un fallo del sistema de puntos no debe invalidar un registro
+    que ya se guardó y un reajuste que ya se aplicó.
+    """
 
     registro: RegistroProgresoPublico
     reajuste: ResultadoReajuste
+    recompensa: RecompensaPublica | None = None
 
 
 class PuntoEvolucion(BaseModel):

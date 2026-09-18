@@ -20,6 +20,8 @@ import AvisoDeError from '../componentes/AvisoDeError.jsx'
 import GraficaBarras from '../componentes/GraficaBarras.jsx'
 import GraficaLineas from '../componentes/GraficaLineas.jsx'
 import Hoja from '../componentes/Hoja.jsx'
+import Pildoras from '../componentes/Pildoras.jsx'
+import { PESTANAS_AVANCE } from '../datos/secciones.js'
 import { useSesion } from '../contexto/ContextoSesion.jsx'
 import { servicioProgreso } from '../servicios/api.js'
 import { conSigno, entero, fechaLarga } from '../utilidades/formatos.js'
@@ -111,6 +113,8 @@ export default function Reportes() {
         <h1 className="titulo-pantalla">Mi evolución</h1>
         <p className="apoyo">Lo que ha cambiado desde que empezó, semana a semana.</p>
       </div>
+
+      <Pildoras etiquetaGrupo="Secciones de avance" opciones={PESTANAS_AVANCE} />
 
       <div className="tarjeta tarjeta--protagonista">
         <div className="fila--entre fila--abajo">

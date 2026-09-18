@@ -23,12 +23,14 @@ from app.esquemas.entrenamiento import (
     SesionParaEntrenar,
     SesionRealizadaPublica,
 )
+from app.esquemas.juego import RecompensaPublica
 from app.esquemas.rutina import NOMBRES_GRUPO
 from app.modelos.catalogo import Ejercicio
 from app.modelos.plan import EjercicioSesion, Plan, SesionEntrenamiento
 from app.motor.progresion import Decision
 from app.motor.rutina import NOMBRES_DIAS
 from app.servicios import entrenamiento as servicio
+from app.servicios import juego as servicio_juego
 
 enrutador = APIRouter(prefix="/entrenamiento", tags=["Bitacora de entrenamiento"])
 
@@ -157,10 +159,18 @@ def registrar_sesion(
             "el rango de repeticiones en todas las series."
         )
 
+    # Los puntos se otorgan aquí, sobre la sesión ya guardada, y no dentro del
+    # servicio de la bitácora: la bitácora alimenta la progresión de carga, que
+    # es una regla del negocio, y no debería depender del sistema de recompensas.
+    recompensa = servicio_juego.recompensar_entrenamiento(sesion, usuario, realizada)
+
     return RespuestaSesionRegistrada(
         sesion=_a_publica(sesion, realizada),
         progresiones=[RecomendacionPublica(**vars(p)) for p in progresiones],
         mensaje=mensaje,
+        recompensa=(
+            RecompensaPublica.model_validate(recompensa) if recompensa is not None else None
+        ),
     )
 
 

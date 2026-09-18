@@ -17,10 +17,12 @@ import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 
 import AvisoDeError from '../componentes/AvisoDeError.jsx'
+import Mascota from '../componentes/Mascota.jsx'
 import { useSesion } from '../contexto/ContextoSesion.jsx'
 import {
   ErrorApi,
   servicioEntrenamiento,
+  servicioJuego,
   servicioPerfil,
   servicioPlan,
   servicioProgreso,
@@ -71,15 +73,16 @@ export default function Panel() {
     try {
       // Las consultas salen a la vez: en serie, sobre una conexión móvil, el
       // panel tardaría seis veces más en dibujarse.
-      const [plan, rutina, menu, reporte, entrenamiento, perfil] = await Promise.all([
+      const [plan, rutina, menu, reporte, entrenamiento, perfil, senda] = await Promise.all([
         opcional(servicioPlan.consultarVigente(token)),
         opcional(servicioRutina.consultarVigente(token)),
         opcional(servicioPlan.consultarMenu(token)),
         opcional(servicioProgreso.consultarReporte(token)),
         opcional(servicioEntrenamiento.consultarResumen(token)),
         opcional(servicioPerfil.consultarVigente(token)),
+        opcional(servicioJuego.consultarEstado(token)),
       ])
-      setDatos({ plan, rutina, menu, reporte, entrenamiento, perfil })
+      setDatos({ plan, rutina, menu, reporte, entrenamiento, perfil, senda })
       setError(null)
     } catch (fallo) {
       setError(fallo.message)
@@ -96,7 +99,7 @@ export default function Panel() {
 
   if (error) return <AvisoDeError mensaje={error} alReintentar={cargar} />
 
-  const { plan, rutina, menu, reporte, entrenamiento, perfil } = datos
+  const { plan, rutina, menu, reporte, entrenamiento, perfil, senda } = datos
   const hoy = diaDeLaSemana()
   const sesionDeHoy = rutina?.sesiones?.find((sesion) => sesion.dia === hoy) ?? null
   const primerNombre = usuario?.nombre?.split(' ')[0] ?? ''
@@ -132,8 +135,55 @@ export default function Panel() {
         <TarjetaEntrenar sesion={sesionDeHoy} rutina={rutina} entrenamiento={entrenamiento} />
       </div>
 
+      {senda && <FranjaSenda senda={senda} />}
+
       <FilaDelPeso reporte={reporte} />
     </div>
+  )
+}
+
+/**
+ * La franja de la senda: el lobo, el nivel y lo que falta para el siguiente.
+ *
+ * Va aquí y no arriba del todo a propósito. Esta pantalla contesta «qué me toca
+ * hoy», y el nivel no es eso: es la razón para volver mañana. Ocupa una fila del
+ * alto de la del peso, con la mascota como única imagen, y lleva a la pantalla
+ * donde el avance se ve completo.
+ */
+function FranjaSenda({ senda }) {
+  const enElTope = senda.nombre_proximo_nivel === null
+
+  return (
+    <Link to="/avance/senda" className="franja-senda press">
+      <Mascota estado={senda.animo} gala={senda.gala} tamano={46} />
+
+      <span className="franja-senda__texto">
+        <span className="franja-senda__cabecera">
+          <span className="franja-senda__nivel">
+            Nivel {senda.nivel} · {senda.nombre_nivel}
+          </span>
+          <span className="franja-senda__puntos">{entero(senda.puntos_totales)} pts</span>
+        </span>
+
+        {enElTope ? (
+          <span className="lista__detalle">Último nivel de la senda</span>
+        ) : (
+          <>
+            <span className="barra-nivel">
+              <span
+                className="barra-nivel__relleno"
+                style={{ width: `${senda.porcentaje}%` }}
+              />
+            </span>
+            <span className="lista__detalle">
+              {entero(senda.puntos_para_el_proximo)} puntos para {senda.nombre_proximo_nivel}
+            </span>
+          </>
+        )}
+      </span>
+
+      <span className="boton-texto">Ver</span>
+    </Link>
   )
 }
 

@@ -7,6 +7,24 @@
 
 const URL_API = import.meta.env.VITE_URL_API ?? 'http://localhost:8000/api/v1'
 
+/**
+ * Tiempo que se espera una respuesta antes de darla por perdida.
+ *
+ * `fetch` no tiene tiempo límite propio: sin este corte, una petición contra un
+ * servicio que acepta la conexión pero no contesta —el servidor arrancando, o
+ * caído detrás de un reenvío que mantiene la conexión abierta— deja el botón en
+ * «Verificando…» para siempre, sin error y sin forma de reintentar. Es el
+ * síntoma de «no inicia sesión» que se reportó, y el corte lo convierte en un
+ * mensaje que dice qué pasó.
+ *
+ * Treinta segundos es holgado para todo lo que el sistema hace: el criterio de
+ * aceptación de la historia HU-06 concede tres segundos para generar el plan
+ * completo, que es la operación más costosa. Lo que no alcanza a cubrir es el
+ * arranque en frío de una instancia dormida, y eso es deliberado: más vale
+ * decírselo al usuario que hacerle esperar un minuto en blanco.
+ */
+const TIEMPO_LIMITE_MS = 30_000
+
 /** Error con el mensaje que el servidor destinó al usuario final. */
 export class ErrorApi extends Error {
   constructor(mensaje, codigo) {
@@ -98,18 +116,33 @@ export async function peticion(ruta, { metodo = 'GET', datos = null, token = nul
   if (datos !== null) encabezados['Content-Type'] = 'application/json'
   if (token) encabezados.Authorization = `Bearer ${token}`
 
+  const cancelacion = new AbortController()
+  const reloj = setTimeout(() => cancelacion.abort(), TIEMPO_LIMITE_MS)
+
   let respuesta
   try {
     respuesta = await fetch(`${URL_API}${ruta}`, {
       method: metodo,
       headers: encabezados,
       body: datos !== null ? JSON.stringify(datos) : undefined,
+      signal: cancelacion.signal,
     })
-  } catch {
+  } catch (fallo) {
+    // Se distingue el corte por tiempo de la falta de conexión: son dos
+    // problemas distintos y el usuario puede hacer algo distinto con cada uno.
+    if (fallo?.name === 'AbortError') {
+      throw new ErrorApi(
+        'El servidor tardó demasiado en responder. Puede estar iniciando; ' +
+          'espere un momento e intente de nuevo.',
+        0,
+      )
+    }
     throw new ErrorApi(
       'No se pudo comunicar con el servidor. Verifique su conexión e intente de nuevo.',
       0,
     )
+  } finally {
+    clearTimeout(reloj)
   }
 
   if (!respuesta.ok) {
@@ -158,6 +191,10 @@ export const servicioEntrenamiento = {
   consultarResumen: (token) => peticion('/entrenamiento/resumen', { token }),
   consultarEjercicio: (ejercicioId, token) =>
     peticion(`/entrenamiento/ejercicios/${ejercicioId}`, { token }),
+}
+
+export const servicioJuego = {
+  consultarEstado: (token) => peticion('/juego', { token }),
 }
 
 export const servicioProgreso = {

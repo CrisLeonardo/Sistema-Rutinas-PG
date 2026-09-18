@@ -20,6 +20,8 @@ import { Link, useNavigate } from 'react-router-dom'
 
 import AvisoDeError from '../componentes/AvisoDeError.jsx'
 import Icono from '../componentes/Icono.jsx'
+import Pildoras from '../componentes/Pildoras.jsx'
+import { PESTANAS_AVANCE } from '../datos/secciones.js'
 import { useSesion } from '../contexto/ContextoSesion.jsx'
 import { ErrorApi, servicioPerfil, servicioProgreso } from '../servicios/api.js'
 import { conSigno, fechaLarga } from '../utilidades/formatos.js'
@@ -142,7 +144,7 @@ export default function RegistroProgreso() {
         },
         token,
       )
-      setResultado(respuesta.reajuste)
+      setResultado({ ...respuesta.reajuste, recompensa: respuesta.recompensa })
       window.scrollTo({ top: 0, behavior: 'smooth' })
     } catch (fallo) {
       // El servidor responde 409 cuando todavía no hay plan sobre el que ajustar.
@@ -188,6 +190,8 @@ export default function RegistroProgreso() {
             : fechaLarga(`${formulario.fecha_registro}T12:00:00`)}
         </button>
       </div>
+
+      <Pildoras etiquetaGrupo="Secciones de avance" opciones={PESTANAS_AVANCE} />
 
       {fechaVisible && (
         <label className="campo">
@@ -378,6 +382,19 @@ function AvanceRegistrado({ resultado, alRegistrarOtro }) {
             <span className="cifras__valor">{conSigno(resultado.ritmo_semanal_kg, 2)} kg</span>
             <span className="cifras__rotulo">por semana</span>
           </div>
+        </div>
+      )}
+
+      {resultado.recompensa && resultado.recompensa.puntos_ganados > 0 && (
+        <div className="ganancia">
+          <span className="ganancia__cifra">+{resultado.recompensa.puntos_ganados}</span>
+          <span className="cifras__rotulo">puntos por anotar su avance</span>
+          {resultado.recompensa.subio_de_nivel && (
+            <span className="ganancia__subida">
+              <Icono nombre="award-01" tamano={15} />
+              Ahora es {resultado.recompensa.nombre_nivel}
+            </span>
+          )}
         </div>
       )}
 

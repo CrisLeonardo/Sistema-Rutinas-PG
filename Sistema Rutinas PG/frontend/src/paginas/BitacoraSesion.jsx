@@ -30,6 +30,7 @@ import AvisoDeError from '../componentes/AvisoDeError.jsx'
 import CronometroDescanso from '../componentes/CronometroDescanso.jsx'
 import Hoja from '../componentes/Hoja.jsx'
 import Icono from '../componentes/Icono.jsx'
+import Mascota from '../componentes/Mascota.jsx'
 import { useSesion } from '../contexto/ContextoSesion.jsx'
 import { ErrorApi, servicioEntrenamiento } from '../servicios/api.js'
 import { entero, fechaLarga } from '../utilidades/formatos.js'
@@ -567,15 +568,26 @@ function SesionGuardada({ resultado }) {
     }))
     .filter((progresion) => progresion.hay_incremento)
 
+  const { recompensa } = resultado
+
   return (
     <div className="pila-5">
       <div className="resultado">
-        <span className="resultado__circulo">
-          <Icono nombre="tick-02" tamano={24} />
-        </span>
+        {/* La mascota celebra en lugar de la marca de verificación: es el único
+            momento de la aplicación en que hay algo que celebrar de verdad, y
+            una palomita no lo celebra. */}
+        <Mascota
+          estado={recompensa?.subio_de_nivel ? 'celebrando' : 'animando'}
+          gala={recompensa?.gala ?? 0}
+          tamano={132}
+        />
         <h1 className="titulo-resultado">Sesión guardada</h1>
         <p className="cuerpo">{resultado.mensaje}</p>
       </div>
+
+      {recompensa && recompensa.puntos_ganados > 0 && (
+        <PuntosGanados recompensa={recompensa} />
+      )}
 
       <div className="cifras">
         <div className="cifras__columna">
@@ -614,9 +626,46 @@ function SesionGuardada({ resultado }) {
         <Link to="/entrenar" className="boton boton--principal">
           Volver a mi semana
         </Link>
-        <Link to="/entrenar/bitacora" className="boton boton--secundario">
-          Ver mi bitácora
+        <Link to="/avance/senda" className="boton boton--secundario">
+          Ver mi senda
         </Link>
+      </div>
+    </div>
+  )
+}
+
+/**
+ * Los puntos que la sesión acaba de valer.
+ *
+ * Se muestran aquí y no solo en la pantalla de la senda porque es el instante en
+ * que la señal sirve: el esfuerzo está fresco. El detalle se lista motivo por
+ * motivo —no una cifra suelta— para que el usuario pueda ver de dónde salió cada
+ * punto y no tenga que creerlo.
+ */
+function PuntosGanados({ recompensa }) {
+  return (
+    <div className="pila-3">
+      <div className="ganancia">
+        <span className="ganancia__cifra">+{recompensa.puntos_ganados}</span>
+        <span className="cifras__rotulo">puntos</span>
+        {recompensa.subio_de_nivel && (
+          <span className="ganancia__subida">
+            <Icono nombre="award-01" tamano={15} />
+            Ahora es {recompensa.nombre_nivel}
+          </span>
+        )}
+      </div>
+
+      <div className="tarjeta tarjeta--densa">
+        <span className="rotulo">De dónde salieron</span>
+        <div className="lista lista--desnuda">
+          {recompensa.detalle.map((punto, indice) => (
+            <div key={`${punto.tipo}-${indice}`} className="lista__fila">
+              <span className="cuerpo crece">{punto.motivo}</span>
+              <span className="lista__valor tinta-ok mono">+{punto.puntos}</span>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   )

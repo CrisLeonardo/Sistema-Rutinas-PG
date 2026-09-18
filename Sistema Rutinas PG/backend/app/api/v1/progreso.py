@@ -8,6 +8,7 @@ para su titular.
 from fastapi import APIRouter, HTTPException, status
 
 from app.api.dependencias import SesionBD, UsuarioAutenticado
+from app.esquemas.juego import RecompensaPublica
 from app.esquemas.progreso import (
     ComparacionPlanes,
     PuntoEvolucion,
@@ -16,6 +17,7 @@ from app.esquemas.progreso import (
     ReporteEvolucion,
     RespuestaProgreso,
 )
+from app.servicios import juego as servicio_juego
 from app.servicios import perfil as servicio_perfil
 from app.servicios import plan as servicio_plan
 from app.servicios import progreso as servicio_progreso
@@ -62,9 +64,14 @@ def registrar(
             ),
         ) from None
 
+    recompensa = servicio_juego.recompensar_avance_semanal(sesion, usuario, registro)
+
     return RespuestaProgreso(
         registro=RegistroProgresoPublico.model_validate(registro),
         reajuste=reajuste,
+        recompensa=(
+            RecompensaPublica.model_validate(recompensa) if recompensa is not None else None
+        ),
     )
 
 

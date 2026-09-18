@@ -11,6 +11,7 @@ from datetime import date, datetime
 
 from pydantic import BaseModel, ConfigDict, Field, computed_field, field_validator
 
+from app.esquemas.juego import RecompensaPublica
 from app.motor.progresion import Decision
 
 PESO_MAXIMO_KG = 500.0
@@ -292,8 +293,16 @@ class ResumenEntrenamiento(BaseModel):
 
 
 class RespuestaSesionRegistrada(BaseModel):
-    """La sesión guardada junto con lo que el sistema hará la próxima vez."""
+    """La sesión guardada junto con lo que el sistema hará la próxima vez.
+
+    Lleva además lo que la sesión le valió en puntos. Es la única pantalla donde
+    esa cifra se puede mostrar en el momento en que se gana: el esfuerzo todavía
+    está fresco y es cuando la señal sirve para algo. La recompensa es opcional
+    porque un fallo del sistema de puntos no debe costarle al usuario la sesión
+    que acaba de registrar.
+    """
 
     sesion: SesionRealizadaPublica
     progresiones: list[RecomendacionPublica]
     mensaje: str
+    recompensa: RecompensaPublica | None = None
