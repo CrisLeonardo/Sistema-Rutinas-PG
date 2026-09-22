@@ -8,7 +8,7 @@ una medicion biometrica nueva, y esa medicion regenera el plan.
 
 El reajuste no inventa un mecanismo propio de correccion calorica. Reutiliza la
 misma cadena que genero el plan original —perfil biometrico, red neuronal,
-reglas del negocio— con el peso actualizado, de modo que las reglas *b* y *c* se
+reglas del negocio— con el peso actualizado, de modo que las reglas RN-02 y RN-03 se
 sigan cumpliendo por construccion.
 """
 
@@ -240,6 +240,24 @@ def _evaluar_y_reajustar(
             plan_id_vigente=registro.plan_id,
         )
 
+    if perfil.condiciones:
+        # Restricción RE-02: con una patología crónica severa no se genera plan,
+        # tampoco por la vía del reajuste. El avance queda registrado igual.
+        return ResultadoReajuste(
+            reajusto_el_plan=False,
+            motivo=(
+                "Su perfil declara una condición médica que requiere la valoración de "
+                "un profesional de la salud, así que el sistema no recalcula su plan."
+            ),
+            recomendacion=(
+                "Su avance quedó registrado. Comparta estas cifras con el profesional "
+                "que le da seguimiento."
+            ),
+            cambio_peso_kg=cambio,
+            ritmo_semanal_kg=ritmo,
+            plan_id_vigente=registro.plan_id,
+        )
+
     # El peso cambió lo suficiente: se registra una medición biométrica nueva con
     # el peso reportado y se regenera el plan a partir de ella. Es el mismo camino
     # que sigue una actualización manual de medidas, de modo que las reglas del
@@ -255,6 +273,9 @@ def _evaluar_y_reajustar(
         nivel_experiencia=perfil.nivel_experiencia,
         dias_entrenamiento_semana=perfil.dias_entrenamiento_semana,
     )
+    # El historial de lesiones y las condiciones viajan con la medicion nueva:
+    # sin ellos, el reajuste armaria una rutina que vuelve a cargar la lesion.
+    medicion.declarar_antecedentes(perfil.lesiones, perfil.condiciones)
     sesion.add(medicion)
     sesion.flush()
 

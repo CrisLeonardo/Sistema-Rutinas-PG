@@ -8,15 +8,22 @@ from app.modelos.catalogo import Alimento, Ejercicio
 from app.modelos.entrenamiento import SerieRealizada, SesionRealizada
 from app.modelos.enumeraciones import (
     CategoriaAlimento,
+    CondicionMedica,
     GrupoMuscular,
     NivelActividad,
     NivelExperiencia,
     Objetivo,
     RolUsuario,
     Sexo,
+    ZonaLesion,
 )
 from app.modelos.juego import EventoJuego, LogroObtenido
-from app.modelos.perfil import PerfilBiometrico, RegistroProgreso
+from app.modelos.perfil import (
+    CondicionPerfil,
+    LesionPerfil,
+    PerfilBiometrico,
+    RegistroProgreso,
+)
 from app.modelos.plan import ComidaPlan, EjercicioSesion, Plan, SesionEntrenamiento
 from app.modelos.usuario import Usuario
 
@@ -24,10 +31,13 @@ __all__ = [
     "Alimento",
     "CategoriaAlimento",
     "ComidaPlan",
+    "CondicionMedica",
+    "CondicionPerfil",
     "Ejercicio",
     "EjercicioSesion",
     "EventoJuego",
     "GrupoMuscular",
+    "LesionPerfil",
     "LogroObtenido",
     "NivelActividad",
     "NivelExperiencia",
@@ -41,4 +51,5 @@ __all__ = [
     "SesionEntrenamiento",
     "Sexo",
     "Usuario",
+    "ZonaLesion",
 ]

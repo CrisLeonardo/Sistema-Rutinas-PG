@@ -3,7 +3,7 @@
 Verifican los tres criterios de aceptacion de la Tabla 9 —ejercicio, series,
 repeticiones y repeticiones en reserva por sesion; coincidencia con la frecuencia
 declarada; y ningun grupo muscular en dos dias consecutivos— junto con la regla
-del negocio *d* del apartado 4.3.4.
+del negocio RN-04 del apartado 4.3.4.
 """
 
 import pytest

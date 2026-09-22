@@ -1,6 +1,6 @@
 """Pruebas de las formulas de referencia y del conjunto de datos (subfase 3.1).
 
-Verifican la aritmetica del apartado 2.4.2, las reglas del negocio *b* y *c* del
+Verifican la aritmetica del apartado 2.4.2, las reglas del negocio RN-02 y RN-03 del
 apartado 4.3.4 y la cobertura del conjunto con que se entrenara el modelo, cuya
 insuficiencia de volumen es el segundo riesgo tecnico del apartado 4.9.1.
 """
@@ -97,7 +97,7 @@ def test_todos_los_niveles_de_actividad_tienen_factor():
 
 
 # --------------------------------------------------------------------------
-# Regla del negocio *b*: deficit y superavit controlados
+# Regla del negocio RN-02: deficit y superavit controlados
 # --------------------------------------------------------------------------
 
 
@@ -133,7 +133,7 @@ def test_el_ajuste_se_mantiene_dentro_de_los_limites_para_todo_objetivo(objetivo
 
 
 # --------------------------------------------------------------------------
-# Regla del negocio *c*: aporte proteico
+# Regla del negocio RN-03: aporte proteico
 # --------------------------------------------------------------------------
 
 
@@ -271,7 +271,7 @@ def test_la_generacion_es_reproducible_con_la_misma_semilla():
 
 
 def test_las_salidas_del_conjunto_respetan_las_reglas_del_negocio():
-    """Toda fila generada cumple las reglas *b* y *c* y la identidad de Atwater."""
+    """Toda fila generada cumple las reglas RN-02 y RN-03 y la identidad de Atwater."""
     conjunto = conjunto_datos.generar_perfiles_sinteticos(cantidad=1000)
     pesos = conjunto.entradas[:, 0]
     energia, proteina, carbohidrato, grasa, volumen = conjunto.salidas.T

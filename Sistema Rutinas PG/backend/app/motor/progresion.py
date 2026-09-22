@@ -1,8 +1,8 @@
-"""Progresion de la carga entre microciclos (regla del negocio *d*).
+"""Progresion de la carga entre microciclos (regla del negocio RN-04).
 
 El apartado 2.5.2 describe la sobrecarga progresiva como el principio que hace
 que el entrenamiento siga produciendo adaptacion: si la exigencia no aumenta, el
-cuerpo deja de tener motivo para cambiar. La regla del negocio *d* del apartado
+cuerpo deja de tener motivo para cambiar. La regla del negocio RN-04 del apartado
 4.3.4 le pone el limite: el incremento no supera el 10 % del volumen previo, para
 que la adaptacion alcance a producirse antes de la exigencia siguiente.
 
@@ -17,7 +17,7 @@ principiante y el intermedio:
 3. Cuando se alcanza, se sube la carga y las repeticiones vuelven al extremo
    bajo del rango.
 
-El paso 3 es el que la regla *d* acota. Y de esa cota sale una consecuencia que
+El paso 3 es el que la regla RN-04 acota. Y de esa cota sale una consecuencia que
 importa: con cargas ligeras, el incremento mas pequeno que el gimnasio permite
 —un disco de 1.25 kg por lado— ya supera el 10 %. En ese caso la respuesta
 correcta no es saltarse la regla sino seguir progresando en repeticiones, y eso
@@ -203,7 +203,7 @@ def calcular(
             ),
         )
 
-    # Se domino el rango: toca subir, dentro del limite de la regla *d*.
+    # Se domino el rango: toca subir, dentro del limite de la regla RN-04.
     tope = progresion_admitida(carga_previa)
     escalon = incremento_minimo(es_compuesto)
 

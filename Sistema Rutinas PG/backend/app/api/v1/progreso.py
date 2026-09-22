@@ -1,7 +1,7 @@
 """Controlador del seguimiento y los reportes (historias HU-09 y HU-10).
 
 Todas las rutas operan sobre la cuenta que inicio sesion: el progreso es un dato
-biometrico y, por la regla del negocio *f* del apartado 4.3.4, solo es visible
+biometrico y, por la regla del negocio RN-06 del apartado 4.3.4, solo es visible
 para su titular.
 """
 

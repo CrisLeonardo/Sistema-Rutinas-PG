@@ -1,7 +1,7 @@
 """Contratos de la bitacora de entrenamiento.
 
 No corresponden a ninguna de las once historias de la pila de producto. La
-bitacora se agrega porque sin ella la regla del negocio *d* del apartado 4.3.4
+bitacora se agrega porque sin ella la regla del negocio RN-04 del apartado 4.3.4
 —el incremento de carga no supera el 10 % entre microciclos— no se puede aplicar:
 el sistema no tenia forma de saber con cuanto peso entreno el usuario, de modo
 que la rutina de la semana doce era identica a la de la primera.

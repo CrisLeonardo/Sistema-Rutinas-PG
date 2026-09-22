@@ -3,7 +3,7 @@
  *
  * Muestra la evolución de las medidas de la cuenta en sesión, de la medición más
  * reciente a la más antigua. El servidor filtra por el titular de la sesión, de
- * modo que no existe forma de consultar medidas ajenas (regla del negocio *f*).
+ * modo que no existe forma de consultar medidas ajenas (regla del negocio RN-06).
  *
  * La tabla de cinco columnas desaparece: en un teléfono se desplazaba de lado y
  * había que arrastrarla para leer el cambio de peso, que es justamente lo que se
@@ -18,9 +18,11 @@ import AvisoDeError from '../componentes/AvisoDeError.jsx'
 import Pildoras from '../componentes/Pildoras.jsx'
 import { PESTANAS_AVANCE } from '../datos/secciones.js'
 import {
+  CONDICIONES_MEDICAS,
   NIVELES_ACTIVIDAD,
   NIVELES_EXPERIENCIA,
   OBJETIVOS,
+  ZONAS_LESION,
   etiquetaDe,
 } from '../datos/catalogos.js'
 import { useSesion } from '../contexto/ContextoSesion.jsx'
@@ -145,8 +147,26 @@ export default function HistorialMedidas() {
           <span className="chip">
             {etiquetaDe(NIVELES_EXPERIENCIA, vigente.nivel_experiencia)}
           </span>
+          {(vigente.lesiones ?? []).map((zona) => (
+            <span key={zona} className="chip">
+              Lesión: {etiquetaDe(ZONAS_LESION, zona)}
+            </span>
+          ))}
         </div>
       </div>
+
+      {vigente.requiere_valoracion_profesional && (
+        <div className="aviso aviso--aviso" role="status">
+          <p>
+            Declaró:{' '}
+            {vigente.condiciones
+              .map((condicion) => etiquetaDe(CONDICIONES_MEDICAS, condicion).toLowerCase())
+              .join(', ')}
+            . Con esa condición el sistema no genera planes: consulte a un profesional de la
+            salud. Si ya no aplica, actualice sus medidas.
+          </p>
+        </div>
+      )}
 
       <div className="pila-3">
         <span className="rotulo">

@@ -386,14 +386,20 @@ def generar_rutina(
     nivel_experiencia: NivelExperiencia,
     objetivo: Objetivo,
     disponibles: list[EjercicioDisponible],
+    permitir_sesiones_vacias: bool = False,
 ) -> RutinaSemanal:
     """Construye la rutina semanal (historia HU-07).
 
     Recibe el volumen que determino la red neuronal y lo reparte entre las
     sesiones del esquema que corresponde a la frecuencia declarada. El numero de
     sesiones devueltas coincide siempre con esa frecuencia.
+
+    `permitir_sesiones_vacias` distingue dos listas vacias que no significan lo
+    mismo: un catalogo sin ejercicios es un error de configuracion, mientras que
+    un catalogo que el historial de lesiones dejo sin ejercicios compatibles es
+    una rutina valida cuyas sesiones quedan como descanso.
     """
-    if not disponibles:
+    if not disponibles and not permitir_sesiones_vacias:
         raise CatalogoInsuficiente(
             "No hay ejercicios registrados en el catálogo con los que armar la rutina."
         )

@@ -1,7 +1,7 @@
 """Contratos de entrada y salida de las historias HU-04 y HU-05.
 
 Los rangos declarados aqui son los del criterio de aceptacion de la Tabla 9 del
-Capitulo IV y los de la regla del negocio *a* del apartado 4.3.4. Se validan en
+Capitulo IV y los de la regla del negocio RN-01 del apartado 4.3.4. Se validan en
 el servidor y no unicamente en la interfaz, conforme al apartado 4.8.3.
 """
 
@@ -9,7 +9,14 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field, computed_field, field_validator
 
-from app.modelos.enumeraciones import NivelActividad, NivelExperiencia, Objetivo, Sexo
+from app.modelos.enumeraciones import (
+    CondicionMedica,
+    NivelActividad,
+    NivelExperiencia,
+    Objetivo,
+    Sexo,
+    ZonaLesion,
+)
 
 PESO_MINIMO_KG = 30.0
 PESO_MAXIMO_KG = 250.0
@@ -39,6 +46,20 @@ class RegistroPerfilBiometrico(BaseModel):
     dias_entrenamiento_semana: int = Field(
         default=3, description="Sesiones de entrenamiento previstas por semana, entre 1 y 7"
     )
+    lesiones: list[ZonaLesion] = Field(
+        default_factory=list,
+        description="Historial de lesiones: zonas que la rutina no debe cargar",
+    )
+    condiciones: list[CondicionMedica] = Field(
+        default_factory=list,
+        description="Patologías crónicas severas declaradas (restricción RE-02)",
+    )
+
+    @field_validator("lesiones", "condiciones")
+    @classmethod
+    def sin_repetidos(cls, valores: list) -> list:
+        """Una misma zona o condición declarada dos veces cuenta una sola vez."""
+        return list(dict.fromkeys(valores))
 
     @field_validator("peso_kg")
     @classmethod
@@ -62,7 +83,7 @@ class RegistroPerfilBiometrico(BaseModel):
     @field_validator("edad")
     @classmethod
     def validar_edad(cls, valor: int) -> int:
-        # Regla del negocio *a*: los menores de edad quedan excluidos porque
+        # Regla del negocio RN-01: los menores de edad quedan excluidos porque
         # requieren valoracion pediatrica especializada.
         if valor < EDAD_MINIMA:
             raise ValueError(
@@ -98,7 +119,17 @@ class PerfilBiometricoPublico(BaseModel):
     objetivo: Objetivo
     nivel_experiencia: NivelExperiencia
     dias_entrenamiento_semana: int
+    lesiones: list[ZonaLesion] = []
+    condiciones: list[CondicionMedica] = []
     fecha_registro: datetime
+
+    @computed_field(
+        description="Indica si el sistema remite a un profesional en lugar de generar el plan"
+    )
+    @property
+    def requiere_valoracion_profesional(self) -> bool:
+        """Restricción RE-02: con una patología crónica severa no se genera plan."""
+        return bool(self.condiciones)
 
     @computed_field(description="Índice de masa corporal, en kilogramos por metro cuadrado")
     @property
@@ -118,7 +149,7 @@ def clasificar_indice_masa_corporal(indice: float) -> str:
     """Devuelve la categoria de la Organizacion Mundial de la Salud del indice.
 
     Es una lectura descriptiva, no un diagnostico medico: la regla del negocio
-    *e* del apartado 4.3.4 excluye al sistema de emitir diagnosticos.
+    RN-05 del apartado 4.3.4 excluye al sistema de emitir diagnosticos.
     """
     if indice < 18.5:
         return "Peso por debajo de lo normal"

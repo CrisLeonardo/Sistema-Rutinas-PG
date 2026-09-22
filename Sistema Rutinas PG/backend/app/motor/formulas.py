@@ -34,7 +34,7 @@ FACTORES_ACTIVIDAD: dict[NivelActividad, float] = {
     NivelActividad.MUY_ALTO: 1.9,
 }
 
-# Regla del negocio *b* del apartado 4.3.4: el ajuste sobre el gasto energetico
+# Regla del negocio RN-02 del apartado 4.3.4: el ajuste sobre el gasto energetico
 # total nunca excede el 20 % en deficit ni el 15 % en superavit.
 DEFICIT_MAXIMO = 0.20
 SUPERAVIT_MAXIMO = 0.15
@@ -45,7 +45,7 @@ AJUSTES_POR_OBJETIVO: dict[Objetivo, float] = {
     Objetivo.GANANCIA_MUSCULAR: SUPERAVIT_MAXIMO,
 }
 
-# Regla del negocio *c*: la proteina se mantiene entre 1.6 y 2.2 gramos por
+# Regla del negocio RN-03: la proteina se mantiene entre 1.6 y 2.2 gramos por
 # kilogramo de peso corporal (apartado 2.4.3).
 PROTEINA_MINIMA_POR_KG = 1.6
 PROTEINA_MAXIMA_POR_KG = 2.2
@@ -161,7 +161,7 @@ def calcular_referencias(
 def ajustar_por_objetivo(gasto_energetico: float, objetivo: Objetivo) -> float:
     """Aplica el deficit o el superavit calorico que corresponde al objetivo.
 
-    Regla del negocio *b*: el ajuste nunca excede el 20 % en deficit ni el 15 %
+    Regla del negocio RN-02: el ajuste nunca excede el 20 % en deficit ni el 15 %
     en superavit, para evitar descompensaciones metabolicas.
     """
     return gasto_energetico * (1 + AJUSTES_POR_OBJETIVO[objetivo])
@@ -170,7 +170,7 @@ def ajustar_por_objetivo(gasto_energetico: float, objetivo: Objetivo) -> float:
 def gramos_proteina(peso_kg: float, objetivo: Objetivo) -> float:
     """Gramos diarios de proteina segun el objetivo declarado.
 
-    Regla del negocio *c*: el resultado siempre queda entre 1.6 y 2.2 gramos por
+    Regla del negocio RN-03: el resultado siempre queda entre 1.6 y 2.2 gramos por
     kilogramo de peso corporal.
     """
     por_kilogramo = GRAMOS_PROTEINA_POR_OBJETIVO[objetivo]
@@ -228,7 +228,7 @@ def distribuir_macronutrientes(
 ) -> DistribucionMacronutrientes:
     """Reparte la energia diaria en gramos de cada macronutriente.
 
-    Primero se fija la proteina segun el peso corporal (regla del negocio *c*),
+    Primero se fija la proteina segun el peso corporal (regla del negocio RN-03),
     despues la grasa como proporcion de la energia total y, por ultimo, los
     carbohidratos ocupan la energia restante. La energia declarada es la que
     aportan los gramos ya redondeados, para que la suma cuadre exactamente.
@@ -326,7 +326,7 @@ FACTORES_RECUPERACION_POR_OBJETIVO: dict[Objetivo, float] = {
     Objetivo.GANANCIA_MUSCULAR: 1.05,
 }
 
-# Regla del negocio *d* del apartado 4.3.4: el incremento de carga entre
+# Regla del negocio RN-04 del apartado 4.3.4: el incremento de carga entre
 # microciclos no supera el 10 % del volumen previo.
 INCREMENTO_MAXIMO_ENTRE_MICROCICLOS = 0.10
 
@@ -368,7 +368,7 @@ def series_semanales_por_grupo(
 def progresion_admitida(volumen_previo: float) -> float:
     """Volumen maximo que puede prescribirse en el microciclo siguiente.
 
-    Regla del negocio *d*: el incremento no supera el 10 % del volumen previo,
+    Regla del negocio RN-04: el incremento no supera el 10 % del volumen previo,
     en aplicacion del principio de sobrecarga progresiva (apartado 2.5.2).
     """
     return volumen_previo * (1 + INCREMENTO_MAXIMO_ENTRE_MICROCICLOS)

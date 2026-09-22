@@ -204,7 +204,7 @@ URL_RESPALDO="postgresql://postgres.<referencia>:<contraseña>@aws-1-us-east-2.p
 Programe la ejecución diaria en el planificador de tareas del equipo donde viva
 el repositorio. Los volcados quedan comprimidos en `respaldos/`, y el script
 retira los que superan los treinta días. **No se versionan:** contienen los datos
-biométricos de los usuarios, que la regla del negocio *f* reserva a su titular.
+biométricos de los usuarios, que la regla del negocio RN-06 reserva a su titular.
 
 Un respaldo que nunca se restauró es un archivo, no un respaldo. Compruébelo
 contra el entorno de pruebas:

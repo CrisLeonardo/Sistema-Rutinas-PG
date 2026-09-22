@@ -6,7 +6,7 @@ las ejecuto ni con cuanto peso. Al final de la semana el usuario reportaba
 cuantas sesiones cumplio —un numero suelto— y con eso el sistema decidia si
 reajustaba el plan.
 
-Esa falta de datos tenia una consecuencia concreta: la regla del negocio *d* del
+Esa falta de datos tenia una consecuencia concreta: la regla del negocio RN-04 del
 apartado 4.3.4, que acota el incremento de carga al 10 % entre microciclos,
 estaba implementada en `formulas.progresion_admitida` y no se invocaba desde
 ningun servicio. El principio de sobrecarga progresiva del apartado 2.5.2

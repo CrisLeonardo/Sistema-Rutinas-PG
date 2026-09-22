@@ -1,4 +1,4 @@
-"""Pruebas de los guardarrailes clinicos del plan (regla del negocio *e*).
+"""Pruebas de los guardarrailes clinicos del plan (regla del negocio RN-05).
 
 Verifican que el sistema no prescriba una dieta que no sea segura seguir sin
 supervision, situacion que el calculo original no distinguia: aplicaba siempre
@@ -88,7 +88,7 @@ def test_el_piso_energetico_se_respeta_en_todo_el_dominio(sexo, objetivo, peso):
 
 
 def test_el_bajo_peso_no_recibe_deficit():
-    """Regla *e*: acotar la prescripcion no es diagnosticar."""
+    """Regla RN-05: acotar la prescripcion no es diagnosticar."""
     indice = seguridad.indice_masa_corporal(40, 151)
 
     assert indice < seguridad.IMC_BAJO_PESO

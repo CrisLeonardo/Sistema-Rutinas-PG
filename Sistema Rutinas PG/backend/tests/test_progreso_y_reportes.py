@@ -183,7 +183,7 @@ def test_el_plan_reajustado_recalcula_la_energia_con_el_peso_nuevo(cliente, con_
 
 
 def test_el_plan_reajustado_sigue_cumpliendo_las_reglas_del_negocio(cliente, con_plan):
-    """Las reglas *b* y *c* se cumplen por construcción también tras el reajuste."""
+    """Las reglas RN-02 y RN-03 se cumplen por construcción también tras el reajuste."""
     from app.motor import formulas
 
     registrar(cliente, con_plan, peso_kg=79.0)

@@ -172,59 +172,6 @@ def test_las_insignias_se_cumplen_por_umbral():
     assert "racha_12" not in cumplidas
 
 
-def test_el_animo_prioriza_felicitar_sobre_advertir():
-    """Quien acaba de entrenar recibe ánimo, no una advertencia de racha."""
-    animo = motor.animo_del_usuario(
-        sesiones_totales=20,
-        dias_desde_la_ultima_sesion=0,
-        sesiones_esta_semana=1,
-        racha_semanas=6,
-        dia_de_la_semana=6,
-        entreno_hoy=True,
-        toca_sesion_hoy=True,
-    )
-    assert animo == motor.Animo.ANIMANDO
-
-
-def test_el_animo_advierte_la_racha_en_riesgo():
-    animo = motor.animo_del_usuario(
-        sesiones_totales=20,
-        dias_desde_la_ultima_sesion=5,
-        sesiones_esta_semana=0,
-        racha_semanas=6,
-        dia_de_la_semana=5,
-        entreno_hoy=False,
-        toca_sesion_hoy=False,
-    )
-    assert animo == motor.Animo.ALERTA
-
-
-def test_el_animo_duerme_al_lobo_tras_un_abandono():
-    animo = motor.animo_del_usuario(
-        sesiones_totales=20,
-        dias_desde_la_ultima_sesion=motor.DIAS_PARA_DORMIR,
-        sesiones_esta_semana=0,
-        racha_semanas=0,
-        dia_de_la_semana=3,
-        entreno_hoy=False,
-        toca_sesion_hoy=True,
-    )
-    assert animo == motor.Animo.DORMIDO
-
-
-def test_el_animo_invita_a_quien_no_ha_empezado():
-    animo = motor.animo_del_usuario(
-        sesiones_totales=0,
-        dias_desde_la_ultima_sesion=None,
-        sesiones_esta_semana=0,
-        racha_semanas=0,
-        dia_de_la_semana=1,
-        entreno_hoy=False,
-        toca_sesion_hoy=True,
-    )
-    assert animo == motor.Animo.PENSANDO
-
-
 # --------------------------------------------------------------------------
 # Recorrido completo contra la interfaz
 # --------------------------------------------------------------------------
@@ -266,13 +213,13 @@ def test_la_senda_empieza_en_el_primer_nivel(cliente, token_usuario):
     estado = respuesta.json()
     assert estado["nivel"] == 1
     assert estado["puntos_totales"] == 0
-    assert estado["animo"] == motor.Animo.PENSANDO
     # El catalogo de insignias viaja completo, con las bloqueadas y sus pistas.
     assert estado["logros_totales"] == len(motor.LOGROS)
     assert estado["logros_obtenidos"] == 0
     # El unico hito del primer dia es haberse unido.
     assert [hito["tipo"] for hito in estado["hitos"]] == ["inicio"]
     assert estado["motivos"], "La pantalla debe poder explicar de dónde salen los puntos."
+    assert "animo" not in estado and "gala" not in estado
 
 
 def test_registrar_una_sesion_otorga_puntos_y_la_primera_insignia(
@@ -415,7 +362,6 @@ def test_la_senda_registra_el_camino_recorrido(cliente, token_usuario, ejercicio
     assert estado["puntos_totales"] > 0
     assert estado["sesiones_totales"] == 1
     assert estado["racha_semanas"] >= 1
-    assert estado["animo"] == motor.Animo.ANIMANDO
 
     tipos = [hito["tipo"] for hito in estado["hitos"]]
     assert "logro" in tipos
@@ -428,7 +374,7 @@ def test_la_senda_registra_el_camino_recorrido(cliente, token_usuario, ejercicio
 
 
 def test_la_senda_es_un_dato_personal(cliente, token_usuario, token_segundo_usuario, ejercicio_id):
-    """Regla del negocio *f*: nadie ve el avance de otra cuenta."""
+    """Regla del negocio RN-06: nadie ve el avance de otra cuenta."""
     cliente.post(
         "/api/v1/entrenamiento/sesiones",
         json=_sesion(ejercicio_id, 70.0),

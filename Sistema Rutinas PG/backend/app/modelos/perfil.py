@@ -2,10 +2,26 @@
 
 from datetime import datetime
 
-from sqlalchemy import DateTime, Enum, ForeignKey, Integer, Numeric, SmallInteger, func
+from sqlalchemy import (
+    DateTime,
+    Enum,
+    ForeignKey,
+    Integer,
+    Numeric,
+    SmallInteger,
+    UniqueConstraint,
+    func,
+)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.modelos.enumeraciones import NivelActividad, NivelExperiencia, Objetivo, Sexo
+from app.modelos.enumeraciones import (
+    CondicionMedica,
+    NivelActividad,
+    NivelExperiencia,
+    Objetivo,
+    Sexo,
+    ZonaLesion,
+)
 from app.nucleo.base_datos import Base
 
 
@@ -58,17 +74,95 @@ class PerfilBiometrico(Base):
     usuario: Mapped["Usuario"] = relationship(back_populates="perfiles")  # noqa: F821
     planes: Mapped[list["Plan"]] = relationship(back_populates="perfil")  # noqa: F821
 
+    # El historial de lesiones y las condiciones medicas viven en tablas propias
+    # y no en columnas de esta entidad. Cada medicion puede declarar varias, y el
+    # esquema se crea con `create_all`, que agrega tablas nuevas pero no altera
+    # las existentes: una columna nueva aqui romperia la base ya desplegada.
+    registros_lesion: Mapped[list["LesionPerfil"]] = relationship(
+        back_populates="perfil", cascade="all, delete-orphan", lazy="selectin"
+    )
+    registros_condicion: Mapped[list["CondicionPerfil"]] = relationship(
+        back_populates="perfil", cascade="all, delete-orphan", lazy="selectin"
+    )
+
     @property
     def indice_masa_corporal(self) -> float:
         """Calcula el indice de masa corporal a partir del peso y la estatura."""
         estatura_m = float(self.estatura_cm) / 100
         return round(float(self.peso_kg) / (estatura_m**2), 2)
 
+    @property
+    def lesiones(self) -> list[ZonaLesion]:
+        """Zonas lesionadas declaradas en esta medicion, en orden estable."""
+        return sorted(
+            (registro.zona for registro in self.registros_lesion), key=list(ZonaLesion).index
+        )
+
+    @property
+    def condiciones(self) -> list[CondicionMedica]:
+        """Condiciones medicas declaradas en esta medicion, en orden estable."""
+        return sorted(
+            (registro.condicion for registro in self.registros_condicion),
+            key=list(CondicionMedica).index,
+        )
+
+    def declarar_antecedentes(
+        self, lesiones: list[ZonaLesion], condiciones: list[CondicionMedica]
+    ) -> None:
+        """Asocia a la medicion su historial de lesiones y sus condiciones."""
+        self.registros_lesion = [LesionPerfil(zona=zona) for zona in dict.fromkeys(lesiones)]
+        self.registros_condicion = [
+            CondicionPerfil(condicion=condicion) for condicion in dict.fromkeys(condiciones)
+        ]
+
     def __repr__(self) -> str:
         return (
             f"<PerfilBiometrico id={self.id} usuario_id={self.usuario_id} "
             f"peso={self.peso_kg} objetivo={self.objetivo}>"
         )
+
+
+class LesionPerfil(Base):
+    """Zona lesionada que el usuario declara en una medicion.
+
+    Cuelga de la medicion y no del usuario: asi el historial de lesiones se
+    conserva igual que el de las medidas, y la rutina se arma con las lesiones
+    vigentes en el momento en que se genero.
+    """
+
+    __tablename__ = "lesiones_perfil"
+    __table_args__ = (UniqueConstraint("perfil_id", "zona", name="uq_lesion_por_perfil"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    perfil_id: Mapped[int] = mapped_column(
+        ForeignKey("perfiles_biometricos.id", ondelete="CASCADE"), index=True, nullable=False
+    )
+    zona: Mapped[ZonaLesion] = mapped_column(
+        Enum(ZonaLesion, values_callable=lambda tipo: [miembro.value for miembro in tipo]),
+        nullable=False,
+    )
+
+    perfil: Mapped[PerfilBiometrico] = relationship(back_populates="registros_lesion")
+
+
+class CondicionPerfil(Base):
+    """Patologia cronica severa que el usuario declara en una medicion (RE-02)."""
+
+    __tablename__ = "condiciones_perfil"
+    __table_args__ = (
+        UniqueConstraint("perfil_id", "condicion", name="uq_condicion_por_perfil"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    perfil_id: Mapped[int] = mapped_column(
+        ForeignKey("perfiles_biometricos.id", ondelete="CASCADE"), index=True, nullable=False
+    )
+    condicion: Mapped[CondicionMedica] = mapped_column(
+        Enum(CondicionMedica, values_callable=lambda tipo: [miembro.value for miembro in tipo]),
+        nullable=False,
+    )
+
+    perfil: Mapped[PerfilBiometrico] = relationship(back_populates="registros_condicion")
 
 
 class RegistroProgreso(Base):

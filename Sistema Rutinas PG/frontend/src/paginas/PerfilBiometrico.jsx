@@ -1,14 +1,18 @@
 /**
  * Mis medidas (historia HU-04).
  *
- * El formulario se divide en tres pasos cortos, conforme al requerimiento no
+ * El formulario se divide en cuatro pasos cortos, conforme al requerimiento no
  * funcional 4.5.3. Las validaciones que se aplican aquí son un apoyo a la
  * experiencia de uso: el servidor las vuelve a verificar en su totalidad, según
  * exige el apartado 4.8.3.
  *
  * El indicador de pasos deja de ser una fila de tres círculos con su nombre
- * —que en 390 px se aprieta hasta no leerse— y pasa a ser una barra de tres
- * tramos junto a la flecha de volver, con «Paso 1 de 3» al lado.
+ * —que en 390 px se aprieta hasta no leerse— y pasa a ser una barra de tramos
+ * junto a la flecha de volver, con «Paso 1 de 4» al lado.
+ *
+ * El cuarto paso recoge el historial de lesiones y las condiciones médicas que
+ * promete el alcance del apartado 1.6.1. Las lesiones adaptan la rutina; una
+ * condición crónica severa hace que el servidor no genere el plan (RE-02).
  *
  * Los radios desaparecen: el sexo son dos botones, los días de la semana son
  * siete, y la actividad, el objetivo y la experiencia son filas de 56 px con su
@@ -22,11 +26,13 @@ import { Link, useNavigate } from 'react-router-dom'
 import AvisoDeError from '../componentes/AvisoDeError.jsx'
 import Icono from '../componentes/Icono.jsx'
 import {
+  CONDICIONES_MEDICAS,
   NIVELES_ACTIVIDAD,
   NIVELES_EXPERIENCIA,
   OBJETIVOS,
   RANGOS,
   SEXOS,
+  ZONAS_LESION,
   etiquetaDe,
 } from '../datos/catalogos.js'
 import { useSesion } from '../contexto/ContextoSesion.jsx'
@@ -44,6 +50,11 @@ const PASOS = [
     titulo: 'Su entrenamiento',
     ayuda: 'Con esto se ajusta el volumen de la rutina.',
   },
+  {
+    numero: 4,
+    titulo: 'Su salud',
+    ayuda: 'Lesiones y condiciones que el sistema debe tomar en cuenta.',
+  },
 ]
 
 const FORMULARIO_INICIAL = {
@@ -55,6 +66,14 @@ const FORMULARIO_INICIAL = {
   objetivo: '',
   nivel_experiencia: 'principiante',
   dias_entrenamiento_semana: '3',
+  lesiones: [],
+  condiciones: [],
+}
+
+/** Une las etiquetas de varios valores, o «Ninguna» si la lista está vacía. */
+function listarEtiquetas(opciones, valores) {
+  if (!valores.length) return 'Ninguna'
+  return valores.map((valor) => etiquetaDe(opciones, valor)).join(', ')
 }
 
 /** Traduce el índice de masa corporal a una lectura sencilla, igual que el servidor. */
@@ -103,6 +122,8 @@ export default function PerfilBiometrico() {
           objetivo: perfil.objetivo,
           nivel_experiencia: perfil.nivel_experiencia,
           dias_entrenamiento_semana: String(perfil.dias_entrenamiento_semana),
+          lesiones: perfil.lesiones ?? [],
+          condiciones: perfil.condiciones ?? [],
         })
       })
       .catch(() => {
@@ -124,6 +145,20 @@ export default function PerfilBiometrico() {
 
   const elegir = (campo, valor) => {
     setFormulario((anterior) => ({ ...anterior, [campo]: valor }))
+    setError(null)
+  }
+
+  /** Marca o desmarca un valor de una lista de selección múltiple. */
+  const alternar = (campo, valor) => {
+    setFormulario((anterior) => {
+      const actuales = anterior[campo]
+      return {
+        ...anterior,
+        [campo]: actuales.includes(valor)
+          ? actuales.filter((existente) => existente !== valor)
+          : [...actuales, valor],
+      }
+    })
     setError(null)
   }
 
@@ -188,7 +223,7 @@ export default function PerfilBiometrico() {
 
   const enviar = async (evento) => {
     evento.preventDefault()
-    for (const numero of [1, 2, 3]) {
+    for (const { numero } of PASOS) {
       const problema = validarPaso(numero)
       if (problema) {
         setPaso(numero)
@@ -210,6 +245,8 @@ export default function PerfilBiometrico() {
           objetivo: formulario.objetivo,
           nivel_experiencia: formulario.nivel_experiencia,
           dias_entrenamiento_semana: Number(formulario.dias_entrenamiento_semana),
+          lesiones: formulario.lesiones,
+          condiciones: formulario.condiciones,
         },
         token,
       )
@@ -251,7 +288,7 @@ export default function PerfilBiometrico() {
             <Icono nombre="arrow-left-01" tamano={18} />
           </button>
         )}
-        <div className="tramos" role="progressbar" aria-valuenow={paso} aria-valuemin={1} aria-valuemax={3}>
+        <div className="tramos" role="progressbar" aria-valuenow={paso} aria-valuemin={1} aria-valuemax={PASOS.length}>
           {PASOS.map((definicion) => (
             <span
               key={definicion.numero}
@@ -434,6 +471,36 @@ export default function PerfilBiometrico() {
               </div>
               <p className="campo__ayuda">Su rutina tendrá exactamente esta cantidad de sesiones.</p>
             </div>
+          </>
+        )}
+
+        {paso === 4 && (
+          <>
+            <GrupoMultiple
+              titulo="¿Tiene alguna lesión?"
+              ayuda="Su rutina dejará fuera los ejercicios que cargan esa zona."
+              opciones={ZONAS_LESION}
+              valores={formulario.lesiones}
+              alAlternar={(valor) => alternar('lesiones', valor)}
+            />
+
+            <GrupoMultiple
+              titulo="¿Tiene alguna de estas condiciones médicas?"
+              ayuda="Márquela aunque esté en tratamiento."
+              opciones={CONDICIONES_MEDICAS}
+              valores={formulario.condiciones}
+              alAlternar={(valor) => alternar('condiciones', valor)}
+            />
+
+            {formulario.condiciones.length > 0 && (
+              <div className="aviso aviso--aviso" role="status">
+                <p>
+                  Con esta condición, el sistema no puede generarle un plan de alimentación
+                  ni de entrenamiento: necesita la valoración de un profesional de la salud.
+                  Sus medidas sí se guardan en su historial.
+                </p>
+              </div>
+            )}
 
             <div className="pila-3">
               <span className="rotulo">Resumen de lo que va a guardar</span>
@@ -456,17 +523,39 @@ export default function PerfilBiometrico() {
                   valor={formulario.dias_entrenamiento_semana}
                 />
                 <FilaResumen nombre="Índice de masa corporal" valor={indice ?? '—'} />
+                <FilaResumen
+                  nombre="Lesiones"
+                  valor={listarEtiquetas(ZONAS_LESION, formulario.lesiones)}
+                />
+                <FilaResumen
+                  nombre="Condiciones médicas"
+                  valor={listarEtiquetas(CONDICIONES_MEDICAS, formulario.condiciones)}
+                />
               </div>
             </div>
           </>
         )}
 
+        {/* Las llaves distintas obligan a React a crear un botón nuevo. Sin ellas
+            reutiliza el mismo elemento y le cambia el tipo a «submit» durante el
+            clic de «Continuar», y el navegador envía el formulario sin mostrar el
+            último paso. */}
         {paso < PASOS.length ? (
-          <button type="button" className="boton boton--principal" onClick={avanzar}>
+          <button
+            key="continuar"
+            type="button"
+            className="boton boton--principal"
+            onClick={avanzar}
+          >
             Continuar
           </button>
         ) : (
-          <button type="submit" className="boton boton--principal" disabled={enviando}>
+          <button
+            key="guardar"
+            type="submit"
+            className="boton boton--principal"
+            disabled={enviando}
+          >
             {enviando ? 'Guardando…' : 'Guardar mis medidas'}
           </button>
         )}
@@ -500,6 +589,39 @@ function GrupoDeOpciones({ titulo, opciones, valor, alElegir }) {
             )}
           </button>
         ))}
+      </div>
+    </div>
+  )
+}
+
+/**
+ * Un grupo de opciones que admite varias a la vez. No marcar ninguna es una
+ * respuesta válida —la mayoría no tiene lesiones—, de modo que el paso no exige
+ * elegir.
+ */
+function GrupoMultiple({ titulo, ayuda, opciones, valores, alAlternar }) {
+  return (
+    <div className="pila-3">
+      <span className="pila-2">
+        <span className="lista__titulo">{titulo}</span>
+        <span className="campo__ayuda">{ayuda} Si no tiene ninguna, deje todo sin marcar.</span>
+      </span>
+      <div className="lista">
+        {opciones.map((opcion) => {
+          const marcada = valores.includes(opcion.valor)
+          return (
+            <button
+              key={opcion.valor}
+              type="button"
+              className={`lista__fila${marcada ? ' lista__fila--seleccionada' : ''}`}
+              onClick={() => alAlternar(opcion.valor)}
+              aria-pressed={marcada}
+            >
+              <span className="lista__titulo crece">{opcion.etiqueta}</span>
+              {marcada && <Icono nombre="tick-02" tamano={18} className="tinta-acento" />}
+            </button>
+          )
+        })}
       </div>
     </div>
   )

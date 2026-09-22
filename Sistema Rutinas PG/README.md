@@ -127,10 +127,11 @@ ni de la interfaz: puede entrenarse y evaluarse por separado.
 
 | Módulo | Contenido |
 |---|---|
-| `formulas.py` | Mifflin-St Jeor, Harris-Benedict, factores de actividad, reglas *b*, *c* y *d*, constantes de Atwater, volumen de entrenamiento |
+| `formulas.py` | Mifflin-St Jeor, Harris-Benedict, factores de actividad, reglas RN-02, RN-03 y RN-04, constantes de Atwater, volumen de entrenamiento |
 | `conjunto_datos.py` | Generación de perfiles sintéticos, normalización y división en entrenamiento y validación |
 | `red_neuronal.py` | Arquitectura, entrenamiento, métricas y predicción |
 | `rutina.py` | Reparto del volumen semanal entre las sesiones disponibles (HU-07) |
+| `lesiones.py` | Articulaciones que carga cada ejercicio; la rutina omite los que cargan una zona del historial de lesiones |
 
 Para entrenar el modelo:
 
@@ -251,7 +252,7 @@ patrón modelo-vista-controlador adoptado en el apartado 3.1.2.
 
 Las rutas del perfil biométrico y del plan operan siempre sobre la cuenta que inició sesión.
 No existe ninguna ruta que permita consultar el perfil de otra persona, ni
-siquiera para el administrador, en cumplimiento de la regla del negocio *f* del
+siquiera para el administrador, en cumplimiento de la regla del negocio RN-06 del
 apartado 4.3.4.
 
 ## Seguridad
@@ -322,7 +323,7 @@ avisos de salud en `advertencias_de_salud`, y ambos se muestran al usuario: el
 plan no se corrige en silencio.
 
 Estas reglas **no sustituyen la valoración profesional** ni emiten diagnóstico,
-conforme a la regla del negocio *e* del apartado 4.3.4. Acotan una prescripción,
+conforme a la regla del negocio RN-05 del apartado 4.3.4. Acotan una prescripción,
 que es cosa distinta.
 
 ## Costo del plan y lista de compras
@@ -369,7 +370,7 @@ Del criterio de aceptación de HU-04 y de las reglas del negocio del apartado
 |---|---|
 | Peso | Obligatorio, entre 30 y 250 kilogramos |
 | Estatura | Obligatoria, entre 120 y 220 centímetros |
-| Edad | Obligatoria, desde 18 años cumplidos (regla del negocio *a*) |
+| Edad | Obligatoria, desde 18 años cumplidos (regla del negocio RN-01) |
 | Sexo | Obligatorio: masculino o femenino |
 | Nivel de actividad | Obligatorio: sedentario, ligero, moderado, alto o muy alto |
 | Objetivo | Obligatorio: pérdida de grasa, mantenimiento o ganancia muscular |
@@ -400,7 +401,7 @@ repeticiones en reserva, y no tenía forma de saber si se ejecutaron ni con cuá
 peso. Al final de la semana el usuario reportaba cuántas sesiones cumplió —un
 número suelto— y con eso el sistema decidía si reajustaba el plan.
 
-Esa falta de datos tenía una consecuencia concreta: la regla del negocio *d* del
+Esa falta de datos tenía una consecuencia concreta: la regla del negocio RN-04 del
 apartado 4.3.4, que acota el incremento de carga al 10 % entre microciclos,
 estaba implementada en `formulas.progresion_admitida` y **no se invocaba desde
 ningún servicio**. El principio de sobrecarga progresiva del apartado 2.5.2
@@ -421,7 +422,7 @@ intermedio, y consta de tres pasos:
    repite la misma carga y se busca sumar repeticiones.
 3. Cuando se alcanza, se sube la carga y las repeticiones vuelven al extremo bajo.
 
-El paso 3 es el que la regla *d* acota. De esa cota sale una consecuencia que
+El paso 3 es el que la regla RN-04 acota. De esa cota sale una consecuencia que
 importa: con cargas ligeras, el incremento más pequeño que el gimnasio permite
 —un disco de 1.25 kg por lado— ya supera el 10 %. Con 20 kg en la barra, subir
 2.5 kg es un 12.5 %. El sistema **no se salta la regla**: responde que se siga

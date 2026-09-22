@@ -2,7 +2,7 @@
 
 Todas las rutas operan sobre la cuenta que inicio sesion. No existe ninguna
 ruta que permita consultar el perfil de otra persona, ni siquiera al
-administrador, en cumplimiento de la regla del negocio *f* del apartado 4.3.4.
+administrador, en cumplimiento de la regla del negocio RN-06 del apartado 4.3.4.
 """
 
 from fastapi import APIRouter, HTTPException, status

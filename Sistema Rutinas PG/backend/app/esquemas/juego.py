@@ -9,7 +9,7 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field, computed_field
 
-from app.motor.juego import Animo, TipoEvento, gala_de_nivel
+from app.motor.juego import TipoEvento
 
 
 class PuntoGanadoPublico(BaseModel):
@@ -39,18 +39,6 @@ class RecompensaPublica(BaseModel):
     @property
     def subio_de_nivel(self) -> bool:
         return self.nivel_actual > self.nivel_anterior
-
-    @computed_field(
-        description="Grado de atavío con que se dibuja la mascota en el nivel alcanzado"
-    )
-    @property
-    def gala(self) -> int:
-        """Para que la pantalla que celebra la subida dibuje el atavío nuevo.
-
-        Sin este dato tendría que consultar la senda otra vez solo para saber si
-        al lobo le toca ya la corona de laurel.
-        """
-        return gala_de_nivel(self.nivel_actual)
 
 
 class LogroPublico(BaseModel):
@@ -101,7 +89,6 @@ class EstadoJuego(BaseModel):
     nivel: int
     nombre_nivel: str
     lema: str
-    gala: int = Field(description="Grado de atavío con que se dibuja la mascota, de 0 a 4")
     nivel_maximo: int
 
     puntos_totales: int
@@ -110,8 +97,6 @@ class EstadoJuego(BaseModel):
     puntos_para_el_proximo: int
     porcentaje: int
     nombre_proximo_nivel: str | None
-
-    animo: Animo = Field(description="Estado con que se dibuja la mascota")
 
     racha_semanas: int
     racha_maxima_semanas: int

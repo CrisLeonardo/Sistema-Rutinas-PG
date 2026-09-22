@@ -17,7 +17,7 @@ una vez tres problemas que un contador deja abiertos:
    eventos en orden y viendo cuando el acumulado cruzo cada umbral.
 
 Los dos totales —puntos y logros— se filtran siempre por la cuenta en sesion, en
-cumplimiento de la regla del negocio *f* del apartado 4.3.4.
+cumplimiento de la regla del negocio RN-06 del apartado 4.3.4.
 """
 
 from datetime import datetime

@@ -313,7 +313,7 @@ def test_la_lista_de_compras_exige_sesion(cliente):
 
 
 def test_la_lista_es_privada_de_su_titular(cliente, token_usuario, token_segundo_usuario):
-    """Regla del negocio *f*: los datos de un plan solo los ve su titular."""
+    """Regla del negocio RN-06: los datos de un plan solo los ve su titular."""
     _con_plan(cliente, token_usuario)
 
     respuesta = cliente.get(

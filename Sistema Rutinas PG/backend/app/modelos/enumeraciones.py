@@ -55,6 +55,36 @@ class NivelExperiencia(StrEnum):
     AVANZADO = "avanzado"
 
 
+class ZonaLesion(StrEnum):
+    """Zonas del historial de lesiones que el perfil biometrico registra.
+
+    Son las articulaciones que el entrenamiento con pesas carga de forma directa.
+    La rutina deja fuera los ejercicios que cargan una zona lesionada, en lugar
+    de pedirle al usuario que los adapte por su cuenta (apartado 2.5.2).
+    """
+
+    HOMBRO = "hombro"
+    CODO_MUNECA = "codo_muneca"
+    ESPALDA_BAJA = "espalda_baja"
+    RODILLA = "rodilla"
+    TOBILLO = "tobillo"
+
+
+class CondicionMedica(StrEnum):
+    """Patologias cronicas severas que el sistema no atiende (restriccion RE-02).
+
+    Declarar cualquiera de ellas no impide registrar medidas, pero el servidor
+    se niega a generar el plan y remite a un profesional de la salud: son
+    situaciones en que un plan calculado sin supervision puede hacer dano.
+    """
+
+    CARDIOPATIA = "cardiopatia"
+    HIPERTENSION_NO_CONTROLADA = "hipertension_no_controlada"
+    DIABETES = "diabetes"
+    ENFERMEDAD_RENAL = "enfermedad_renal"
+    TRASTORNO_ALIMENTARIO = "trastorno_alimentario"
+
+
 class CategoriaAlimento(StrEnum):
     """Categorias del catalogo local de alimentos."""
 

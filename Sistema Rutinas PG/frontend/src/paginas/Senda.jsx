@@ -8,7 +8,7 @@
  *
  * La pantalla se ordena por lo que cuesta responder, de arriba abajo:
  *
- *  1. Dónde estoy       · el lobo dentro del anillo, con el nombre del nivel.
+ *  1. Dónde estoy       · el anillo del nivel, con su número y su nombre.
  *  2. Qué falta         · los puntos que quedan para el nivel siguiente.
  *  3. Qué he hecho      · racha, sesiones, volumen, marcas.
  *  4. Qué me falta por  · las insignias, con su pista cuando están bloqueadas.
@@ -97,12 +97,7 @@ function Cabecera({ estado }) {
   return (
     <div className="pila-3">
       <div className="senda-cabecera">
-        <AnilloNivel
-          porcentaje={estado.porcentaje}
-          estado={estado.animo}
-          gala={estado.gala}
-          tamano={140}
-        />
+        <AnilloNivel porcentaje={estado.porcentaje} nivel={estado.nivel} tamano={140} />
         <div className="senda-cabecera__texto">
           <span className="senda-cabecera__nivel">
             Nivel {estado.nivel} de {estado.nivel_maximo}

@@ -4,7 +4,7 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, computed_field
 
-# Regla del negocio *e* del apartado 4.3.4: el sistema no emite diagnosticos
+# Regla del negocio RN-05 del apartado 4.3.4: el sistema no emite diagnosticos
 # medicos y muestra este aviso en todos los planes.
 AVISO_PROFESIONAL = (
     "Este plan es una orientación general generada de forma automática. No sustituye "
@@ -56,13 +56,13 @@ class PlanNutricionalPublico(BaseModel):
     objetivo: str
     explicacion_objetivo: str
 
-    # Guardarrailes clinicos que gobiernan el plan (regla del negocio *e*). Las
+    # Guardarrailes clinicos que gobiernan el plan (regla del negocio RN-05). Las
     # correcciones explican por que el plan no es el calculo crudo; las
     # advertencias senalan cuando conviene consultar a un profesional.
     correcciones_de_seguridad: list[str] = []
     advertencias_de_salud: list[str] = []
 
-    @computed_field(description="Aviso de consulta profesional (regla del negocio *e*)")
+    @computed_field(description="Aviso de consulta profesional (regla del negocio RN-05)")
     @property
     def aviso_profesional(self) -> str:
         return AVISO_PROFESIONAL

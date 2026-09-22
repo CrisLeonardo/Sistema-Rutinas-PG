@@ -41,19 +41,12 @@ from enum import StrEnum
 
 @dataclass(frozen=True)
 class Nivel:
-    """Un nivel de la senda, con el atavio que le corresponde a la mascota.
-
-    `gala` es el grado de atavio —de 0 a 4— con que se dibuja la mascota en ese
-    nivel. Es lo que hace visible el avance sin obligar a leer una cifra: el
-    lobo aparece con cinta de laurel, con corona, con capa y finalmente con
-    aureola dorada.
-    """
+    """Un nivel de la senda: su nombre, su lema y los puntos que exige."""
 
     numero: int
     nombre: str
     lema: str
     xp_requerido: int
-    gala: int
 
 
 # La curva se calibro contra el presupuesto real de puntos del usuario que el
@@ -74,17 +67,17 @@ class Nivel:
 # primera semana —la primera señal llega pronto— y que cada tramo valga entre
 # una cuarta parte y un tercio mas que el anterior.
 NIVELES: tuple[Nivel, ...] = (
-    #                                                                   xp    gala
-    Nivel(1, "Cachorro", "Toda manada empieza con un cachorro.", 0, 0),
-    Nivel(2, "Rastreador", "Ya sabe seguir el rastro de su propio avance.", 900, 0),
-    Nivel(3, "Cazador", "La constancia dejó de ser un intento.", 2_000, 1),
-    Nivel(4, "Guardián", "Aparece aunque nadie lo esté viendo.", 3_600, 1),
-    Nivel(5, "Alfa", "La manada sigue a quien no falta.", 6_000, 2),
-    Nivel(6, "Espartano", "Volvió con el escudo, no sobre el escudo.", 9_000, 2),
-    Nivel(7, "Olímpico", "Compite contra quien fue el mes pasado.", 13_000, 3),
-    Nivel(8, "Semidiós", "El esfuerzo dejó de pesar y empezó a rendir.", 18_500, 3),
-    Nivel(9, "Titán", "Ya no levanta peso: levanta meses de trabajo.", 26_000, 4),
-    Nivel(10, "Leyenda", "Su historial es el argumento.", 36_000, 4),
+    #                                                                   xp
+    Nivel(1, "Principiante", "Todo camino empieza con la primera sesión.", 0),
+    Nivel(2, "Aprendiz", "Ya sabe seguir el rastro de su propio avance.", 900),
+    Nivel(3, "Constante", "La constancia dejó de ser un intento.", 2_000),
+    Nivel(4, "Guardián", "Aparece aunque nadie lo esté viendo.", 3_600),
+    Nivel(5, "Atleta", "No falta, y eso ya se nota.", 6_000),
+    Nivel(6, "Espartano", "Volvió con el escudo, no sobre el escudo.", 9_000),
+    Nivel(7, "Olímpico", "Compite contra quien fue el mes pasado.", 13_000),
+    Nivel(8, "Semidiós", "El esfuerzo dejó de pesar y empezó a rendir.", 18_500),
+    Nivel(9, "Titán", "Ya no levanta peso: levanta meses de trabajo.", 26_000),
+    Nivel(10, "Leyenda", "Su historial es el argumento.", 36_000),
 )
 
 NIVEL_MAXIMO = NIVELES[-1].numero
@@ -99,19 +92,6 @@ def nivel_para(puntos: int) -> Nivel:
         else:
             break
     return alcanzado
-
-
-def gala_de_nivel(numero: int) -> int:
-    """Grado de atavio que le toca a la mascota en ese nivel.
-
-    Lo necesita la respuesta de una accion, que conoce el numero del nivel
-    alcanzado pero no la tabla: sin esto, la pantalla que celebra una subida
-    dibujaria al lobo con el atavio del nivel anterior.
-    """
-    for nivel in NIVELES:
-        if nivel.numero == numero:
-            return nivel.gala
-    return NIVELES[-1].gala if numero > NIVEL_MAXIMO else NIVELES[0].gala
 
 
 def siguiente_nivel(nivel: Nivel) -> Nivel | None:
@@ -301,7 +281,7 @@ DISCIPLINA = "Disciplina"
 LOGROS: tuple[Logro, ...] = (
     Logro(
         "primera_sesion",
-        "Primer aullido",
+        "Primer paso",
         "Registró su primera sesión de entrenamiento.",
         "Registre su primera sesión en el gimnasio.",
         50,
@@ -355,7 +335,7 @@ LOGROS: tuple[Logro, ...] = (
     ),
     Logro(
         "racha_26",
-        "Medio año de manada",
+        "Medio año",
         "Veintiséis semanas seguidas con entrenamiento.",
         "Sostenga la racha veintiséis semanas.",
         800,
@@ -477,75 +457,3 @@ def logros_cumplidos(trayectoria: Trayectoria) -> tuple[str, ...]:
     """
     return tuple(logro.clave for logro in LOGROS if logro.condicion(trayectoria))
 
-
-# --------------------------------------------------------------------------
-# Animo de la mascota
-# --------------------------------------------------------------------------
-
-
-class Animo(StrEnum):
-    """Estado con que se dibuja la mascota.
-
-    La mascota no es un adorno con una sola pose: es el canal por el que el
-    sistema dice en una imagen lo que la pantalla dice en cifras. Cada estado
-    corresponde a una situacion real del usuario, y por eso se decide aqui, del
-    lado del servidor, y no en la interfaz: la situacion se deduce de la
-    bitacora completa, que la interfaz no tiene.
-    """
-
-    SALUDO = "saludo"
-    ANIMANDO = "animando"
-    ENTRENANDO = "entrenando"
-    DESCANSO = "descanso"
-    DORMIDO = "dormido"
-    ALERTA = "alerta"
-    CELEBRANDO = "celebrando"
-    PENSANDO = "pensando"
-
-
-# Dias sin entrenar tras los cuales la mascota aparece dormida. Por debajo de
-# este plazo, un usuario que entrena tres veces por semana veria al lobo dormido
-# cada dia de descanso, y el estado dejaria de significar nada.
-DIAS_PARA_DORMIR = 10
-
-# Dia de la semana —lunes es 1— desde el que una semana sin sesiones pone en
-# riesgo la racha. Antes del jueves todavia no hay nada que advertir.
-DIA_EN_QUE_LA_RACHA_PELIGRA = 4
-
-
-def animo_del_usuario(
-    *,
-    sesiones_totales: int,
-    dias_desde_la_ultima_sesion: int | None,
-    sesiones_esta_semana: int,
-    racha_semanas: int,
-    dia_de_la_semana: int,
-    entreno_hoy: bool,
-    toca_sesion_hoy: bool,
-) -> Animo:
-    """Decide con que animo se dibuja la mascota.
-
-    El orden de las comprobaciones es la prioridad: felicitar a quien acaba de
-    entrenar importa mas que advertirle de una racha, y advertir de una racha en
-    riesgo importa mas que saludar.
-    """
-    if sesiones_totales == 0:
-        return Animo.PENSANDO
-    if entreno_hoy:
-        return Animo.ANIMANDO
-    if (
-        dias_desde_la_ultima_sesion is not None
-        and dias_desde_la_ultima_sesion >= DIAS_PARA_DORMIR
-    ):
-        return Animo.DORMIDO
-    if (
-        racha_semanas > 0
-        and sesiones_esta_semana == 0
-        and dia_de_la_semana >= DIA_EN_QUE_LA_RACHA_PELIGRA
-    ):
-        return Animo.ALERTA
-    if toca_sesion_hoy:
-        return Animo.ENTRENANDO
-    if sesiones_esta_semana > 0:
-        return Animo.DESCANSO
-    return Animo.SALUDO

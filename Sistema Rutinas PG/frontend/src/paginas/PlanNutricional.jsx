@@ -3,7 +3,7 @@
  *
  * Cada cifra técnica va acompañada de una explicación en lenguaje sencillo, tal
  * como exige el requerimiento no funcional 4.5.3, y todo plan muestra el aviso
- * de consulta profesional de la regla del negocio *e*.
+ * de consulta profesional de la regla del negocio RN-05.
  *
  * La pantalla tenía cinco tarjetas y dos tablas, y la cifra que de verdad
  * importa —cuánta energía comer— competía con la comparación contra las

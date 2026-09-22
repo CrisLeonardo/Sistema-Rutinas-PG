@@ -1,4 +1,4 @@
-"""Pruebas del motor de progresion de carga (regla del negocio *d*).
+"""Pruebas del motor de progresion de carga (regla del negocio RN-04).
 
 `formulas.progresion_admitida` implementaba el incremento maximo del 10 % entre
 microciclos desde la Iteracion 3, y su unica invocacion en todo el sistema estaba
@@ -97,13 +97,13 @@ def test_al_subir_la_carga_las_repeticiones_vuelven_al_extremo_bajo():
 
 
 # --------------------------------------------------------------------------
-# La regla del negocio *d*
+# La regla del negocio RN-04
 # --------------------------------------------------------------------------
 
 
 @pytest.mark.parametrize("carga", [30.0, 45.0, 60.0, 80.0, 100.0, 140.0, 200.0])
 def test_el_incremento_nunca_supera_el_diez_por_ciento(carga):
-    """Regla *d* del apartado 4.3.4, ahora verificada sobre el camino real."""
+    """Regla RN-04 del apartado 4.3.4, ahora verificada sobre el camino real."""
     recomendacion = progresion.calcular(
         ejecucion([12, 12, 12], carga), 8, 12, es_compuesto=True
     )

@@ -18,6 +18,7 @@ from app.modelos.perfil import PerfilBiometrico
 from app.modelos.plan import ComidaPlan, EjercicioSesion, Plan, SesionEntrenamiento
 from app.modelos.usuario import Usuario
 from app.motor import formulas, seguridad
+from app.motor.lesiones import ejercicios_compatibles
 from app.motor.red_neuronal import ModeloNoEntrenado, MotorNeuronal
 from app.motor.menu import (
     AlimentoDisponible,
@@ -49,6 +50,14 @@ class PerfilIncompleto(Exception):
 
     Corresponde a la validacion del apartado 4.8.3: el sistema no genera un plan
     si el perfil biometrico esta incompleto.
+    """
+
+
+class RequiereValoracionProfesional(Exception):
+    """El perfil declara una patologia cronica severa (restriccion RE-02).
+
+    Se comprueba aqui, en el servidor, y no solo como aviso en la interfaz,
+    porque asi lo exige la restriccion RE-06.
     """
 
 
@@ -113,6 +122,9 @@ def generar_plan(sesion: Session, usuario: Usuario) -> Plan:
 
     if not servicio_perfil.perfil_esta_completo(perfil):
         raise PerfilIncompleto(usuario.id)
+
+    if perfil.condiciones:
+        raise RequiereValoracionProfesional(usuario.id)
 
     plan = construir_plan(perfil)
 
@@ -181,13 +193,24 @@ def ejercicios_disponibles(sesion: Session) -> list[EjercicioDisponible]:
 def construir_rutina(
     sesion: Session, perfil: PerfilBiometrico, series_semanales_por_grupo: float
 ) -> RutinaSemanal:
-    """Arma la rutina semanal del perfil con los ejercicios del catalogo."""
+    """Arma la rutina semanal del perfil con los ejercicios del catalogo.
+
+    Los ejercicios que cargan una zona del historial de lesiones del perfil no
+    entran en la seleccion. Si la lesion deja un grupo sin ningun ejercicio
+    compatible, su sesion queda vacia y la rutina lo explica al usuario.
+    """
+    catalogo = ejercicios_disponibles(sesion)
+    if not catalogo:
+        raise CatalogoInsuficiente(
+            "No hay ejercicios registrados en el catálogo con los que armar la rutina."
+        )
     return generar_rutina(
         series_semanales_por_grupo=series_semanales_por_grupo,
         dias_entrenamiento_semana=perfil.dias_entrenamiento_semana,
         nivel_experiencia=perfil.nivel_experiencia,
         objetivo=perfil.objetivo,
-        disponibles=ejercicios_disponibles(sesion),
+        disponibles=ejercicios_compatibles(catalogo, perfil.lesiones),
+        permitir_sesiones_vacias=bool(perfil.lesiones),
     )
 
 
@@ -430,7 +453,7 @@ def explicacion_objetivo(perfil: PerfilBiometrico) -> str:
 
     El porcentaje se calcula para el perfil concreto y no se declara fijo: los
     guardarrailes clinicos reducen el ajuste cuando la composicion corporal no
-    admite el maximo de la regla del negocio *b*, y anunciar un 20 % que el plan
+    admite el maximo de la regla del negocio RN-02, y anunciar un 20 % que el plan
     no aplica seria describirle al usuario un plan distinto del que recibio.
     """
     indice = seguridad.indice_masa_corporal(float(perfil.peso_kg), float(perfil.estatura_cm))

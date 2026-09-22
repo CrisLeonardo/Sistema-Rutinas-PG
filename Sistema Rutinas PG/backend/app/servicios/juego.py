@@ -16,7 +16,7 @@ proceso de migracion ni tarea programada. Con la comprobacion puntual, esa
 insignia no se habria concedido nunca.
 
 Todas las consultas se filtran por el identificador de la cuenta en sesion, en
-cumplimiento de la regla del negocio *f* del apartado 4.3.4.
+cumplimiento de la regla del negocio RN-06 del apartado 4.3.4.
 """
 
 import logging
@@ -33,7 +33,7 @@ from app.modelos.perfil import PerfilBiometrico, RegistroProgreso
 from app.modelos.plan import SesionEntrenamiento
 from app.modelos.usuario import Usuario
 from app.motor import juego as motor
-from app.motor.juego import Animo, TipoEvento
+from app.motor.juego import TipoEvento
 
 bitacora = logging.getLogger(__name__)
 
@@ -471,7 +471,7 @@ def recompensar_avance_semanal(
 class Historial:
     """Lo que se lee una sola vez de la base de datos para todo lo demas.
 
-    Armar la trayectoria, calcular la racha y decidir el animo de la mascota
+    Armar la trayectoria, calcular la racha y otorgar los puntos del descanso
     necesitan los mismos datos. Sin esta estructura intermedia, cada uno los
     volveria a consultar.
     """
@@ -698,7 +698,7 @@ class Hito:
     puntos: int = 0
 
 
-def estado(sesion: Session, usuario: Usuario, toca_sesion_hoy: bool = False) -> dict:
+def estado(sesion: Session, usuario: Usuario) -> dict:
     """Todo lo que la pantalla de la senda y el panel necesitan, en una consulta.
 
     Se arma completo del lado del servidor por la misma razon que el reporte de
@@ -710,26 +710,10 @@ def estado(sesion: Session, usuario: Usuario, toca_sesion_hoy: bool = False) -> 
     total = puntos_totales(sesion, usuario)
     avance = motor.avance_de_nivel(total)
 
-    hoy = date.today()
-    ultima = historial.sesiones[0].fecha if historial.sesiones else None
-    esta_semana = _inicio_de_semana(hoy)
-    sesiones_esta_semana = sum(1 for s in historial.sesiones if s.fecha >= esta_semana)
-
-    animo = motor.animo_del_usuario(
-        sesiones_totales=trayectoria.sesiones_totales,
-        dias_desde_la_ultima_sesion=(hoy - ultima).days if ultima else None,
-        sesiones_esta_semana=sesiones_esta_semana,
-        racha_semanas=trayectoria.racha_semanas,
-        dia_de_la_semana=hoy.isoweekday(),
-        entreno_hoy=ultima == hoy,
-        toca_sesion_hoy=toca_sesion_hoy,
-    )
-
     return {
         "nivel": avance.nivel.numero,
         "nombre_nivel": avance.nivel.nombre,
         "lema": avance.nivel.lema,
-        "gala": avance.nivel.gala,
         "nivel_maximo": motor.NIVEL_MAXIMO,
         "puntos_totales": total,
         "puntos_en_el_nivel": avance.puntos_en_el_nivel,
@@ -737,7 +721,6 @@ def estado(sesion: Session, usuario: Usuario, toca_sesion_hoy: bool = False) -> 
         "puntos_para_el_proximo": avance.puntos_para_el_proximo,
         "porcentaje": avance.porcentaje,
         "nombre_proximo_nivel": avance.proximo.nombre if avance.proximo else None,
-        "animo": animo,
         "racha_semanas": trayectoria.racha_semanas,
         "racha_maxima_semanas": trayectoria.racha_maxima_semanas,
         "sesiones_totales": trayectoria.sesiones_totales,
@@ -857,7 +840,7 @@ def _camino_recorrido(sesion: Session, usuario: Usuario) -> list[Hito]:
     hitos.append(
         Hito(
             tipo="inicio",
-            titulo="Se unió a la manada",
+            titulo="Empezó su senda",
             detalle="Creó su cuenta y empezó el camino.",
             fecha=usuario.fecha_registro,
         )

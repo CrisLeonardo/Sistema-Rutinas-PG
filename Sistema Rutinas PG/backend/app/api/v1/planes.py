@@ -38,6 +38,19 @@ _PERFIL_INCOMPLETO = HTTPException(
     ),
 )
 
+# Restricciones RE-02 y RE-06: la negativa sale del servidor. Se usa 403 y no el
+# 409 del perfil incompleto porque la salida no es completar un dato: el perfil
+# está completo, y lo que corresponde es la valoración de un profesional.
+_REQUIERE_PROFESIONAL = HTTPException(
+    status_code=status.HTTP_403_FORBIDDEN,
+    detail=(
+        "Declaró una condición médica que requiere la valoración de un profesional de "
+        "la salud. El sistema no genera planes de alimentación ni de entrenamiento en "
+        "ese caso, porque un plan sin supervisión médica podría perjudicarle. Si la "
+        "condición ya no aplica, actualice sus medidas."
+    ),
+)
+
 _SIN_PLAN = HTTPException(
     status_code=status.HTTP_404_NOT_FOUND,
     detail="Todavía no tiene un plan generado.",
@@ -87,6 +100,8 @@ def generar(sesion: SesionBD, usuario: UsuarioAutenticado) -> PlanNutricionalPub
         plan = servicio_plan.generar_plan(sesion, usuario)
     except servicio_plan.PerfilIncompleto:
         raise _PERFIL_INCOMPLETO from None
+    except servicio_plan.RequiereValoracionProfesional:
+        raise _REQUIERE_PROFESIONAL from None
     return _componer(sesion, plan)
 
 

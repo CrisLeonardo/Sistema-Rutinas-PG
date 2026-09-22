@@ -2,7 +2,7 @@
 
 Verifican el criterio de aceptacion de la Tabla 9 —tiempo de respuesta, margen de
 error frente a las formulas y coherencia de los macronutrientes— y las reglas del
-negocio *b*, *c* y *e* del apartado 4.3.4.
+negocio RN-02, RN-03 y RN-05 del apartado 4.3.4.
 """
 
 import time

@@ -1,4 +1,4 @@
-"""Guardarrailes clinicos sobre el plan calculado (regla del negocio *e*).
+"""Guardarrailes clinicos sobre el plan calculado (regla del negocio RN-05).
 
 El motor de calculo produce el requerimiento energetico que las formulas de
 referencia determinan; este modulo comprueba que lo prescrito quepa dentro de
@@ -13,7 +13,7 @@ aparte, se declara aparte y se le explica al usuario aparte.
 
 Las tres situaciones que atiende son las que el calculo original no distinguia:
 
-1. El deficit se aplicaba siempre al maximo. La regla del negocio *b* del
+1. El deficit se aplicaba siempre al maximo. La regla del negocio RN-02 del
    apartado 4.3.4 dice que el ajuste «nunca excede» el 20 %, no que sea
    siempre el 20 %: una persona con indice de masa corporal de 19.5 recibia el
    mismo recorte que una con indice de 40.
@@ -24,7 +24,7 @@ Las tres situaciones que atiende son las que el calculo original no distinguia:
    pagar en el municipio.
 
 Ninguna de las tres correcciones emite un diagnostico: acotan una prescripcion
-y explican por que, que es justamente lo que la regla del negocio *e* permite.
+y explican por que, que es justamente lo que la regla del negocio RN-05 permite.
 """
 
 from dataclasses import dataclass, field
@@ -39,7 +39,7 @@ from app.motor.formulas import (
     SUPERAVIT_MAXIMO,
 )
 
-# Techos que fija la regla del negocio *b*. Se leen de `formulas` para que un
+# Techos que fija la regla del negocio RN-02. Se leen de `formulas` para que un
 # cambio en la regla no deje aqui una copia desactualizada.
 DEFICIT_MAXIMO_REGLA = DEFICIT_MAXIMO
 SUPERAVIT_MAXIMO_REGLA = SUPERAVIT_MAXIMO
@@ -65,7 +65,7 @@ IMC_OBESIDAD = 30.0
 # Deficit admitido segun el indice de masa corporal. La reserva de grasa
 # disponible es lo que determina cuanta energia puede retirarse sin que el
 # cuerpo compense consumiendo musculo: quien tiene poca no tolera el recorte
-# que quien tiene mucha si tolera. El techo sigue siendo el 20 % de la regla *b*.
+# que quien tiene mucha si tolera. El techo sigue siendo el 20 % de la regla RN-02.
 DEFICIT_POR_INDICE: tuple[tuple[float, float], ...] = (
     (IMC_BAJO_PESO, 0.00),  # bajo peso: no se retira energia
     (21.0, 0.10),
@@ -75,7 +75,7 @@ DEFICIT_POR_INDICE: tuple[tuple[float, float], ...] = (
 
 # Superavit admitido. Con exceso de grasa corporal, el excedente calorico se
 # acumula sobre todo como grasa, de modo que se modera. El techo sigue siendo
-# el 15 % de la regla *b*.
+# el 15 % de la regla RN-02.
 SUPERAVIT_POR_INDICE: tuple[tuple[float, float], ...] = (
     (IMC_SOBREPESO, 0.15),
     (IMC_OBESIDAD, 0.10),
@@ -127,7 +127,7 @@ def ajuste_admitido(objetivo: Objetivo, indice: float) -> float:
     """Ajuste calorico que corresponde al objetivo y a la composicion corporal.
 
     Devuelve una fraccion con signo: negativa en deficit, positiva en superavit.
-    Nunca excede los limites de la regla del negocio *b*.
+    Nunca excede los limites de la regla del negocio RN-02.
     """
     if objetivo == Objetivo.MANTENIMIENTO:
         return 0.0

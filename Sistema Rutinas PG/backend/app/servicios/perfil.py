@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 
 from app.esquemas.perfil import RegistroPerfilBiometrico
 from app.modelos.perfil import PerfilBiometrico
+from app.modelos.plan import Plan
 from app.modelos.usuario import Usuario
 
 
@@ -27,7 +28,7 @@ def registrar_perfil(
 
     El identificador del usuario proviene siempre del token verificado y nunca
     del cuerpo de la peticion, de modo que una cuenta no pueda registrar medidas
-    a nombre de otra (regla del negocio *f*).
+    a nombre de otra (regla del negocio RN-06).
     """
     perfil = PerfilBiometrico(
         usuario_id=usuario.id,
@@ -40,7 +41,18 @@ def registrar_perfil(
         nivel_experiencia=datos.nivel_experiencia,
         dias_entrenamiento_semana=datos.dias_entrenamiento_semana,
     )
+    perfil.declarar_antecedentes(datos.lesiones, datos.condiciones)
     sesion.add(perfil)
+
+    if datos.condiciones:
+        # Restriccion RE-02: con una patologia cronica severa el sistema no
+        # prescribe. Un plan calculado antes de conocerla seguiria mostrandose
+        # como vigente, de modo que se retira; se conserva en el historial.
+        for plan in sesion.execute(
+            select(Plan).where(Plan.usuario_id == usuario.id, Plan.activo.is_(True))
+        ).scalars():
+            plan.activo = False
+
     sesion.commit()
     sesion.refresh(perfil)
     return perfil
@@ -68,7 +80,7 @@ def listar_historial(sesion: Session, usuario: Usuario) -> list[PerfilBiometrico
     """Devuelve todas las mediciones del usuario, de la mas reciente a la mas antigua.
 
     La consulta se filtra por el identificador de la sesion activa, de manera que
-    los datos biometricos solo sean visibles para su titular (regla del negocio *f*).
+    los datos biometricos solo sean visibles para su titular (regla del negocio RN-06).
     """
     sentencia = (
         select(PerfilBiometrico)

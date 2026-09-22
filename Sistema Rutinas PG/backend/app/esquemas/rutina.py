@@ -2,11 +2,11 @@
 
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict, computed_field
+from pydantic import BaseModel, ConfigDict, Field, computed_field
 
 from app.modelos.enumeraciones import GrupoMuscular
 
-# Regla del negocio *e* del apartado 4.3.4. La rutina lleva su propio aviso
+# Regla del negocio RN-05 del apartado 4.3.4. La rutina lleva su propio aviso
 # porque puede consultarse sin pasar por la pantalla del plan nutricional.
 AVISO_TECNICA = (
     "Antes de aumentar la carga, asegúrese de dominar la técnica de cada ejercicio. "
@@ -120,6 +120,10 @@ class RutinaPublica(BaseModel):
     nivel_experiencia: str
     objetivo: str
     sesiones: list[SesionRutinaPublica]
+    lesiones_consideradas: list[str] = Field(
+        default=[],
+        description="Zonas del historial de lesiones que la rutina evita cargar",
+    )
 
     @computed_field(description="Aviso de técnica y consulta profesional")
     @property
@@ -200,6 +204,13 @@ class RutinaPublica(BaseModel):
         listado = " y ".join(
             [", ".join(faltantes[:-1]), faltantes[-1]] if len(faltantes) > 1 else faltantes
         ).strip(", ")
+        if self.lesiones_consideradas:
+            return (
+                f"{listado} no tienen ejercicios esta semana. Algunos grupos quedan sin "
+                "trabajo porque todos sus ejercicios cargan una zona de su historial de "
+                "lesiones, y otros porque su frecuencia semanal no les da un día propio. "
+                "Las sesiones sin ejercicios cuentan como descanso activo."
+            )
         return (
             f"Con {self.dias_entrenamiento_semana} sesiones a la semana no alcanza para "
             f"darle un día propio a cada músculo. {listado} no tienen sesión dedicada, "
@@ -208,10 +219,24 @@ class RutinaPublica(BaseModel):
             "en el perfil biométrico."
         )
 
+    @computed_field(description="Cómo se adaptó la rutina al historial de lesiones")
+    @property
+    def explicacion_lesiones(self) -> str | None:
+        """Dice qué zonas se protegieron, para que un ejercicio ausente no parezca un error."""
+        if not self.lesiones_consideradas:
+            return None
+        zonas = self.lesiones_consideradas
+        listado = zonas[0] if len(zonas) == 1 else f"{', '.join(zonas[:-1])} y {zonas[-1]}"
+        return (
+            f"Su rutina deja fuera los ejercicios que cargan: {listado}. Ante cualquier "
+            "dolor en esa zona, deténgase y consulte a un profesional de la salud antes "
+            "de volver a entrenarla."
+        )
+
     @computed_field(description="Explicación de la progresión de carga")
     @property
     def explicacion_progresion(self) -> str:
-        """Regla del negocio *d*: la carga no sube mas del 10 % entre microciclos."""
+        """Regla del negocio RN-04: la carga no sube mas del 10 % entre microciclos."""
         return (
             "Cuando complete todas las series dentro del rango de repeticiones indicado, "
             "suba la carga para la semana siguiente. El aumento nunca debe pasar del "

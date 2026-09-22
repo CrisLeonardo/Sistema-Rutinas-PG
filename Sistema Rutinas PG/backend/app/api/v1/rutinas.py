@@ -17,6 +17,7 @@ from app.esquemas.rutina import (
 )
 from app.modelos.perfil import PerfilBiometrico
 from app.modelos.plan import EjercicioSesion, Plan, SesionEntrenamiento
+from app.motor.lesiones import NOMBRES_ZONA
 from app.servicios import plan as servicio_plan
 
 enrutador = APIRouter(prefix="/rutina", tags=["Rutina de entrenamiento"])
@@ -85,6 +86,7 @@ def _componer(sesion: SesionBD, plan: Plan) -> RutinaPublica:
         nivel_experiencia=perfil.nivel_experiencia.value,
         objetivo=perfil.objetivo.value,
         sesiones=sesiones,
+        lesiones_consideradas=[NOMBRES_ZONA[zona] for zona in perfil.lesiones],
     )
 
 

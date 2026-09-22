@@ -1,12 +1,12 @@
 """Logica de la bitacora de entrenamiento y de la progresion de carga.
 
 Une el registro de lo ejecutado con el motor de progresion. Es lo que convierte
-la regla del negocio *d* del apartado 4.3.4 —el incremento de carga no supera el
+la regla del negocio RN-04 del apartado 4.3.4 —el incremento de carga no supera el
 10 % entre microciclos— de una funcion que nadie invocaba en una regla que
 gobierna lo que el usuario ve cada vez que entra al gimnasio.
 
 Todas las consultas se filtran por el identificador de la cuenta en sesion, en
-cumplimiento de la regla del negocio *f*: la bitacora es un dato personal y solo
+cumplimiento de la regla del negocio RN-06: la bitacora es un dato personal y solo
 la ve su titular.
 """
 

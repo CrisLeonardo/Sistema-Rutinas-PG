@@ -2,7 +2,7 @@
 
 Todas las rutas operan sobre la cuenta que inicio sesion. No existe ninguna que
 permita consultar la bitacora de otra persona, ni siquiera para el administrador,
-en cumplimiento de la regla del negocio *f* del apartado 4.3.4.
+en cumplimiento de la regla del negocio RN-06 del apartado 4.3.4.
 """
 
 from fastapi import APIRouter, HTTPException, status
@@ -52,7 +52,7 @@ def abrir_sesion(
 
     Es la pantalla que se usa dentro del gimnasio: además de la prescripción,
     lleva lo que el usuario hizo la última vez y con cuánto peso conviene
-    entrenar hoy, calculado con la regla del negocio *d*.
+    entrenar hoy, calculado con la regla del negocio RN-04.
     """
     sentencia = (
         select(SesionEntrenamiento)

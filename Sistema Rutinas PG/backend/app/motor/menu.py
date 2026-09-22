@@ -12,7 +12,7 @@ logica pueda verificarse por separado.
 El reparto no busca el optimo matematico. Sigue la estructura de comidas
 habitual del municipio —desayuno, refaccion, almuerzo, refaccion y cena— y
 asigna a cada tiempo una porcion del requerimiento diario, cubriendo primero la
-proteina, que es la que la regla del negocio *c* fija con menos holgura.
+proteina, que es la que la regla del negocio RN-03 fija con menos holgura.
 """
 
 from collections.abc import Callable
@@ -446,7 +446,7 @@ def _ajustar_energia(
     diferencia entre la energia del menu y la del plan. Aqui se reparte esa
     diferencia entre los cereales y los tuberculos, que son los alimentos cuya
     porcion admite variar sin volverse impracticable, y no entre la proteina,
-    que la regla del negocio *c* fija con poca holgura.
+    que la regla del negocio RN-03 fija con poca holgura.
     """
     if energia_objetivo <= 0:
         return tiempos
@@ -523,7 +523,7 @@ def generar_menu(
     El reparto sigue el orden en que los macronutrientes admiten menos holgura:
 
     1. La proteina de cada tiempo dimensiona su alimento proteico, porque es la
-       que la regla del negocio *c* acota entre 1.6 y 2.2 gramos por kilogramo.
+       que la regla del negocio RN-03 acota entre 1.6 y 2.2 gramos por kilogramo.
     2. Las verduras y las frutas se sirven en porciones fijas, no por energia:
        aportan muy pocas kilocalorias por gramo y pedirles cubrir parte del
        requerimiento produciria porciones impracticables.

@@ -87,6 +87,27 @@ export const NIVELES_EXPERIENCIA = [
   },
 ]
 
+/** Historial de lesiones: la rutina deja fuera los ejercicios que cargan la zona. */
+export const ZONAS_LESION = [
+  { valor: 'hombro', etiqueta: 'Hombro' },
+  { valor: 'codo_muneca', etiqueta: 'Codo o muñeca' },
+  { valor: 'espalda_baja', etiqueta: 'Espalda baja' },
+  { valor: 'rodilla', etiqueta: 'Rodilla' },
+  { valor: 'tobillo', etiqueta: 'Tobillo' },
+]
+
+/**
+ * Patologías crónicas severas (restricción RE-02). Con cualquiera de ellas el
+ * servidor no genera el plan y remite a un profesional de la salud.
+ */
+export const CONDICIONES_MEDICAS = [
+  { valor: 'cardiopatia', etiqueta: 'Enfermedad del corazón' },
+  { valor: 'hipertension_no_controlada', etiqueta: 'Presión alta sin control médico' },
+  { valor: 'diabetes', etiqueta: 'Diabetes' },
+  { valor: 'enfermedad_renal', etiqueta: 'Enfermedad de los riñones' },
+  { valor: 'trastorno_alimentario', etiqueta: 'Trastorno de la conducta alimentaria' },
+]
+
 /** Busca la etiqueta legible de un valor dentro de una lista de opciones. */
 export function etiquetaDe(opciones, valor) {
   return opciones.find((opcion) => opcion.valor === valor)?.etiqueta ?? valor ?? '—'

@@ -62,7 +62,7 @@ def catalogo() -> list[AlimentoDisponible]:
 
 
 # Pares de energia y proteina que el sistema produce de verdad: la proteina sale
-# de la regla del negocio *c*, entre 1.6 y 2.2 gramos por kilogramo de peso.
+# de la regla del negocio RN-03, entre 1.6 y 2.2 gramos por kilogramo de peso.
 PLANES_REALES = [
     (1200, 100),  # mujer pequeña en pérdida de grasa, sobre el piso energético
     (1500, 120),  # hombre pequeño en pérdida de grasa

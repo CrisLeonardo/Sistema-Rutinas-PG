@@ -141,8 +141,11 @@ export default function Rutina() {
   }
 
   const hoy = diaDeHoy()
-  const { sesion: alFrente, esHoy } = sesionAlFrente(rutina.sesiones, hoy)
-  const resto = rutina.sesiones.length
+  // Una sesión que el historial de lesiones dejó sin ejercicios es descanso: no
+  // se ofrece para entrenar ni se cuenta como sesión.
+  const sesiones = rutina.sesiones.filter((sesion) => sesion.ejercicios.length > 0)
+  const { sesion: alFrente, esHoy } = sesionAlFrente(sesiones, hoy)
+  const resto = sesiones.length
   const nivel = ETIQUETAS_NIVEL[rutina.nivel_experiencia] ?? rutina.nivel_experiencia
 
   // Los siete días, menos el que ya está en la tarjeta de arriba.
@@ -151,7 +154,7 @@ export default function Rutina() {
     return {
       dia,
       abreviatura,
-      sesion: rutina.sesiones.find((sesion) => sesion.dia === dia) ?? null,
+      sesion: sesiones.find((sesion) => sesion.dia === dia) ?? null,
     }
   }).filter((fila) => fila.sesion?.id !== alFrente?.id)
 
@@ -211,6 +214,10 @@ export default function Rutina() {
           )
         })}
       </div>
+
+      {rutina.explicacion_lesiones && (
+        <p className="aviso aviso--aviso">{rutina.explicacion_lesiones}</p>
+      )}
 
       {rutina.cumple_separacion_de_grupos && (
         <p className="aviso aviso--ok">Ningún músculo se entrena dos días seguidos.</p>

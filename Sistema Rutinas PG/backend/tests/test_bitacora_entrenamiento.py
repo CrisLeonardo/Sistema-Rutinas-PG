@@ -4,7 +4,7 @@ La rutina era de solo lectura: el sistema prescribia series y repeticiones y no
 tenia forma de saber si se ejecutaron ni con cuanto peso. Estas pruebas verifican
 el ciclo completo —abrir la sesion, registrar lo hecho, recibir la carga de la
 proxima— y el aislamiento de la bitacora entre cuentas, que es la regla del
-negocio *f* aplicada a un dato personal nuevo.
+negocio RN-06 aplicada a un dato personal nuevo.
 """
 
 from datetime import date, timedelta
@@ -103,7 +103,7 @@ def test_sin_historial_cada_ejercicio_pide_elegir_la_carga(cliente, con_rutina):
 def test_no_se_puede_abrir_la_sesion_de_otra_persona(
     cliente, con_rutina, token_segundo_usuario
 ):
-    """Regla del negocio *f*: la rutina y su bitacora son datos personales."""
+    """Regla del negocio RN-06: la rutina y su bitacora son datos personales."""
     prescrita = primera_sesion(cliente, con_rutina)
 
     respuesta = cliente.get(

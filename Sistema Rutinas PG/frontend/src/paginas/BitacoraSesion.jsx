@@ -30,7 +30,6 @@ import AvisoDeError from '../componentes/AvisoDeError.jsx'
 import CronometroDescanso from '../componentes/CronometroDescanso.jsx'
 import Hoja from '../componentes/Hoja.jsx'
 import Icono from '../componentes/Icono.jsx'
-import Mascota from '../componentes/Mascota.jsx'
 import { useSesion } from '../contexto/ContextoSesion.jsx'
 import { ErrorApi, servicioEntrenamiento } from '../servicios/api.js'
 import { entero, fechaLarga } from '../utilidades/formatos.js'
@@ -573,14 +572,9 @@ function SesionGuardada({ resultado }) {
   return (
     <div className="pila-5">
       <div className="resultado">
-        {/* La mascota celebra en lugar de la marca de verificación: es el único
-            momento de la aplicación en que hay algo que celebrar de verdad, y
-            una palomita no lo celebra. */}
-        <Mascota
-          estado={recompensa?.subio_de_nivel ? 'celebrando' : 'animando'}
-          gala={recompensa?.gala ?? 0}
-          tamano={132}
-        />
+        <span className="resultado__circulo">
+          <Icono nombre="tick-02" tamano={24} />
+        </span>
         <h1 className="titulo-resultado">Sesión guardada</h1>
         <p className="cuerpo">{resultado.mensaje}</p>
       </div>

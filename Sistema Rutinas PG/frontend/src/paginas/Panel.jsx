@@ -17,7 +17,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 
 import AvisoDeError from '../componentes/AvisoDeError.jsx'
-import Mascota from '../componentes/Mascota.jsx'
+import AnilloNivel from '../componentes/AnilloNivel.jsx'
 import { useSesion } from '../contexto/ContextoSesion.jsx'
 import {
   ErrorApi,
@@ -101,7 +101,9 @@ export default function Panel() {
 
   const { plan, rutina, menu, reporte, entrenamiento, perfil, senda } = datos
   const hoy = diaDeLaSemana()
-  const sesionDeHoy = rutina?.sesiones?.find((sesion) => sesion.dia === hoy) ?? null
+  const sesionDeHoy =
+    rutina?.sesiones?.find((sesion) => sesion.dia === hoy && sesion.ejercicios.length > 0) ??
+    null
   const primerNombre = usuario?.nombre?.split(' ')[0] ?? ''
 
   if (!plan) return <PrimerDia tienePerfil={Boolean(perfil)} />
@@ -143,19 +145,19 @@ export default function Panel() {
 }
 
 /**
- * La franja de la senda: el lobo, el nivel y lo que falta para el siguiente.
+ * La franja de la senda: el nivel y lo que falta para el siguiente.
  *
  * Va aquí y no arriba del todo a propósito. Esta pantalla contesta «qué me toca
  * hoy», y el nivel no es eso: es la razón para volver mañana. Ocupa una fila del
- * alto de la del peso, con la mascota como única imagen, y lleva a la pantalla
- * donde el avance se ve completo.
+ * alto de la del peso, con el anillo del nivel como única imagen, y lleva a la
+ * pantalla donde el avance se ve completo.
  */
 function FranjaSenda({ senda }) {
   const enElTope = senda.nombre_proximo_nivel === null
 
   return (
     <Link to="/avance/senda" className="franja-senda press">
-      <Mascota estado={senda.animo} gala={senda.gala} tamano={46} />
+      <AnilloNivel porcentaje={senda.porcentaje} nivel={senda.nivel} tamano={46} grosor={4} />
 
       <span className="franja-senda__texto">
         <span className="franja-senda__cabecera">
