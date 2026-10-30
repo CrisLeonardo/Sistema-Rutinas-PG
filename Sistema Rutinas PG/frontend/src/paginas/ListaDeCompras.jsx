@@ -145,6 +145,7 @@ export default function ListaDeCompras() {
       />
 
       <Pildoras etiquetaGrupo="Secciones de alimentación" opciones={PESTANAS_COMER} />
+      {lista.procede_de_semana && <p className="apoyo">Suma de los siete días calculados. Cantidades de parte comestible en el estado indicado: los gramos cocidos no equivalen al peso que debe comprar crudo. Consulte recetas y detalles en <Link to="/comer/semana">Semana</Link>. Precios provisionales sin fecha de observación.</p>}
 
       <div className="tarjeta tarjeta--protagonista">
         <div className="fila--entre fila--abajo">
@@ -200,7 +201,7 @@ export default function ListaDeCompras() {
                   <span className={`casilla${comprado ? ' casilla--marcada' : ''}`} aria-hidden="true">
                     {comprado && <Icono nombre="tick-02" tamano={15} />}
                   </span>
-                  <span className="lista__titulo crece">{renglon.nombre}</span>
+                  <span className="lista__titulo crece">{renglon.nombre}{renglon.estado && <span className="lista__detalle" style={{ display: 'block' }}>{renglon.estado}</span>}</span>
                   <span className="lista__valor">{renglon.cantidad_de_mercado}</span>
                 </button>
               )

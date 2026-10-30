@@ -39,7 +39,7 @@ def verificar_contrasena(contrasena: str, resumen: str) -> bool:
         return False
 
 
-def crear_token_sesion(id_usuario: int, rol: str) -> tuple[str, int]:
+def crear_token_sesion(id_usuario: int, rol: str, version_sesion: int = 0) -> tuple[str, int]:
     """Emite el token de sesion y devuelve tambien su duracion en segundos.
 
     La vigencia corresponde a los minutos configurados de inactividad. La
@@ -52,6 +52,7 @@ def crear_token_sesion(id_usuario: int, rol: str) -> tuple[str, int]:
     contenido = {
         "sub": str(id_usuario),
         "rol": rol,
+        "ver": version_sesion,
         "iat": emitido_en,
         "exp": emitido_en + duracion,
     }

@@ -125,7 +125,7 @@ export default function AvisoInstalacion({ conBarra = false }) {
       aria-label="Instalar la aplicación"
     >
       <div className="aviso-instalacion__cabecera">
-        <img src="/pwa-192x192.png" alt="" className="aviso-instalacion__logo" />
+        <img src="/pwa-192x192-camino.png" alt="" className="aviso-instalacion__logo" />
         <p className="cuerpo">
           <strong>Instale la aplicación</strong> para abrirla desde su pantalla de inicio, como
           cualquier otra app.

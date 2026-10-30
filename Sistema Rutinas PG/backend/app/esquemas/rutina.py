@@ -38,6 +38,8 @@ class EjercicioRutinaPublico(BaseModel):
     descripcion: str | None
     orden: int
     series: int
+    duracion_segundos_min: int | None = None
+    duracion_segundos_max: int | None = None
     repeticiones_min: int
     repeticiones_max: int
     repeticiones_en_reserva: int
@@ -46,6 +48,8 @@ class EjercicioRutinaPublico(BaseModel):
     @computed_field(description="Prescripción resumida, tal como se lee en el gimnasio")
     @property
     def prescripcion(self) -> str:
+        if self.duracion_segundos_min is not None:
+            return f"{self.series} series de {self.duracion_segundos_min} a {self.duracion_segundos_max} segundos (referencia provisional)"
         return (
             f"{self.series} series de {self.repeticiones_min} a "
             f"{self.repeticiones_max} repeticiones"
@@ -59,6 +63,8 @@ class EjercicioRutinaPublico(BaseModel):
         La sigla RIR no significa nada para quien no entrena con un plan escrito,
         y el requerimiento 4.5.3 obliga a explicar toda cifra tecnica.
         """
+        if self.duracion_segundos_min is not None:
+            return "Sostenga sin perder la postura ni contener la respiración. Deténgase ante dolor. Duración pendiente de revisión profesional; sin aumento automático."
         if self.repeticiones_en_reserva <= 1:
             return "Termine cada serie cuando le quede apenas una repetición de reserva."
         return (

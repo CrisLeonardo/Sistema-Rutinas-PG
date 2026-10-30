@@ -32,7 +32,8 @@ class SerieEjecutadaEntrada(BaseModel):
 
     ejercicio_id: int
     numero_serie: int = Field(ge=1, le=SERIES_MAXIMAS_POR_SESION)
-    repeticiones: int = Field(ge=0, le=REPETICIONES_MAXIMAS)
+    repeticiones: int = Field(default=0, ge=0, le=REPETICIONES_MAXIMAS)
+    duracion_segundos: int | None = Field(default=None, ge=1, le=3600)
     peso_kg: float | None = Field(
         default=None, description="Peso movido. Vacío en los ejercicios de peso corporal"
     )
@@ -99,6 +100,7 @@ class SeriePublica(BaseModel):
     ejercicio_id: int
     numero_serie: int
     repeticiones: int
+    duracion_segundos: int | None = None
     peso_kg: float | None
     repeticiones_en_reserva: int | None
 
@@ -127,6 +129,11 @@ class SesionRealizadaPublica(BaseModel):
     @property
     def repeticiones_totales(self) -> int:
         return sum(serie.repeticiones for serie in self.series)
+
+    @computed_field
+    @property
+    def duracion_total_segundos(self) -> int:
+        return sum(serie.duracion_segundos or 0 for serie in self.series)
 
     @computed_field(description="Volumen de carga: la suma de peso por repeticiones")
     @property
@@ -161,6 +168,7 @@ class SeriePrevia(BaseModel):
 
     numero_serie: int
     repeticiones: int
+    duracion_segundos: int | None = None
     peso_kg: float | None
 
 
@@ -175,6 +183,8 @@ class EjercicioParaEntrenar(BaseModel):
     orden: int
 
     series: int
+    duracion_segundos_min: int | None = None
+    duracion_segundos_max: int | None = None
     repeticiones_min: int
     repeticiones_max: int
     repeticiones_en_reserva: int
@@ -187,6 +197,8 @@ class EjercicioParaEntrenar(BaseModel):
     @computed_field(description="Prescripción resumida, tal como se lee en el gimnasio")
     @property
     def prescripcion(self) -> str:
+        if self.duracion_segundos_min is not None:
+            return f"{self.series} series de {self.duracion_segundos_min} a {self.duracion_segundos_max} segundos (referencia provisional)"
         return (
             f"{self.series} series de {self.repeticiones_min} a "
             f"{self.repeticiones_max} repeticiones"
@@ -242,6 +254,7 @@ class PuntoDeCarga(BaseModel):
     carga_maxima_kg: float | None
     volumen_kg: float
     repeticiones_totales: int
+    duracion_total_segundos: int = 0
 
 
 class HistorialDeEjercicio(BaseModel):

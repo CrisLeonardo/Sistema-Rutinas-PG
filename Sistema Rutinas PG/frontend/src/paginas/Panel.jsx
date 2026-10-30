@@ -109,7 +109,7 @@ export default function Panel() {
   if (!plan) return <PrimerDia tienePerfil={Boolean(perfil)} />
 
   return (
-    <div className="pila">
+    <div className="pila panel-senda">
       <div className="saludo">
         <div className="pila-2">
           <h1 className="titulo-pantalla">
@@ -132,10 +132,18 @@ export default function Panel() {
         </div>
       )}
 
+      <section className="panel-siguiente">
+        <p className="rotulo">Su siguiente paso</p>
+        <h2 className="titulo-grupo">{sesionDeHoy ? 'Un momento para moverse' : 'Organice su alimentación de hoy'}</h2>
+        <p className="apoyo">{sesionDeHoy ? `Hoy: ${sesionDeHoy.nombre_grupo}. Sus series y su descanso estarán a mano.` : 'Consulte las porciones y los alimentos de su menú. Puede revisar también su semana de entrenamiento.'}</p>
+        <Link className="boton boton--principal" to={sesionDeHoy ? `/entrenar/${sesionDeHoy.id}` : '/comer'}>{sesionDeHoy ? 'Iniciar entrenamiento' : 'Ver mi menú de hoy'}</Link>
+      </section>
+
       <div className="rejilla-doble">
-        <TarjetaComer plan={plan} menu={menu} />
-        <TarjetaEntrenar sesion={sesionDeHoy} rutina={rutina} entrenamiento={entrenamiento} />
+        {sesionDeHoy ? <><TarjetaEntrenar sesion={sesionDeHoy} rutina={rutina} entrenamiento={entrenamiento} /><TarjetaComer plan={plan} menu={menu} /></> : <><TarjetaComer plan={plan} menu={menu} /><TarjetaEntrenar sesion={sesionDeHoy} rutina={rutina} entrenamiento={entrenamiento} /></>}
       </div>
+
+      {entrenamiento && <section className="panel-resumen" aria-label="Resumen semanal de entrenamiento"><p><strong>{entero(entrenamiento.sesiones_esta_semana)}</strong><span>Sesiones esta semana</span></p><p><strong>{entero(entrenamiento.racha_semanas)}</strong><span>Semanas de constancia</span></p><p><strong>{entero(entrenamiento.sesiones_totales)}</strong><span>Sesiones registradas</span></p></section>}
 
       {senda && <FranjaSenda senda={senda} />}
 
@@ -220,7 +228,7 @@ function PrimerDia({ tienePerfil }) {
   return (
     <div className="entrada">
       <div className="pila-3">
-        <h1 className="titulo-grande">Empecemos por sus medidas</h1>
+        <h1 className="titulo-grande">{tienePerfil ? 'Su siguiente paso: preparar el plan' : 'Empecemos por su recorrido'}</h1>
         <p className="cuerpo">
           Con su peso, su estatura y su objetivo, el sistema calcula cuánta energía
           necesita al día y arma su rutina.
@@ -247,11 +255,11 @@ function PrimerDia({ tienePerfil }) {
             Ya las registré: generar mi plan
           </Link>
         ) : (
-          <Link to="/avance/medidas/editar" className="boton boton--principal">
+          <Link to="/avance/medidas/editar?inicio=1" className="boton boton--principal">
             Registrar mis medidas
           </Link>
         )}
-        <p className="nota-al-pie centrado">Toma menos de dos minutos</p>
+        <p className="nota-al-pie centrado">Complete los datos a su ritmo.</p>
       </div>
     </div>
   )

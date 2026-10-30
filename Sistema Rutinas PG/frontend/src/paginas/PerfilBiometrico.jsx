@@ -21,7 +21,7 @@
  */
 
 import { useEffect, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 
 import AvisoDeError from '../componentes/AvisoDeError.jsx'
 import Icono from '../componentes/Icono.jsx'
@@ -93,6 +93,7 @@ function calcularIndice(peso, estatura) {
 }
 
 export default function PerfilBiometrico() {
+  const [parametros] = useSearchParams()
   const { token } = useSesion()
   const navegar = useNavigate()
 
@@ -250,7 +251,7 @@ export default function PerfilBiometrico() {
         },
         token,
       )
-      navegar('/avance/medidas', { replace: true })
+      navegar(parametros.get('inicio') === '1' ? '/comer/plan?inicio=1' : '/avance/medidas', { replace: true })
     } catch (fallo) {
       setError(fallo instanceof ErrorApi ? fallo.message : 'No fue posible guardar sus medidas.')
     } finally {
@@ -312,7 +313,8 @@ export default function PerfilBiometrico() {
 
       {error && <AvisoDeError mensaje={error} />}
 
-      <form onSubmit={enviar} noValidate className="pila-5">
+      <form onSubmit={enviar} noValidate className="pila-5" aria-busy={enviando}>
+        <fieldset disabled={enviando} className="envio-campos pila-5">
         {paso === 1 && (
           <>
             <div className="pila-3">
@@ -559,9 +561,10 @@ export default function PerfilBiometrico() {
             {enviando ? 'Guardando…' : 'Guardar mis medidas'}
           </button>
         )}
+        </fieldset>
       </form>
 
-      <p className="nota-al-pie centrado">Sus medidas son privadas: nadie más las consulta.</p>
+      <p className="nota-al-pie centrado">Sus medidas se consultan desde su cuenta. No comparta su acceso.</p>
     </div>
   )
 }

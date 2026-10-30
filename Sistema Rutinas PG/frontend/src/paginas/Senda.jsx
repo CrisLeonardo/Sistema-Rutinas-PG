@@ -25,6 +25,7 @@ import AnilloNivel from '../componentes/AnilloNivel.jsx'
 import AvisoDeError from '../componentes/AvisoDeError.jsx'
 import Icono from '../componentes/Icono.jsx'
 import Pildoras from '../componentes/Pildoras.jsx'
+import TarjetaLogro from '../componentes/TarjetaLogro.jsx'
 import { PESTANAS_AVANCE } from '../datos/secciones.js'
 import { useSesion } from '../contexto/ContextoSesion.jsx'
 import { servicioJuego } from '../servicios/api.js'
@@ -83,6 +84,12 @@ export default function Senda() {
       <Pildoras etiquetaGrupo="Secciones de avance" opciones={PESTANAS_AVANCE} />
 
       <Cabecera estado={estado} />
+      <section className="tarjeta pila-3">
+        <h2 className="titulo-tarjeta">{estado.racha_semanas === 0 && estado.sesiones_totales > 0 ? 'Su recorrido sigue aquí' : 'Su siguiente paso'}</h2>
+        <p className="apoyo">{estado.racha_semanas === 0 && estado.sesiones_totales > 0 ? 'Sus puntos e insignias se conservan después de una pausa. Puede retomar con la próxima sesión de su plan.' : 'Revise la semana y siga la sesión indicada. Los días de descanso también forman parte del recorrido.'}</p>
+        <p className="apoyo">Mejor racha registrada: {estado.racha_maxima_semanas} {estado.racha_maxima_semanas === 1 ? 'semana' : 'semanas'}.</p>
+        <Link className="boton boton--principal" to="/entrenar">Consultar mi próxima sesión</Link>
+      </section>
       <Cifras estado={estado} />
       <Insignias logros={estado.logros} conseguidas={estado.logros_obtenidos} />
       <Camino hitos={estado.hitos} />
@@ -165,8 +172,10 @@ function Cifras({ estado }) {
  * primer día.
  */
 function Insignias({ logros, conseguidas }) {
+  const [filtro, setFiltro] = useState('todas')
   const categorias = []
-  logros.forEach((logro) => {
+  const visibles = logros.filter(l => filtro === 'todas' || (filtro === 'conseguidas' ? l.obtenido : !l.obtenido))
+  visibles.forEach((logro) => {
     let grupo = categorias.find((candidato) => candidato.nombre === logro.categoria)
     if (!grupo) {
       grupo = { nombre: logro.categoria, logros: [] }
@@ -183,6 +192,11 @@ function Insignias({ logros, conseguidas }) {
           {conseguidas} de {logros.length}
         </span>
       </div>
+
+      <div className="senda-filtros" role="group" aria-label="Filtrar insignias">
+        {[['todas', 'Todas'], ['conseguidas', 'Conseguidas'], ['pendientes', 'Por conseguir']].map(([valor, texto]) => <button key={valor} className="boton boton--secundario" aria-pressed={filtro === valor} onClick={() => setFiltro(valor)}>{texto}</button>)}
+      </div>
+      <p className="apoyo" role="status">{visibles.length} {visibles.length === 1 ? 'insignia en esta vista' : 'insignias en esta vista'}.</p>
 
       {categorias.map((categoria) => (
         <div key={categoria.nombre} className="pila-2">
@@ -215,6 +229,7 @@ function Insignia({ logro }) {
       <span className="insignia__puntos">
         {logro.obtenido ? fechaBreve(logro.fecha) : `+${logro.puntos} puntos`}
       </span>
+      {logro.obtenido && <TarjetaLogro logro={logro} />}
     </div>
   )
 }

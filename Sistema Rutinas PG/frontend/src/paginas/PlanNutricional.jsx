@@ -13,7 +13,7 @@
  */
 
 import { useCallback, useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 
 import AvisoDeError from '../componentes/AvisoDeError.jsx'
 import CabeceraPantalla from '../componentes/CabeceraPantalla.jsx'
@@ -33,6 +33,7 @@ const CLASES_MACRO = {
 }
 
 export default function PlanNutricional() {
+  const [parametros] = useSearchParams()
   const { token } = useSesion()
 
   const [plan, setPlan] = useState(null)
@@ -141,6 +142,8 @@ export default function PlanNutricional() {
       />
 
       <Pildoras etiquetaGrupo="Secciones de alimentación" opciones={PESTANAS_COMER} />
+
+      {parametros.get('inicio') === '1' && <div className="aviso aviso--neutro pila-3"><p>Su plan está listo. Revise sus indicaciones y advertencias; después puede abrir su inicio para ver qué sigue hoy.</p><Link to="/panel" className="boton boton--principal">Ir a mi día</Link></div>}
 
       {plan.advertencias_de_salud?.length > 0 && (
         <div className="aviso aviso--aviso" role="alert">

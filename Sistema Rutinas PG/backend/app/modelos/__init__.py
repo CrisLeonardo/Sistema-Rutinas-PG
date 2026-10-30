@@ -26,9 +26,13 @@ from app.modelos.perfil import (
 )
 from app.modelos.plan import ComidaPlan, EjercicioSesion, Plan, SesionEntrenamiento
 from app.modelos.usuario import Usuario
+from app.modelos.recuperacion import RecuperacionAcceso
+from app.modelos.alimentacion import PreferenciasAlimentarias, SemanaAlimentaria
 
 __all__ = [
     "Alimento",
+    "PreferenciasAlimentarias",
+    "SemanaAlimentaria",
     "CategoriaAlimento",
     "ComidaPlan",
     "CondicionMedica",
@@ -51,5 +55,8 @@ __all__ = [
     "SesionEntrenamiento",
     "Sexo",
     "Usuario",
+    "RecuperacionAcceso",
     "ZonaLesion",
 ]
+
+from app.modelos.comunidad import GrupoPrivado, MiembroPrivado, InvitacionPrivada, SemanaPrivada, BloqueoPrivado, DenunciaPrivada, EventoConstancia  # noqa: F401

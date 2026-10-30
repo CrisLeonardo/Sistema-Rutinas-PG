@@ -134,6 +134,8 @@ class EjercicioSesion(Base):
 
     orden: Mapped[int] = mapped_column(SmallInteger, nullable=False)
     series: Mapped[int] = mapped_column(SmallInteger, nullable=False)
+    duracion_segundos_min: Mapped[int | None] = mapped_column(SmallInteger, nullable=True)
+    duracion_segundos_max: Mapped[int | None] = mapped_column(SmallInteger, nullable=True)
     repeticiones_min: Mapped[int] = mapped_column(SmallInteger, nullable=False)
     repeticiones_max: Mapped[int] = mapped_column(SmallInteger, nullable=False)
     repeticiones_en_reserva: Mapped[int] = mapped_column(SmallInteger, nullable=False)

@@ -15,6 +15,7 @@
  */
 
 import { fechaBreve } from '../utilidades/formatos.js'
+import DatosGrafica from './DatosGrafica.jsx'
 
 const ANCHO = 320
 const ALTO = 120
@@ -62,7 +63,7 @@ export default function GraficaLineas({ puntos, etiquetaValor = '', descripcion 
       : [puntos[0], puntos[Math.floor((puntos.length - 1) / 2)], ultimo]
 
   return (
-    <figure className="pila-3 figura">
+    <figure className="pila-3 figura grafica-entrada">
       <svg
         viewBox={`0 0 ${ANCHO} ${ALTO}`}
         preserveAspectRatio="xMidYMid meet"
@@ -93,9 +94,7 @@ export default function GraficaLineas({ puntos, etiquetaValor = '', descripcion 
           r="5"
           className="grafica__punto"
         >
-          <title>
-            {fechaBreve(ultimo.etiqueta)}: {ultimo.valor} {etiquetaValor}
-          </title>
+          <title>{`${fechaBreve(ultimo.etiqueta)}: ${ultimo.valor} ${etiquetaValor}`}</title>
         </circle>
       </svg>
 
@@ -106,6 +105,7 @@ export default function GraficaLineas({ puntos, etiquetaValor = '', descripcion 
       </div>
 
       {descripcion && <figcaption className="solo-lectores">{descripcion}</figcaption>}
+      <DatosGrafica puntos={puntos} etiquetaValor={etiquetaValor} descripcion={descripcion} />
     </figure>
   )
 }

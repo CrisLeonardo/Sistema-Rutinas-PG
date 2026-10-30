@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 
 import Icono from '../componentes/Icono.jsx'
+import CabeceraCuenta from '../componentes/MarcaProducto.jsx'
 import { useSesion } from '../contexto/ContextoSesion.jsx'
 import { servicioAcceso } from '../servicios/api.js'
 
@@ -86,7 +87,7 @@ export default function Registro() {
       // Se abre la sesión de inmediato para que el usuario continúe sin volver
       // a escribir sus credenciales.
       await iniciarSesion(credenciales)
-      navegar('/panel', { replace: true })
+      navegar('/bienvenida', { replace: true })
     } catch (fallo) {
       setError(fallo.message)
       // Si el registro falla, el paso 1 es donde están los datos que hay que
@@ -98,7 +99,8 @@ export default function Registro() {
   }
 
   return (
-    <div className="entrada">
+    <div className="entrada cuenta-senda">
+      <CabeceraCuenta />
       <div className="pila-3">
         <div className="fila">
           {paso === 2 && (
@@ -127,7 +129,7 @@ export default function Registro() {
       )}
 
       {paso === 1 ? (
-        <form onSubmit={continuar} noValidate className="pila-5">
+        <form onSubmit={continuar} className="pila-5">
           <div className="pila-3">
             <label className="campo">
               <span className="campo__etiqueta">Nombre completo</span>
@@ -191,7 +193,7 @@ export default function Registro() {
           </button>
         </form>
       ) : (
-        <form onSubmit={enviar} noValidate className="pila-5">
+        <form onSubmit={enviar} className="pila-5">
           <label className="campo">
             <span className="campo__etiqueta">Repita la contraseña</span>
             <input
@@ -207,8 +209,8 @@ export default function Registro() {
           </label>
 
           <p className="nota-al-pie">
-            Al crear su cuenta, sus medidas, su plan y su avance solo los ve usted. Ni el
-            administrador del sistema tiene acceso a ellos.
+            Consulte el uso de sus datos en <Link to="/privacidad">Privacidad</Link> y el alcance
+            del servicio en las <Link to="/terminos">Condiciones de uso</Link>.
           </p>
 
           <button type="submit" className="boton boton--principal" disabled={enviando}>

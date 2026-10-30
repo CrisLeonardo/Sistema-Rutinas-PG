@@ -211,6 +211,7 @@ function Sesiones({ sesiones }) {
               <span className="lista__detalle mono">
                 {fechaBreve(`${sesion.fecha}T12:00:00`)} · {sesion.series_totales} series
                 {sesion.duracion_minutos ? ` · ${sesion.duracion_minutos} min` : ''}
+                {sesion.duracion_total_segundos > 0 ? ` · sostenes: ${sesion.duracion_total_segundos} s` : ''}
               </span>
               {sesion.notas && <span className="cita">«{sesion.notas}»</span>}
             </span>

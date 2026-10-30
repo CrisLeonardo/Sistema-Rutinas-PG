@@ -11,6 +11,7 @@
  */
 
 import { fechaBreve } from '../utilidades/formatos.js'
+import DatosGrafica from './DatosGrafica.jsx'
 
 export default function GraficaBarras({ puntos, etiquetaValor = '', descripcion }) {
   if (!puntos || puntos.length === 0) {
@@ -25,7 +26,7 @@ export default function GraficaBarras({ puntos, etiquetaValor = '', descripcion 
       : [puntos[0], puntos[Math.floor((puntos.length - 1) / 2)], puntos[puntos.length - 1]]
 
   return (
-    <figure className="pila-3 figura">
+    <figure className="pila-3 figura grafica-entrada">
       <div className="barras" role="img" aria-label={descripcion}>
         {puntos.map((punto, indice) => (
           <div
@@ -46,6 +47,7 @@ export default function GraficaBarras({ puntos, etiquetaValor = '', descripcion 
       </div>
 
       {descripcion && <figcaption className="solo-lectores">{descripcion}</figcaption>}
+      <DatosGrafica puntos={puntos} etiquetaValor={etiquetaValor} descripcion={descripcion} />
     </figure>
   )
 }

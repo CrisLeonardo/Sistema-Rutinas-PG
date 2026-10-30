@@ -11,6 +11,11 @@ from app.nucleo import arranque
 from app.nucleo.configuracion import RAIZ_BACKEND, Configuracion, normalizar_url_base_datos
 from tests.conftest import encabezado
 
+
+def test_normalizar_no_modifica_urls_sqlite_locales():
+    for url in ("sqlite+pysqlite:///C:/pruebas/senda.db", "sqlite:///:memory:"):
+        assert normalizar_url_base_datos(url) == url
+
 RUTA_ESTADO = "/api/v1/administracion/estado"
 RUTA_RECARGA = "/api/v1/administracion/modelo/recargar"
 

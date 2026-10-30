@@ -126,6 +126,7 @@ class SerieRealizada(Base):
     )
 
     numero_serie: Mapped[int] = mapped_column(SmallInteger, nullable=False)
+    duracion_segundos: Mapped[int | None] = mapped_column(SmallInteger, nullable=True)
     repeticiones: Mapped[int] = mapped_column(SmallInteger, nullable=False)
     # Nulo en los ejercicios de peso corporal, donde no hay carga que anotar.
     peso_kg: Mapped[float | None] = mapped_column(Numeric(6, 2), nullable=True)

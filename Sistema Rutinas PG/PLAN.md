@@ -1,5 +1,12 @@
 # Plan de desarrollo por fases
 
+> **Actualización de fase 0 de Senda, 29 de octubre de 2026.** Este archivo
+> conserva el historial de desarrollo. Para el estado actual consulte
+> [FASE_0_LINEA_BASE.md](operaciones/FASE_0_LINEA_BASE.md) y el
+> [plan maestro de evolución](../PLAN_MAESTRO_EVOLUCION.md). Las cifras y los
+> pendientes históricos de abajo corresponden a distintas revisiones; no deben
+> interpretarse como una nueva comprobación del sistema ni del despliegue.
+
 Documento de control del desarrollo del sistema. Las fases siguen la pila de producto
 priorizada del **Capítulo IV, Tabla 11** de la tesis. Lo tachado ya está construido y
 verificado; lo demás está pendiente.

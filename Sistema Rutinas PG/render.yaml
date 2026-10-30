@@ -87,6 +87,21 @@ services:
         sync: false
       - key: ADMIN_NOMBRE
         value: Administrador del sistema
+      - key: CORREO_CONTACTO
+        value: senda1986.gt@gmail.com
+      - key: CORREO_REMITENTE
+        value: senda1986.gt@gmail.com
+      - key: CORREO_TRANSPORTE
+        value: gmail_api
+      # Completar en el servidor; no poner secretos en el sitio estático.
+      - key: URL_PUBLICA_FRONTEND
+        sync: false
+      - key: GMAIL_CLIENTE_ID
+        sync: false
+      - key: GMAIL_CLIENTE_SECRETO
+        sync: false
+      - key: GMAIL_REFRESH_TOKEN
+        sync: false
 
   # ------------------------------------------------------------------
   # Interfaz de cliente: los archivos que produce React, servidos como
@@ -104,6 +119,8 @@ services:
       # compartan dominio.
       - key: VITE_URL_API
         value: /api/v1
+      - key: VITE_CORREO_CONTACTO
+        value: senda1986.gt@gmail.com
     headers:
       - path: /*
         name: X-Content-Type-Options
@@ -125,8 +142,38 @@ services:
       - type: rewrite
         source: /api/*
         destination: https://rutinas-servicios.onrender.com/api/*
-      # La aplicación resuelve sus propias rutas: cualquier dirección que no
-      # corresponda a un archivo se entrega al índice para que React la atienda.
+      # HTML público generado durante la construcción, con contenido y metadatos.
+      - type: rewrite
+        source: /
+        destination: /index.html
+      - type: rewrite
+        source: /como-funciona
+        destination: /como-funciona/index.html
+      - type: rewrite
+        source: /ejercicios
+        destination: /ejercicios/index.html
+      - type: rewrite
+        source: /alimentacion
+        destination: /alimentacion/index.html
+      - type: rewrite
+        source: /comunidad
+        destination: /comunidad/index.html
+      - type: rewrite
+        source: /preguntas-frecuentes
+        destination: /preguntas-frecuentes/index.html
+      - type: rewrite
+        source: /sobre-el-proyecto
+        destination: /sobre-el-proyecto/index.html
+      - type: rewrite
+        source: /privacidad
+        destination: /privacidad/index.html
+      - type: rewrite
+        source: /terminos
+        destination: /terminos/index.html
+      - type: rewrite
+        source: /ayuda
+        destination: /ayuda/index.html
+      # El resto usa un armazón sin datos y con noindex; React resuelve la ruta.
       - type: rewrite
         source: /*
-        destination: /index.html
+        destination: /privado.html

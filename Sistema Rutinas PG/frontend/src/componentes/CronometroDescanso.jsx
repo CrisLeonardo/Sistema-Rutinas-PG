@@ -19,6 +19,7 @@
 import { useEffect, useRef, useState } from 'react'
 
 import { usePreferencias } from '../contexto/ContextoPreferencias.jsx'
+import { segundosRestantes } from '../interaccion/respuestas.mjs'
 
 function comoReloj(segundos) {
   const minutos = Math.floor(segundos / 60)
@@ -29,37 +30,38 @@ function comoReloj(segundos) {
 export default function CronometroDescanso({ segundos, alTerminar, alSaltar }) {
   const { vibracion } = usePreferencias()
   const [restante, setRestante] = useState(segundos)
-  const avisado = useRef(false)
+  const avisos = useRef({ vibracion, alTerminar })
+  avisos.current = { vibracion, alTerminar }
 
   useEffect(() => {
-    setRestante(segundos)
-    avisado.current = false
-  }, [segundos])
-
-  useEffect(() => {
-    if (restante <= 0) return undefined
-    const temporizador = setTimeout(() => setRestante((valor) => valor - 1), 1000)
-    return () => clearTimeout(temporizador)
-  }, [restante])
-
-  useEffect(() => {
-    if (restante > 0 || avisado.current) return
-    avisado.current = true
-    if (vibracion) {
-      // La vibración es opcional: el escritorio no la implementa y algunos
-      // navegadores la exigen tras una interacción del usuario.
-      try {
-        navigator.vibrate?.([200, 100, 200])
-      } catch {
-        // Sin vibración, el aviso es visual y es suficiente.
+    const venceEn = Date.now() + Math.max(segundos, 0) * 1000
+    let avisado = false
+    let temporizador
+    const actualizar = () => {
+      const siguiente = segundosRestantes(venceEn)
+      setRestante(siguiente)
+      if (siguiente === 0 && !avisado) {
+        avisado = true
+        clearInterval(temporizador)
+        if (avisos.current.vibracion && !document.hidden) {
+          try { navigator.vibrate?.([200, 100, 200]) } catch { /* El texto permanece. */ }
+        }
+        avisos.current.alTerminar?.()
       }
     }
-    alTerminar?.()
-  }, [restante, alTerminar, vibracion])
+    actualizar()
+    if (segundos > 0) temporizador = setInterval(actualizar, 250)
+    document.addEventListener('visibilitychange', actualizar)
+    return () => {
+      clearInterval(temporizador)
+      document.removeEventListener('visibilitychange', actualizar)
+    }
+  }, [segundos])
 
   const terminado = restante <= 0
 
   return (
+    <>
     <div
       className={`cronometro${terminado ? ' cronometro--terminado' : ''}`}
       role="timer"
@@ -78,5 +80,7 @@ export default function CronometroDescanso({ segundos, alTerminar, alSaltar }) {
         {terminado ? 'El descanso terminó.' : `Quedan ${restante} segundos de descanso.`}
       </span>
     </div>
+    <p className="solo-lectores" role="status">{terminado ? 'Descanso terminado. Puede continuar con su siguiente serie.' : ''}</p>
+    </>
   )
 }

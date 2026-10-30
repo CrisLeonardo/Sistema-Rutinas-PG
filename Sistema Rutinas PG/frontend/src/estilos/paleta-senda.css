@@ -1,0 +1,29 @@
+/* Una identidad en dos modos. Fuente común del producto y su prototipo. */
+:root {
+  --senda-claro-fondo: #f6f3eb;
+  --senda-claro-panel: #fffdf8;
+  --senda-claro-texto: #233d32;
+  --senda-claro-apoyo: #526357;
+  --senda-claro-acento: #244b3b;
+  --senda-claro-sobre-acento: #fffdf8;
+  --senda-claro-suave: #e6ebdf;
+  --senda-claro-borde: #d3d9cb;
+  --senda-claro-colina-lejos: #d9e3d2;
+  --senda-claro-colina: #a1b598;
+  --senda-claro-bosque: #244b3b;
+
+  --senda-oscuro-fondo: #151e1b;
+  --senda-oscuro-panel: #1d2a23;
+  --senda-oscuro-texto: #f2f4eb;
+  --senda-oscuro-apoyo: #bfccbd;
+  --senda-oscuro-acento: #c4ed95;
+  --senda-oscuro-sobre-acento: #182719;
+  --senda-oscuro-suave: #26372f;
+  --senda-oscuro-borde: #4e6153;
+  --senda-oscuro-colina-lejos: #49604b;
+  --senda-oscuro-colina: #688461;
+  --senda-oscuro-bosque: #263d30;
+
+  --senda-logro: #e8bd65;
+  --senda-camino: #efe7d0;
+}

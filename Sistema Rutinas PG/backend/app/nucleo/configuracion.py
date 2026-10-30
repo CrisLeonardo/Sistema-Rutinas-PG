@@ -2,9 +2,10 @@
 
 from functools import lru_cache
 from pathlib import Path
+from typing import Literal
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
-from pydantic import field_validator
+from pydantic import EmailStr, Field, SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 RAIZ_BACKEND = Path(__file__).resolve().parents[2]
@@ -41,6 +42,9 @@ def normalizar_url_base_datos(url: str) -> str:
 
     partes = urlsplit(url)
     esquema = partes.scheme
+    if esquema.split("+")[0] not in _PREFIJOS_SIN_CONTROLADOR:
+        # SQLite conserva tres barras y, en Windows, la letra de unidad.
+        return url
     if esquema in _PREFIJOS_SIN_CONTROLADOR:
         esquema = _CONTROLADOR_POSTGRESQL
 
@@ -62,7 +66,7 @@ class Configuracion(BaseSettings):
     """
 
     model_config = SettingsConfigDict(
-        env_file=RAIZ_BACKEND / ".env",
+        env_file=(RAIZ_BACKEND / ".env", RAIZ_BACKEND / ".env.gmail"),
         env_file_encoding="utf-8",
         extra="ignore",
     )
@@ -83,6 +87,12 @@ class Configuracion(BaseSettings):
     # se elige por gusto sino por la memoria de la instancia contratada.
     procesos_de_trabajo: int = 1
 
+    # Ampliación social pospuesta por el autor; Mi senda individual sigue activa.
+    comunidad_habilitada: bool = False
+    # Coincide con las cinco conexiones persistentes del pool; evita rotar
+    # conexiones de desbordamiento durante una ráfaga. El máximo total es diez.
+    solicitudes_activas_bd: int = Field(default=5, ge=1, le=10)
+
     clave_secreta: str = "clave-de-desarrollo-no-apta-para-produccion"
     algoritmo_firma: str = "HS256"
     minutos_expiracion_sesion: int = 30
@@ -92,6 +102,47 @@ class Configuracion(BaseSettings):
     admin_correo: str = "admin@sistemarutinas.gt"
     admin_contrasena: str = "Admin12345"
     admin_nombre: str = "Administrador del sistema"
+
+    # Se configura fuera del código. Nunca se deriva un enlace del encabezado Host.
+    url_publica_frontend: str = "http://127.0.0.1:5173"
+    correo_contacto: EmailStr | None = "senda1986.gt@gmail.com"
+    correo_transporte: Literal["gmail_api", "smtp"] = "gmail_api"
+    correo_remitente: EmailStr = "senda1986.gt@gmail.com"
+    gmail_cliente_id: str = ""
+    gmail_cliente_secreto: SecretStr | None = None
+    gmail_refresh_token: SecretStr | None = None
+    smtp_servidor: str = ""
+    smtp_puerto: int = Field(default=587, ge=1, le=65535)
+    smtp_seguridad: Literal["starttls", "ssl", "ninguna"] = "starttls"
+    smtp_usuario: str = ""
+    smtp_contrasena: SecretStr | None = None
+    smtp_remitente: EmailStr | None = None
+
+    @field_validator("url_publica_frontend")
+    @classmethod
+    def validar_url_publica(cls, valor: str) -> str:
+        partes = urlsplit(valor)
+        if (partes.scheme not in {"http", "https"} or not partes.hostname
+                or partes.username or partes.password or partes.query or partes.fragment
+                or partes.path not in {"", "/"}):
+            raise ValueError("URL_PUBLICA_FRONTEND debe ser un origen HTTP(S) sin ruta ni credenciales.")
+        return valor.rstrip("/")
+
+    @property
+    def recuperacion_habilitada(self) -> bool:
+        if self.es_produccion and not self.url_publica_frontend.startswith("https://"):
+            return False
+        if self.correo_transporte == "gmail_api":
+            return bool(self.gmail_cliente_id and self.gmail_cliente_secreto
+                        and self.gmail_cliente_secreto.get_secret_value()
+                        and self.gmail_refresh_token and self.gmail_refresh_token.get_secret_value())
+        secreto = self.smtp_contrasena.get_secret_value() if self.smtp_contrasena else ""
+        credenciales = bool(secreto) if self.smtp_usuario else self.smtp_servidor.lower() != "smtp.gmail.com"
+        cifrado = self.smtp_seguridad != "ninguna" or (
+            not self.es_produccion and self.smtp_servidor in {"localhost", "127.0.0.1", "::1"}
+        )
+        return bool(self.smtp_servidor and self.smtp_remitente and credenciales and cifrado
+                    and (not self.es_produccion or self.url_publica_frontend.startswith("https://")))
 
     @field_validator("url_base_datos")
     @classmethod

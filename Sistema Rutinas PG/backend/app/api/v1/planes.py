@@ -27,6 +27,8 @@ from app.modelos.perfil import PerfilBiometrico
 from app.modelos.plan import ComidaPlan, Plan
 from app.motor.menu import TIEMPOS_DE_COMIDA, AlimentoDisponible, buscar_sustituto
 from app.servicios import plan as servicio_plan
+from app.servicios import alimentacion as alimentacion_practica
+from app.servicios.restricciones_alimentarias import preferencias, filtrar
 
 enrutador = APIRouter(prefix="/plan-nutricional", tags=["Plan nutricional"])
 
@@ -151,6 +153,19 @@ def consultar_menu(sesion: SesionBD, usuario: UsuarioAutenticado) -> MenuPublico
     if plan is None:
         raise _SIN_PLAN
 
+    semana = alimentacion_practica.consultar(sesion, usuario, requerido=False)
+    if semana is not None:
+        # Compatibilidad para panel y clientes antiguos: primer día de la semana.
+        return MenuPublico(
+            plan_id=plan.id, fecha_generacion=plan.fecha_generacion, activo=plan.activo,
+            energia_objetivo_kcal=float(plan.calorias_objetivo), proteina_objetivo_g=float(plan.proteina_g),
+            procede_de_semana=True,
+            costo_semana_calculado=alimentacion_practica.publicar(semana)["compras"]["costo_quetzales"],
+            tiempos=[TiempoComidaPublico(nombre=t["nombre"], porciones=[
+                PorcionPublica(**{**p, **{k: round(p[k]) for k in ("energia_kcal", "proteina_g", "carbohidrato_g", "grasa_g")}})
+                for p in t["porciones"]]) for t in semana.datos["dias"][0]["tiempos"]],
+        )
+
     porciones_guardadas = list(
         sesion.execute(
             select(ComidaPlan)
@@ -167,7 +182,8 @@ def consultar_menu(sesion: SesionBD, usuario: UsuarioAutenticado) -> MenuPublico
             ),
         )
 
-    disponibles = servicio_plan.alimentos_disponibles(sesion)
+    alimentacion_practica.verificar_menu_anterior(sesion, usuario, porciones_guardadas)
+    disponibles = filtrar(servicio_plan.alimentos_disponibles(sesion), preferencias(sesion, usuario.id))
     por_identificador = {alimento.id: alimento for alimento in disponibles}
 
     tiempos: dict[str, list[PorcionPublica]] = {}
@@ -258,6 +274,16 @@ def consultar_lista_de_compras(
     if plan is None:
         raise _SIN_PLAN
 
+    semana = alimentacion_practica.consultar(sesion, usuario, requerido=False)
+    if semana is not None:
+        compras = alimentacion_practica.publicar(semana)["compras"]
+        return ListaDeCompras(
+            plan_id=plan.id, fecha_generacion=plan.fecha_generacion, dias=7, procede_de_semana=True,
+            grupos=[GrupoDeCompra(categoria=categoria, renglones=[RenglonDeCompra(**r)
+                    for r in compras["renglones"] if r["categoria"] == categoria.value])
+                    for categoria in CategoriaAlimento if any(r["categoria"] == categoria.value for r in compras["renglones"])],
+        )
+
     porciones = list(
         sesion.execute(
             select(ComidaPlan).where(ComidaPlan.plan_id == plan.id)
@@ -272,6 +298,7 @@ def consultar_lista_de_compras(
             ),
         )
 
+    alimentacion_practica.verificar_menu_anterior(sesion, usuario, porciones)
     # Se acumulan los gramos de cada alimento a lo largo del día y se multiplican
     # por los días de la semana.
     gramos_por_alimento: dict[int, int] = {}

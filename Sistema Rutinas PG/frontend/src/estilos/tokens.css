@@ -1,10 +1,6 @@
 /* ============================================================
-   Sistema de Rutinas y Planes Nutricionales — tokens de diseño
-   Derivados del Leogin Design System, con el verde del producto
-   como acento (#14532d en claro / #4ade80 en oscuro).
-
-   Cópiese tal cual a frontend/src/estilos/tokens.css e impórtese
-   ANTES de cualquier otra hoja de estilo.
+   Senda — tokens de interfaz. A / Tierra y camino en modo claro;
+   B / Pulso y contraste en modo oscuro. Paleta común en paleta-senda.css.
    ============================================================ */
 
 /* Fuentes: interfaz Geist, cifras JetBrains Mono, marca Unbounded.
@@ -13,34 +9,35 @@
 @import url("https://cdn.hugeicons.com/font/hgi-stroke-rounded.css");
 
 :root {
+  color-scheme: dark;
   /* Tipografía */
   --ui-font-sans: 'Geist', system-ui, sans-serif;
   --ui-font-mono: 'JetBrains Mono', ui-monospace, monospace;  /* TODA cifra */
   --font-display: 'Unbounded', system-ui, sans-serif;         /* solo la marca */
 
   /* Superficies — tema oscuro (por defecto) */
-  --brand-bg: #0a0a0d;        /* fondo de pantalla */
-  --brand-bg-2: #131317;      /* barra lateral del panel de administración */
-  --adm-card: #17171c;        /* tarjetas y filas */
-  --adm-card-hover: #1c1c22;
-  --adm-overlay: #1f1f26;     /* hojas y diálogos */
+  --brand-bg: var(--senda-oscuro-fondo);
+  --brand-bg-2: var(--senda-oscuro-panel);
+  --adm-card: var(--senda-oscuro-panel);
+  --adm-card-hover: var(--senda-oscuro-suave);
+  --adm-overlay: var(--senda-oscuro-suave);
 
   /* Tinta */
-  --brand-text: #F5F3EF;
-  --u-text: #F5F3EF;                       /* texto principal */
-  --u-text-2: rgba(245, 243, 239, 0.74);   /* texto secundario */
-  --u-text-3: rgba(245, 243, 239, 0.50);   /* apoyo */
-  --u-text-4: rgba(245, 243, 239, 0.40);   /* etiquetas y rótulos */
-  --u-hair: rgba(245, 243, 239, 0.10);     /* filete de 1 px */
-  --u-hair-2: rgba(245, 243, 239, 0.18);   /* borde de control */
+  --brand-text: var(--senda-oscuro-texto);
+  --u-text: var(--senda-oscuro-texto);
+  --u-text-2: color-mix(in srgb, var(--senda-oscuro-texto) 50%, var(--senda-oscuro-apoyo));
+  --u-text-3: var(--senda-oscuro-apoyo);
+  --u-text-4: var(--senda-oscuro-apoyo);
+  --u-hair: color-mix(in srgb, var(--senda-oscuro-borde) 55%, transparent);
+  --u-hair-2: var(--senda-oscuro-borde);
 
   /* Acento */
-  --brand-accent: #4ade80;      /* relleno */
-  --brand-accent-ink: #4ade80;  /* acento COMO TEXTO */
-  --brand-on-accent: #06120c;   /* tinta sobre el relleno de acento */
+  --brand-accent: var(--senda-oscuro-acento);
+  --brand-accent-ink: var(--senda-oscuro-acento);
+  --brand-on-accent: var(--senda-oscuro-sobre-acento);
 
   /* Estados semánticos: -X es tinta, -X-solid es relleno */
-  --c-ok: #4ade80;     --c-ok-solid: #22c55e;
+  --c-ok: var(--senda-oscuro-acento); --c-ok-solid: #22c55e;
   --c-warn: #fbbf24;   --c-warn-solid: #f59e0b;
   --c-danger: #f87171; --c-danger-solid: #ef4444;
   --c-info: #60a5fa;   --c-info-solid: #3b82f6;
@@ -70,28 +67,28 @@
   --ease-entry: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* Tema claro. La misma opacidad NO da el mismo contraste en los dos
-   modos: la tinta oscura sube a 0.82 / 0.62 / 0.48 para pasar 4.5:1. */
+/* Modo claro A: mismos roles y componentes, con superficies crema y bosque. */
 [data-scheme="light"] {
-  --brand-bg: #f4f4f6;
-  --brand-bg-2: #ffffff;
-  --adm-card: #ffffff;
-  --adm-card-hover: #f7f7f9;
-  --adm-overlay: #ffffff;
+  color-scheme: light;
+  --brand-bg: var(--senda-claro-fondo);
+  --brand-bg-2: var(--senda-claro-panel);
+  --adm-card: var(--senda-claro-panel);
+  --adm-card-hover: var(--senda-claro-suave);
+  --adm-overlay: var(--senda-claro-panel);
 
-  --brand-text: #17161a;
-  --u-text: #17161a;
-  --u-text-2: rgba(23, 22, 26, 0.82);
-  --u-text-3: rgba(23, 22, 26, 0.62);
-  --u-text-4: rgba(23, 22, 26, 0.48);
-  --u-hair: rgba(0, 0, 0, 0.08);
-  --u-hair-2: rgba(0, 0, 0, 0.14);
+  --brand-text: var(--senda-claro-texto);
+  --u-text: var(--senda-claro-texto);
+  --u-text-2: color-mix(in srgb, var(--senda-claro-texto) 50%, var(--senda-claro-apoyo));
+  --u-text-3: var(--senda-claro-apoyo);
+  --u-text-4: var(--senda-claro-apoyo);
+  --u-hair: color-mix(in srgb, var(--senda-claro-borde) 70%, transparent);
+  --u-hair-2: var(--senda-claro-borde);
 
-  --brand-accent: #14532d;
-  --brand-accent-ink: #14532d;
-  --brand-on-accent: #ffffff;
+  --brand-accent: var(--senda-claro-acento);
+  --brand-accent-ink: var(--senda-claro-acento);
+  --brand-on-accent: var(--senda-claro-sobre-acento);
 
-  --c-ok: #14532d;     --c-ok-solid: #16a34a;
+  --c-ok: var(--senda-claro-acento); --c-ok-solid: #16a34a;
   --c-warn: #78350f;   --c-warn-solid: #d97706;
   --c-danger: #991b1b; --c-danger-solid: #dc2626;
   --c-info: #1e40af;   --c-info-solid: #2563eb;
@@ -107,7 +104,7 @@
 
 body {
   margin: 0;
-  min-width: 320px;
+  min-width: 0;
   background: var(--brand-bg);
   color: var(--u-text);
   font-family: var(--ui-font-sans);

@@ -11,6 +11,8 @@ LONGITUD_MINIMA_CONTRASENA = 8
 
 def _validar_robustez(valor: str) -> str:
     """Reglas de robustez de la contrasena, compartidas por el alta y el cambio."""
+    if len(valor.encode("utf-8")) > 72:
+        raise ValueError("La contraseña no puede exceder 72 bytes.")
     if valor.strip() != valor:
         raise ValueError("La contraseña no puede iniciar ni terminar con espacios.")
     if not any(caracter.isalpha() for caracter in valor):
@@ -70,6 +72,20 @@ class CredencialesAcceso(BaseModel):
 
     correo: EmailStr
     contrasena: str = Field(min_length=1, max_length=72)
+
+
+class SolicitudRecuperacion(BaseModel):
+    correo: EmailStr = Field(max_length=120)
+
+
+class RestablecimientoContrasena(BaseModel):
+    token: str = Field(min_length=43, max_length=128, pattern=r"^[A-Za-z0-9_-]+$")
+    contrasena_nueva: str = Field(min_length=8, max_length=72)
+
+    @field_validator("contrasena_nueva")
+    @classmethod
+    def validar_robustez(cls, valor: str) -> str:
+        return _validar_robustez(valor)
 
 
 class CambioRol(BaseModel):

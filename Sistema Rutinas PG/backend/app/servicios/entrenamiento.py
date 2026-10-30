@@ -11,8 +11,10 @@ la ve su titular.
 """
 
 import logging
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta, timezone
 
+from fastapi import HTTPException
+from app.nucleo.medicion import es_plancha
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
@@ -22,7 +24,7 @@ from app.modelos.entrenamiento import SerieRealizada, SesionRealizada
 from app.modelos.plan import EjercicioSesion, SesionEntrenamiento
 from app.modelos.usuario import Usuario
 from app.motor import progresion
-from app.motor.progresion import EjecucionPrevia, Recomendacion, SerieEjecutada
+from app.motor.progresion import Decision, EjecucionPrevia, Recomendacion, SerieEjecutada
 
 bitacora = logging.getLogger(__name__)
 
@@ -68,8 +70,17 @@ def registrar_sesion(
         if serie.ejercicio_id not in ejercicios_validos:
             raise EjercicioNoEncontrado(serie.ejercicio_id)
 
+    for serie in datos.series:
+        ejercicio = sesion.get(Ejercicio, serie.ejercicio_id)
+        if es_plancha(ejercicio):
+            if serie.duracion_segundos is None or serie.repeticiones != 0 or serie.peso_kg is not None or serie.repeticiones_en_reserva is not None:
+                raise HTTPException(422, "Registre la plancha en segundos, sin repeticiones, peso ni reserva.")
+        elif serie.duracion_segundos is not None:
+            raise HTTPException(422, "Este ejercicio se registra en repeticiones.")
+
     realizada = SesionRealizada(
         usuario_id=usuario.id,
+        fecha_registro=datetime.now(timezone.utc).replace(tzinfo=None),
         sesion_id=prescrita.id if prescrita is not None else None,
         plan_id=prescrita.plan_id if prescrita is not None else None,
         fecha=datos.fecha or date.today(),
@@ -82,6 +93,7 @@ def registrar_sesion(
             ejercicio_id=serie.ejercicio_id,
             numero_serie=serie.numero_serie,
             repeticiones=serie.repeticiones,
+            duracion_segundos=serie.duracion_segundos,
             peso_kg=serie.peso_kg,
             repeticiones_en_reserva=serie.repeticiones_en_reserva,
         )
@@ -89,6 +101,11 @@ def registrar_sesion(
     ]
 
     sesion.add(realizada)
+    sesion.flush()
+    from app.nucleo.configuracion import configuracion
+    if configuracion.comunidad_habilitada:
+        from app.servicios.comunidad import registrar_evento
+        registrar_evento(sesion, realizada)
     sesion.commit()
     sesion.refresh(realizada)
 
@@ -239,6 +256,9 @@ def recomendar_carga(
     puede juzgar.
     """
     historial = ejecuciones_de_ejercicio(sesion, usuario, ejercicio.id)
+    if es_plancha(ejercicio):
+        fecha, series, _ = historial[0] if historial else (None, [], None)
+        return (Recomendacion(Decision.MANTENER, None, None, 0, "Sostén de referencia de 20–30 segundos, pendiente de revisión profesional. Priorice postura y respiración; deténgase ante dolor. Sin progresión automática de tiempo o carga."), series, fecha)
     if not historial:
         return (
             progresion.calcular(
@@ -310,6 +330,7 @@ def marca_personal(
             SesionRealizada.usuario_id == usuario.id,
             SerieRealizada.ejercicio_id == ejercicio_id,
             SerieRealizada.peso_kg.is_not(None),
+            SerieRealizada.duracion_segundos.is_(None),
         )
         .order_by(SerieRealizada.peso_kg.desc(), SerieRealizada.repeticiones.desc())
         .limit(1)

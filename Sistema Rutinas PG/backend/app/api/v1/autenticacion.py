@@ -1,6 +1,9 @@
 """Controlador de registro y sesion (historias HU-01 y HU-02)."""
 
-from fastapi import APIRouter, HTTPException, Request, status
+import hashlib
+
+from fastapi import APIRouter, BackgroundTasks, HTTPException, Request, status
+from sqlalchemy.orm import sessionmaker
 
 from app.api.dependencias import SesionBD, UsuarioAutenticado
 from app.esquemas.usuario import (
@@ -9,14 +12,20 @@ from app.esquemas.usuario import (
     RegistroUsuario,
     TokenSesion,
     UsuarioPublico,
+    SolicitudRecuperacion,
+    RestablecimientoContrasena,
 )
-from app.nucleo.limitador import limitador_de_acceso, limitador_de_registro
+from app.nucleo.limitador import limitador_de_acceso, limitador_de_registro, LimitadorDeIntentos
+from app.nucleo.configuracion import configuracion
 from app.nucleo.seguridad import crear_token_sesion
 from app.servicios import autenticacion
+from app.servicios import recuperacion
 
 enrutador = APIRouter(prefix="/autenticacion", tags=["Acceso seguro"])
 
 _MENSAJE_CREDENCIALES = "El correo o la contraseña son incorrectos."
+limitador_recuperacion = LimitadorDeIntentos(intentos_maximos=5, bloqueo_segundos=900)
+limitador_restablecimiento = LimitadorDeIntentos(intentos_maximos=8, bloqueo_segundos=900)
 
 
 def _direccion(peticion: Request) -> str:
@@ -122,7 +131,7 @@ def iniciar_sesion(
     for llave in llaves:
         limitador_de_acceso.registrar_exito(llave)
 
-    token, vigencia = crear_token_sesion(usuario.id, usuario.rol.value)
+    token, vigencia = crear_token_sesion(usuario.id, usuario.rol.value, usuario.version_sesion)
     return TokenSesion(
         token_acceso=token,
         expira_en_segundos=vigencia,
@@ -141,7 +150,7 @@ def renovar_sesion(usuario: UsuarioAutenticado) -> TokenSesion:
     Es el mecanismo que convierte la vigencia fija del token en la expiracion
     por inactividad que exige el criterio de aceptacion de la historia HU-02.
     """
-    token, vigencia = crear_token_sesion(usuario.id, usuario.rol.value)
+    token, vigencia = crear_token_sesion(usuario.id, usuario.rol.value, usuario.version_sesion)
     return TokenSesion(
         token_acceso=token,
         expira_en_segundos=vigencia,
@@ -173,10 +182,7 @@ def cambiar_contrasena(
     comprobacion, un teléfono desbloqueado y desatendido bastaria para quedarse
     con la cuenta de forma permanente.
 
-    Devuelve un token nuevo. El anterior conserva su vigencia hasta que caduque
-    —los tokens de este sistema no se revocan, cosa que la sesion de treinta
-    minutos acota—, de modo que se emite uno nuevo para que la sesión del propio
-    usuario no quede atada al token con que entró antes del cambio.
+    Revoca las sesiones anteriores y devuelve un token de la nueva versión.
     """
     if not autenticacion.contrasena_coincide(usuario, datos.contrasena_actual):
         raise HTTPException(
@@ -190,11 +196,49 @@ def cambiar_contrasena(
             detail="La contraseña nueva debe ser distinta de la actual.",
         )
 
-    autenticacion.cambiar_contrasena(sesion, usuario, datos.contrasena_nueva)
+    try:
+        autenticacion.cambiar_contrasena(sesion, usuario, datos.contrasena_nueva)
+    except autenticacion.CredencialesInvalidas:
+        raise HTTPException(409, "Las credenciales cambiaron. Inicia sesión nuevamente.") from None
 
-    token, vigencia = crear_token_sesion(usuario.id, usuario.rol.value)
+    token, vigencia = crear_token_sesion(usuario.id, usuario.rol.value, usuario.version_sesion)
     return TokenSesion(
         token_acceso=token,
         expira_en_segundos=vigencia,
         usuario=UsuarioPublico.model_validate(usuario),
     )
+
+
+@enrutador.get("/opciones-publicas")
+def opciones_publicas() -> dict:
+    return {
+        "recuperacion_habilitada": configuracion.recuperacion_habilitada,
+        "correo_contacto": str(configuracion.correo_contacto) if configuracion.correo_contacto else None,
+    }
+
+
+@enrutador.post("/recuperacion", status_code=202)
+def solicitar_recuperacion(datos: SolicitudRecuperacion, sesion: SesionBD, peticion: Request, tareas: BackgroundTasks) -> dict:
+    if not configuracion.recuperacion_habilitada:
+        raise HTTPException(503, "La recuperación por correo no está disponible por el momento.")
+    correo = str(datos.correo).strip().lower()
+    cuenta = hashlib.sha256(correo.encode()).hexdigest()
+    for llave in (f"origen:{_direccion(peticion)}", f"cuenta:{cuenta}"):
+        veredicto = limitador_recuperacion.registrar_fallo(llave)
+        if not veredicto.permitido:
+            raise _rechazar_por_intentos(veredicto.segundos_de_espera)
+    fabrica = sessionmaker(bind=sesion.get_bind(), expire_on_commit=False)
+    tareas.add_task(recuperacion.procesar_solicitud, correo, fabrica)
+    return {"mensaje": "Si el correo corresponde a una cuenta activa, recibirás un enlace para recuperar el acceso. Revisa también la carpeta de correo no deseado."}
+
+
+@enrutador.post("/restablecimiento")
+def restablecer_acceso(datos: RestablecimientoContrasena, sesion: SesionBD, peticion: Request) -> dict:
+    veredicto = limitador_restablecimiento.registrar_fallo(_direccion(peticion))
+    if not veredicto.permitido:
+        raise _rechazar_por_intentos(veredicto.segundos_de_espera)
+    try:
+        recuperacion.restablecer(sesion, datos.token, datos.contrasena_nueva)
+    except recuperacion.EnlaceNoValido:
+        raise HTTPException(400, "El enlace no es válido o ya venció. Solicita uno nuevo.") from None
+    return {"mensaje": "Contraseña actualizada. Inicia sesión con tu nueva contraseña."}

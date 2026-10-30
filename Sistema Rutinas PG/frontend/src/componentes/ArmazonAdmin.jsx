@@ -6,7 +6,7 @@
  * ciento cuarenta alimentos en una columna de 390 px no es una tabla, es una
  * lista infinita.
  *
- * Barra lateral de 244 px con los dos destinos de administración, barra
+ * Barra lateral de 244 px con los destinos de administración, barra
  * superior con el título y la acción de la pantalla, y una subbarra opcional
  * de pestañas. Por debajo de 900 px la barra lateral se oculta —lo resuelve la
  * hoja de estilos— y la navegación vuelve a la barra inferior de siempre.
@@ -18,10 +18,12 @@ import Icono from './Icono.jsx'
 import { IconoComer } from './Iconos.jsx'
 import { useSesion } from '../contexto/ContextoSesion.jsx'
 import { iniciales } from '../utilidades/formatos.js'
+import { NombreSenda } from './MarcaProducto.jsx'
 
 const DESTINOS = [
   { ruta: '/admin/catalogos', etiqueta: 'Catálogos' },
   { ruta: '/admin/cuentas', etiqueta: 'Cuentas' },
+  { ruta: '/admin/informes', etiqueta: 'Informes' },
 ]
 
 export default function ArmazonAdmin({ titulo, explicacion, accion, subbarra, children }) {
@@ -32,11 +34,8 @@ export default function ArmazonAdmin({ titulo, explicacion, accion, subbarra, ch
     <div className="admin">
       <aside className="admin__lateral no-imprimir">
         <div className="pila-2">
-          <Link to="/panel" className="admin__marca">
-            <span className="admin__marca-cuadro" aria-hidden="true">
-              P
-            </span>
-            <span className="lista__etiqueta">Planes y Rutinas</span>
+          <Link to="/panel" className="admin__marca" aria-label="Senda, ir a mi día">
+            <NombreSenda />
           </Link>
         </div>
 
@@ -52,6 +51,8 @@ export default function ArmazonAdmin({ titulo, explicacion, accion, subbarra, ch
             >
               {destino.ruta.endsWith('catalogos') ? (
                 <IconoComer tamano={16} grosor={1.8} />
+              ) : destino.ruta.endsWith('informes') ? (
+                <Icono nombre="file-01" tamano={17} />
               ) : (
                 <Icono nombre="user" tamano={17} />
               )}

@@ -86,6 +86,8 @@ def abrir_sesion(
                 grupo_muscular=NOMBRES_GRUPO[prescrito.ejercicio.grupo_muscular],
                 orden=prescrito.orden,
                 series=prescrito.series,
+                duracion_segundos_min=prescrito.duracion_segundos_min,
+                duracion_segundos_max=prescrito.duracion_segundos_max,
                 repeticiones_min=prescrito.repeticiones_min,
                 repeticiones_max=prescrito.repeticiones_max,
                 repeticiones_en_reserva=prescrito.repeticiones_en_reserva,
@@ -95,6 +97,7 @@ def abrir_sesion(
                     SeriePrevia(
                         numero_serie=serie.numero_serie,
                         repeticiones=serie.repeticiones,
+                        duracion_segundos=serie.duracion_segundos,
                         peso_kg=float(serie.peso_kg) if serie.peso_kg is not None else None,
                     )
                     for serie in ultima_vez
@@ -155,8 +158,7 @@ def registrar_sesion(
         )
     else:
         mensaje = (
-            "Sesión registrada. Repita estas cargas la próxima vez y busque completar "
-            "el rango de repeticiones en todas las series."
+            "Sesión registrada. Revise las indicaciones de cada ejercicio para la próxima vez."
         )
 
     # Los puntos se otorgan aquí, sobre la sesión ya guardada, y no dentro del
@@ -223,6 +225,7 @@ def historial_de_ejercicio(
                 1,
             ),
             repeticiones_totales=sum(s.repeticiones for s in series),
+            duracion_total_segundos=sum(s.duracion_segundos or 0 for s in series),
         )
         # La lectura de una evolución va de izquierda a derecha en el tiempo.
         for fecha, series, _ in reversed(historial)

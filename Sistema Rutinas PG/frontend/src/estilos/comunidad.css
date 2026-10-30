@@ -1,0 +1,11 @@
+.comunidad-privada { overflow-wrap: anywhere; }
+.comunidad-privada fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
+.comunidad-privada label { display: grid; gap: .5rem; }
+.comunidad-privada input:not([type=checkbox]), .comunidad-privada select { width: 100%; min-width: 0; box-sizing: border-box; font: inherit; padding: .75rem; color: inherit; background: var(--brand-bg-2); border: 1px solid currentColor; border-radius: .5rem; }
+.comunidad-privada .comunidad-casilla { display: flex; align-items: start; gap: .75rem; }
+.comunidad-casilla input { flex: 0 0 auto; margin-top: .25rem; width: 1.2rem; height: 1.2rem; }
+.comunidad-privada summary { cursor: pointer; padding-block: .75rem; font-weight: 600; }
+.comunidad-reglas p { margin-block: .75rem; }
+.comunidad-miembros { list-style: none; padding: 0; margin: 0; }
+.comunidad-miembros li { border-bottom: 1px solid currentColor; padding-block: 1rem; }
+.comunidad-privada .fila { flex-wrap: wrap; }

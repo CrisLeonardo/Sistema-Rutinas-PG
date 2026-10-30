@@ -403,7 +403,9 @@ class MotorNeuronal:
             nivel_experiencia,
             dias_entrenamiento_semana,
         ).reshape(1, -1)
-        normalizada = self._modelo.predict(self._normalizador.aplicar(entrada), verbose=0)
+        # Una sola fila: evita crear el adaptador de lotes/tf.data de predict.
+        # training=False conserva el comportamiento de inferencia del modelo.
+        normalizada = np.asarray(self._modelo(self._normalizador.aplicar(entrada), training=False))
         salida = self._normalizador_salidas.revertir(normalizada)[0]
 
         proteina_g = max(int(round(float(salida[1]))), 1)

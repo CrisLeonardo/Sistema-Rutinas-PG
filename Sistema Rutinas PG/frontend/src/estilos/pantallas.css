@@ -503,3 +503,166 @@
     grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   }
 }
+
+/* ── Informes ────────────────────────────────────────────────
+   La tabla es una tabla de verdad, no una rejilla de divs: se lee con un
+   lector de pantalla celda por celda y se imprime con sus bordes, que es lo
+   que el informe necesita en papel. */
+
+.selector-informes {
+  display: grid;
+  gap: var(--m-sp-2);
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+}
+
+.selector-informes__opcion {
+  background: var(--adm-card);
+  border: 1px solid var(--u-hair);
+  border-radius: var(--radius-lg);
+  color: var(--u-text);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 48px;
+  padding: 12px 14px;
+  text-align: left;
+}
+
+.selector-informes__opcion:hover {
+  border-color: var(--u-hair-2);
+}
+
+.selector-informes__opcion--activa {
+  border-color: var(--brand-accent);
+  box-shadow: inset 0 0 0 1px var(--brand-accent);
+}
+
+.acciones-informe {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--m-sp-2);
+}
+
+.acciones-informe .boton {
+  gap: 6px;
+}
+
+.informe {
+  background: var(--adm-card);
+  border: 1px solid var(--u-hair);
+  border-radius: var(--radius-xl);
+  display: flex;
+  flex-direction: column;
+  gap: var(--m-sp-4);
+  padding: 18px;
+}
+
+.informe[aria-busy='true'] {
+  opacity: 0.6;
+}
+
+.informe__encabezado {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.informe__titulo {
+  color: var(--u-text);
+  font: 600 20px/1.2 var(--ui-font-sans);
+  margin: 0;
+}
+
+.informe__resumen {
+  display: grid;
+  gap: var(--m-sp-3);
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  margin: 0;
+}
+
+.informe__indicador {
+  border-left: 2px solid var(--brand-accent);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-left: 10px;
+}
+
+.informe__valor {
+  color: var(--u-text);
+  font: 500 15px/1.2 var(--ui-font-mono);
+  margin: 0;
+}
+
+.informe__desplazamiento {
+  overflow-x: auto;
+}
+
+.informe__tabla {
+  border-collapse: collapse;
+  font: 400 13px/1.35 var(--ui-font-sans);
+  min-width: 100%;
+}
+
+.informe__tabla th,
+.informe__tabla td {
+  border-bottom: 1px solid var(--u-hair);
+  padding: 9px 10px;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.informe__tabla th {
+  color: var(--u-text-4);
+  font: 600 10.5px/1.2 var(--ui-font-sans);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.informe__tabla .numero {
+  font-family: var(--ui-font-mono);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.informe__nota {
+  font-style: italic;
+}
+
+@media print {
+  .informe {
+    border: 0 !important;
+    padding: 0 !important;
+  }
+
+  .informe__tabla {
+    font-size: 9.5pt;
+  }
+
+  .informe__tabla th,
+  .informe__tabla td {
+    border: 1px solid #999 !important;
+    color: #000 !important;
+    padding: 4px 6px;
+    white-space: normal;
+  }
+
+  /* El encabezado de la tabla se repite en cada hoja impresa. */
+  .informe__tabla thead {
+    display: table-header-group;
+  }
+
+  .informe__tabla tr {
+    break-inside: avoid;
+  }
+
+  .informe__titulo,
+  .informe__valor {
+    color: #000 !important;
+  }
+
+  .informe__desplazamiento {
+    overflow: visible;
+  }
+}

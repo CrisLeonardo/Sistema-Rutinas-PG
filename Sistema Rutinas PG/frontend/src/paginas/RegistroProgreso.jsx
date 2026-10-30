@@ -20,6 +20,8 @@ import { Link, useNavigate } from 'react-router-dom'
 
 import AvisoDeError from '../componentes/AvisoDeError.jsx'
 import Icono from '../componentes/Icono.jsx'
+import ResultadoAccion from '../componentes/ResultadoAccion.jsx'
+import RecompensaAccion from '../componentes/RecompensaAccion.jsx'
 import Pildoras from '../componentes/Pildoras.jsx'
 import { PESTANAS_AVANCE } from '../datos/secciones.js'
 import { useSesion } from '../contexto/ContextoSesion.jsx'
@@ -66,6 +68,7 @@ export default function RegistroProgreso() {
   const [fechaVisible, setFechaVisible] = useState(false)
 
   const campoPeso = useRef(null)
+  const envioEnCurso = useRef(false)
 
   // Se precarga el peso de la última medición para que el usuario solo tenga
   // que corregirlo, en lugar de escribirlo desde cero cada semana.
@@ -122,6 +125,7 @@ export default function RegistroProgreso() {
 
   const enviar = async (evento) => {
     evento.preventDefault()
+    if (envioEnCurso.current) return
     const problema = validar()
     if (problema) {
       setError(problema)
@@ -129,6 +133,7 @@ export default function RegistroProgreso() {
     }
 
     setError(null)
+    envioEnCurso.current = true
     setEnviando(true)
     setSinPlan(false)
     try {
@@ -145,12 +150,12 @@ export default function RegistroProgreso() {
         token,
       )
       setResultado({ ...respuesta.reajuste, recompensa: respuesta.recompensa })
-      window.scrollTo({ top: 0, behavior: 'smooth' })
     } catch (fallo) {
       // El servidor responde 409 cuando todavía no hay plan sobre el que ajustar.
       if (fallo instanceof ErrorApi && fallo.codigo === 409) setSinPlan(true)
       setError(fallo.message)
     } finally {
+      envioEnCurso.current = false
       setEnviando(false)
     }
   }
@@ -218,7 +223,8 @@ export default function RegistroProgreso() {
         </div>
       )}
 
-      <form onSubmit={enviar} noValidate className="pila-5">
+      <form onSubmit={enviar} noValidate className="pila-5" aria-busy={enviando}>
+        <fieldset disabled={enviando} className="envio-campos pila-5">
         <div className="tarjeta tarjeta--protagonista control-peso">
           <div className="cifra-con-unidad">
             <input
@@ -346,6 +352,7 @@ export default function RegistroProgreso() {
         <button type="submit" className="boton boton--principal" disabled={enviando}>
           {enviando ? 'Guardando…' : 'Guardar mi avance'}
         </button>
+        </fieldset>
       </form>
     </div>
   )
@@ -355,12 +362,7 @@ export default function RegistroProgreso() {
 function AvanceRegistrado({ resultado, alRegistrarOtro }) {
   return (
     <div className="pila-5">
-      <div className="resultado">
-        <span className="resultado__circulo">
-          <Icono nombre="tick-02" tamano={24} />
-        </span>
-        <h1 className="titulo-resultado">Avance registrado</h1>
-      </div>
+      <ResultadoAccion titulo="Avance registrado" />
 
       <p className={`aviso ${resultado.reajusto_el_plan ? 'aviso--ok' : 'aviso--neutro'}`} role="status">
         <strong>
@@ -385,18 +387,7 @@ function AvanceRegistrado({ resultado, alRegistrarOtro }) {
         </div>
       )}
 
-      {resultado.recompensa && resultado.recompensa.puntos_ganados > 0 && (
-        <div className="ganancia">
-          <span className="ganancia__cifra">+{resultado.recompensa.puntos_ganados}</span>
-          <span className="cifras__rotulo">puntos por anotar su avance</span>
-          {resultado.recompensa.subio_de_nivel && (
-            <span className="ganancia__subida">
-              <Icono nombre="award-01" tamano={15} />
-              Ahora es {resultado.recompensa.nombre_nivel}
-            </span>
-          )}
-        </div>
-      )}
+      <RecompensaAccion recompensa={resultado.recompensa} />
 
       <div className="pila-3">
         <Link to="/avance/evolucion" className="boton boton--principal">

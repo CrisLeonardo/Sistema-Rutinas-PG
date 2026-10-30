@@ -8,6 +8,8 @@ __pycache__/
 # Configuración local con credenciales
 .env
 backend/.env
+backend/.env.gmail
+backend/*client_secret*.json
 frontend/.env.local
 .env.pruebas
 
@@ -20,6 +22,9 @@ dist/
 build/
 *.egg-info/
 .pytest_cache/
+
+# Evidencia reproducible local: puede incluir capturas y datos de demostracion.
+operaciones/evidencias/
 
 # Modelo neuronal entrenado.
 #

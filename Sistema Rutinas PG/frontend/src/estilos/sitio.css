@@ -1,0 +1,84 @@
+/* Identidad aprobada: Camino y nombre Senda, compartidos por sitio y sistema. */
+.marca-producto { display: inline-flex; align-items: center; gap: 8px; color: var(--brand-text); }
+.marca-producto > svg { width: 32px; height: 32px; flex: 0 0 32px; }
+.sitio-publico .marca-producto { color: var(--s1-tinta); }
+.nombre-senda { display: inline-flex; font: 650 32px/1 'Geist', system-ui, sans-serif; letter-spacing: -.055em; color: var(--brand-text); }
+.nombre-senda > span { color: var(--u-text-3); }
+.cabecera-cuenta { display: flex; align-items: center; justify-content: space-between; gap: 18px; width: 100%; }
+.cabecera-cuenta > a { display: inline-flex; align-items: center; min-height: 44px; }
+.cabecera-producto { margin-bottom: 28px; }
+.cambiar-tema { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 8px 12px; border: 1px solid var(--u-hair-2); background: transparent; color: var(--u-text); border-radius: 9px; font: 500 13px/1.4 var(--ui-font-sans); cursor: pointer; }
+.cuenta-senda { max-width: 460px; padding-block: 28px 45px; gap: 24px; }
+.cuenta-senda .cabecera-cuenta { margin-bottom: 10px; }
+.cuenta-senda .campo__control { border-radius: 10px; }
+.bienvenida-senda { max-width: 640px; margin: 25px auto; width: 100%; }
+.bienvenida-pasos { counter-reset: paso; display: grid; gap: 20px; list-style: none; padding: 24px; margin: 0; border: 1px solid var(--u-hair-2); background: var(--adm-card); border-radius: 16px; }
+.bienvenida-pasos li { counter-increment: paso; display: grid; grid-template-columns: 32px 1fr; gap: 5px 12px; }
+.bienvenida-pasos li::before { content: counter(paso, decimal-leading-zero); font: 500 13px/1.5 var(--ui-font-mono); grid-row: span 2; color: var(--brand-accent-ink); }
+.bienvenida-pasos li span { font-size: 13px; color: var(--u-text-3); }
+.sitio-publico { --s1-fondo: var(--senda-oscuro-fondo); --s1-panel: var(--senda-oscuro-panel); --s1-tinta: var(--senda-oscuro-texto); --s1-apoyo: var(--senda-oscuro-apoyo); --s1-acento: var(--senda-oscuro-acento); --s1-sobre-acento: var(--senda-oscuro-sobre-acento); --s1-suave: var(--senda-oscuro-suave); --s1-borde: var(--senda-oscuro-borde); --s1-colina-lejos: var(--senda-oscuro-colina-lejos); --s1-colina: var(--senda-oscuro-colina); --s1-bosque: var(--senda-oscuro-bosque); color-scheme: dark; }
+[data-scheme="light"] .sitio-publico { --s1-fondo: var(--senda-claro-fondo); --s1-panel: var(--senda-claro-panel); --s1-tinta: var(--senda-claro-texto); --s1-apoyo: var(--senda-claro-apoyo); --s1-acento: var(--senda-claro-acento); --s1-sobre-acento: var(--senda-claro-sobre-acento); --s1-suave: var(--senda-claro-suave); --s1-borde: var(--senda-claro-borde); --s1-colina-lejos: var(--senda-claro-colina-lejos); --s1-colina: var(--senda-claro-colina); --s1-bosque: var(--senda-claro-bosque); color-scheme: light; }
+.sitio-publico .nombre-senda { color: var(--s1-tinta); }
+.sitio-publico .nombre-senda > span { color: var(--s1-apoyo); }
+.sitio-publico .cambiar-tema { color: var(--s1-tinta); border-color: var(--s1-borde); }
+.publico-cabecera nav { flex-wrap: wrap; justify-content: flex-end; gap: 20px; }
+.publico-cabecera nav .cambiar-tema { font-size: 12px; }
+.publico-cabecera nav .cambiar-tema span { display: none; }
+.publico-accion-secundaria { display: inline-flex; align-items: center; gap: 12px; min-height: 44px; font-size: 13px; margin: 12px 0 0 15px; }
+.publico-accion-secundaria svg { width: 18px; height: 18px; }
+.publico-cuatro-pasos { grid-template-columns: repeat(4, 1fr); }
+.publico-demo { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-block: 24px; }
+.publico-demo h3 { margin: 18px 0 14px; font-size: 24px; }
+.publico-demo p { font-size: 14px; }
+.publico-demo .s1-plato { width: 135px; height: 135px; }
+.publico-series { display: flex; gap: 12px; margin-block: 25px; }
+.publico-series > span { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; min-height: 90px; flex: 1; border: 1px solid var(--s1-borde); border-radius: 10px; font-size: 22px; font-variant-numeric: tabular-nums; }
+.publico-series svg { width: 25px; height: 25px; }
+.publico-series small { font-size: 11px; color: var(--s1-apoyo); }
+.publico-confirmacion { min-height: 44px; padding-top: 12px; font-size: 12px !important; }
+.publico-demo details { border-top: 1px solid var(--s1-borde); margin-top: 12px; }
+.sitio-publico summary { cursor: pointer; min-height: 48px; padding: 16px 0; font-size: 14px; font-weight: 550; }
+.publico-demo details p { margin-bottom: 15px; }
+.publico-preguntas details { border-bottom: 1px solid var(--s1-borde); }
+.publico-preguntas details p { max-width: 780px; padding-bottom: 20px; font-size: 14px; }
+.publico-titulo { margin-block: 16px 25px !important; }
+.publico-pie nav { display: flex; flex-wrap: wrap; align-items: center; gap: 18px; font-size: 12px; }
+.publico-pie nav a { min-height: 44px; display: inline-flex; align-items: center; }
+.publico-pagina { max-width: 1140px; margin-inline: auto; }
+.publico-pagina > .s1-entradilla { margin-bottom: 30px; }
+.publico-pagina > .s1-panel h2 { margin-bottom: 20px; }
+.publico-pagina > .s1-panel .s1-boton { margin-top: 25px; }
+.publico-texto { display: flex; flex-direction: column; align-items: flex-start; gap: 20px; max-width: 810px; margin-top: 35px; }
+.publico-texto h2 { margin-top: 12px; font-size: 25px; }
+.publico-texto p { font-size: 15px; line-height: 1.85; }
+.publico-texto .s1-panel { margin-block: 18px; width: 100%; }
+.publico-texto .s1-panel h2 { margin-bottom: 15px; }
+.publico-pagina > .s1-boton { margin-top: 30px; }
+.panel-senda .saludo { padding-bottom: 12px; }
+.panel-senda .rejilla-doble { align-items: stretch; }
+.panel-senda .tarjeta { border-radius: 18px; padding: 26px; }
+.panel-senda .tarjeta--destacada { background: var(--adm-card-hover); }
+.panel-senda .panel-siguiente { border-left: 3px solid var(--brand-accent); border-radius: 12px; padding: 20px 24px; background: var(--adm-card); }
+.panel-senda .panel-siguiente .boton { margin-top: 16px; width: fit-content; }
+.panel-resumen { display: flex; gap: 25px; flex-wrap: wrap; padding: 20px 24px; background: var(--adm-card); border: 1px solid var(--u-hair); border-radius: 15px; }
+.panel-resumen p { display: flex; flex-direction: column; gap: 6px; margin: 0; flex: 1; min-width: 100px; }
+.panel-resumen strong { font: 500 25px/1.3 var(--ui-font-mono); }
+.panel-resumen span { font-size: 12px; color: var(--u-text-3); }
+@container senda (max-width: 800px) {
+  .publico-cuatro-pasos { grid-template-columns: 1fr 1fr; }
+}
+@container senda (max-width: 560px) {
+  .publico-demo, .publico-cuatro-pasos { grid-template-columns: 1fr; }
+  .publico-cabecera nav { gap: 10px; }
+  .publico-cabecera nav > a:first-child { display: none; }
+  .publico-cabecera nav > a:nth-child(2) { display: none; }
+  .publico-cabecera nav .cambiar-tema { padding-inline: 10px; }
+  .publico-cabecera nav a { font-size: 12px; }
+  .publico-accion-secundaria { margin-left: 0; }
+  .publico-demo .s1-boton { width: 100%; gap: 12px; }
+}
+@media (max-width: 640px) {
+  .panel-senda .tarjeta { padding: 22px; }
+  .cabecera-producto { margin: 15px 0 22px; }
+  .bienvenida-senda { margin-block: 10px; }
+}

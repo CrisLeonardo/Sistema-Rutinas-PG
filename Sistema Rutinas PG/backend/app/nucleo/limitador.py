@@ -95,6 +95,9 @@ class LimitadorDeIntentos:
         """Anota un intento fallido y bloquea la llave si agoto los admitidos."""
         ahora = time.monotonic()
         with self._cerrojo:
+            hasta = self._bloqueos.get(llave, 0)
+            if hasta > ahora:
+                return Veredicto(permitido=False, segundos_de_espera=int(hasta - ahora) + 1)
             if len(self._intentos) > LLAVES_PARA_LIMPIEZA:
                 self._limpiar_vencidos(ahora)
 

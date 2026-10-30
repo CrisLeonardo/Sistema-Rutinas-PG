@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react'
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 
 import BarraNavegacion from './componentes/BarraNavegacion.jsx'
@@ -13,6 +14,7 @@ import BitacoraSesion from './paginas/BitacoraSesion.jsx'
 import CambioContrasena from './paginas/CambioContrasena.jsx'
 import HistorialEntrenamiento from './paginas/HistorialEntrenamiento.jsx'
 import HistorialMedidas from './paginas/HistorialMedidas.jsx'
+import Informes from './paginas/Informes.jsx'
 import ListaDeCompras from './paginas/ListaDeCompras.jsx'
 import MenuDiario from './paginas/MenuDiario.jsx'
 import Panel from './paginas/Panel.jsx'
@@ -23,6 +25,17 @@ import RegistroProgreso from './paginas/RegistroProgreso.jsx'
 import Reportes from './paginas/Reportes.jsx'
 import Rutina from './paginas/Rutina.jsx'
 import Senda from './paginas/Senda.jsx'
+import Bienvenida from './paginas/Bienvenida.jsx'
+import RecuperarAcceso from './paginas/RecuperarAcceso.jsx'
+import MetadatosPrivados from './componentes/MetadatosPrivados.jsx'
+import CabeceraCuenta from './componentes/MarcaProducto.jsx'
+import { PAGINAS_PUBLICAS } from './publico/contenido.js'
+
+const PrototipoFase1 = lazy(() => import('./prototipo/PrototipoFase1.jsx'))
+const SitioPublico = lazy(() => import('./publico/SitioPublico.jsx'))
+const BibliotecaEjercicios = lazy(() => import('./paginas/BibliotecaEjercicios.jsx'))
+const RevisionFase3 = lazy(() => import('./prototipo/RevisionFase3.jsx'))
+const AlimentacionPractica = lazy(() => import('./paginas/AlimentacionPractica.jsx'))
 
 /**
  * Direcciones de la versión anterior. Se conservan como redirecciones porque
@@ -51,16 +64,37 @@ const RUTAS_ANTERIORES = [
  * intención. Las dos pestañas de la sección sí la conservan.
  */
 function esSesionEnCurso(ruta) {
-  return /^\/entrenar\/(?!bitacora$|marcas$)[^/]+$/.test(ruta)
+  return /^\/entrenar\/\d+\/?$/.test(ruta)
 }
 
 export default function App() {
   const { autenticado } = useSesion()
   const { pathname } = useLocation()
 
+  if (pathname.replace(/\/+$/, '') === '/prototipo/fase-3') {
+    return <Suspense fallback={<p role="status">Cargando el piloto de ejercicios…</p>}><RevisionFase3 /></Suspense>
+  }
+
+  // La fase de diseño tiene datos ficticios y navegación propia. Carga aparte
+  // para poder evaluarla sin sustituir las pantallas ni la sesión existentes.
+  if (pathname === '/prototipo/fase-1' || pathname.startsWith('/prototipo/fase-1/')) {
+    return (
+      <Suspense fallback={<p role="status">Cargando prototipo de Senda…</p>}>
+        <Routes>
+          <Route path="/prototipo/fase-1/*" element={<PrototipoFase1 />} />
+        </Routes>
+      </Suspense>
+    )
+  }
+
+  if (Object.hasOwn(PAGINAS_PUBLICAS, pathname.replace(/\/+$/, '') || '/')) {
+    return <Suspense fallback={<p role="status">Cargando Senda…</p>}><SitioPublico /></Suspense>
+  }
+
   const modoEnfoque = esSesionEnCurso(pathname)
   const esAdministracion = pathname.startsWith('/admin')
-  const sinBarra = modoEnfoque || !autenticado
+  const esRecuperacion = /^\/(recuperar-acceso|restablecer-acceso)\/?$/.test(pathname)
+  const sinBarra = modoEnfoque || esRecuperacion || !autenticado
 
   const clases = ['contenido-principal']
   if (sinBarra) clases.push('contenido-principal--enfoque')
@@ -68,8 +102,13 @@ export default function App() {
 
   return (
     <div className={`armazon${esAdministracion ? ' armazon--administracion' : ''}`}>
+      <MetadatosPrivados />
       <main className={clases.join(' ')}>
+        {autenticado && !modoEnfoque && !esRecuperacion && !esAdministracion && <div className="cabecera-producto"><CabeceraCuenta /></div>}
         <Routes>
+          <Route path="/recuperar-acceso" element={<RecuperarAcceso key="solicitar" />} />
+          <Route path="/restablecer-acceso" element={<RecuperarAcceso key="restablecer" restablecer />} />
+          <Route path="/bienvenida" element={<RutaProtegida><Bienvenida /></RutaProtegida>} />
           <Route
             path="/acceso"
             element={autenticado ? <Navigate to="/panel" replace /> : <Acceso />}
@@ -90,6 +129,7 @@ export default function App() {
           />
 
           {/* Comer */}
+          {['semana', 'recetas', 'preferencias'].map(vista => <Route key={vista} path={`/comer/${vista}`} element={<RutaProtegida><Suspense fallback={<p role="status">Cargando alimentación…</p>}><AlimentacionPractica key={vista} vista={vista} /></Suspense></RutaProtegida>} />)}
           <Route
             path="/comer"
             element={
@@ -116,6 +156,8 @@ export default function App() {
           />
 
           {/* Entrenar */}
+          <Route path="/entrenar/biblioteca" element={<RutaProtegida><Suspense fallback={<p role="status">Cargando biblioteca…</p>}><BibliotecaEjercicios /></Suspense></RutaProtegida>} />
+          <Route path="/entrenar/biblioteca/:ejercicioId" element={<RutaProtegida><Suspense fallback={<p role="status">Cargando ficha…</p>}><BibliotecaEjercicios /></Suspense></RutaProtegida>} />
           <Route
             path="/entrenar"
             element={
@@ -149,6 +191,7 @@ export default function App() {
             }
           />
 
+          <Route path="/avance/amigos" element={<RutaProtegida><Navigate to="/avance/senda" replace /></RutaProtegida>} />
           {/* Avance */}
           <Route
             path="/avance"
@@ -179,6 +222,14 @@ export default function App() {
             element={
               <RutaProtegida>
                 <HistorialMedidas />
+              </RutaProtegida>
+            }
+          />
+          <Route
+            path="/avance/informes"
+            element={
+              <RutaProtegida>
+                <Informes ambito="personal" />
               </RutaProtegida>
             }
           />
@@ -217,6 +268,14 @@ export default function App() {
             }
           />
           <Route
+            path="/admin/informes"
+            element={
+              <RutaProtegida soloAdministrador>
+                <Informes ambito="administracion" />
+              </RutaProtegida>
+            }
+          />
+          <Route
             path="/admin/cuentas"
             element={
               <RutaProtegida soloAdministrador>
@@ -229,14 +288,13 @@ export default function App() {
             <Route key={anterior} path={anterior} element={<Navigate to={nueva} replace />} />
           ))}
 
-          <Route path="/" element={<Navigate to={autenticado ? '/panel' : '/acceso'} replace />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
 
-      {autenticado && !modoEnfoque && <BarraNavegacion />}
+      {!sinBarra && <BarraNavegacion />}
       <AvisoDeSesion />
-      {!modoEnfoque && <AvisoInstalacion conBarra={autenticado} />}
+      {!modoEnfoque && !esRecuperacion && <AvisoInstalacion conBarra={autenticado} />}
     </div>
   )
 }

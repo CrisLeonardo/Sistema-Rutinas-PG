@@ -1,4 +1,4 @@
-# Sistema de rutinas de entrenamiento y planes nutricionales
+# Senda
 
 Sistema web que genera de forma automática regímenes nutricionales y rutinas de
 entrenamiento personalizadas a partir de las variables biométricas del usuario,
@@ -11,9 +11,44 @@ la tesis; este repositorio contiene su implementación.
 
 ## Estado del desarrollo
 
-El detalle tarea por tarea está en **[PLAN.md](PLAN.md)**, que lleva el control de lo
-construido y lo pendiente. El desarrollo sigue las cinco iteraciones de la pila de
-producto (Tabla 11 del Capítulo IV).
+El nombre elegido para el producto es **Senda**. La fase 1 ya dispone de un
+[prototipo de identidad y experiencia](operaciones/FASE_1_IDENTIDAD_Y_EXPERIENCIA.md),
+pendiente de evaluación con participantes. Con el cliente en ejecución se puede
+revisar en `/prototipo/fase-1`; incluye tres símbolos, dos direcciones visuales y
+recorridos con datos ficticios. Por decisión del autor se conservan ambos:
+**A · Tierra y camino como modo claro** y **B · Pulso y contraste como modo oscuro**.
+La paleta y la preferencia de tema ya se comparten con el sistema real.
+La [fase 2](operaciones/FASE_2_SITIO_Y_CUENTAS.md) implementa el sitio público en
+`/`, las cuentas y el primer uso conectado al plan y a Mi día, junto con la
+recuperación de acceso. El panel renovado está en `/panel`. La recuperación
+necesita [autorizar Gmail](operaciones/CORREO_GMAIL.md) y aplicar la migración
+`0002_recuperacion_acceso` antes de publicar. Pendientes: entrega real de correo,
+evaluación con participantes, teléfono físico y despliegue en pruebas.
+La [fase 3](operaciones/FASE_3_ENTRENAMIENTO_VISUAL.md) añade la biblioteca en
+`/entrenar/biblioteca` y las fichas consultables desde la sesión. El piloto de
+diez ejercicios se revisa en `/prototipo/fase-3`; usa una figura esquemática
+simple y permite comparar posiciones y descargar observaciones. La reproducción
+en el piloto está disponible para revisión; en las cuentas normales se conserva
+la vista estática hasta registrar la validación técnica.
+El [plan maestro](../PLAN_MAESTRO_EVOLUCION.md) organiza la evolución;
+la [fase 4](operaciones/FASE_4_ALIMENTACION_PRACTICA.md) añade restricciones en
+`/comer/preferencias`, 18 recetas en borrador en `/comer/recetas` y siete días con
+sustituciones calculadas y compras en `/comer/semana`. Requiere aplicar
+`0003_alimentacion_practica` después de `0002` antes de usar este código con una
+base existente. El piloto y sus datos necesitan revisión profesional y de campo;
+no se publicó. La autorización de Gmail, revisión técnica de fase 3 y duración
+de la plancha siguen pendientes.
+El [informe de fase 0](operaciones/FASE_0_LINEA_BASE.md) registra las comprobaciones,
+divergencias y pendientes actuales. [PLAN.md](PLAN.md) conserva el historial de las
+cinco iteraciones originales y sus ampliaciones posteriores.
+
+La [fase 5](operaciones/FASE_5_INTERACCION_Y_SENDA.md) integra confirmaciones de
+series, resultados con puntos e insignias del servidor, cronómetro por fecha
+límite, Mi senda con filtros y tarjetas revisables, comparación de comidas y
+valores de gráficas en texto. La vibración requiere activación explícita y el
+movimiento reducido elimina las transiciones. No necesita otra migración sobre
+la fase 4. Once pruebas de interacción y las 21 del piloto visual pasan; la
+evaluación humana, teléfono físico y publicación siguen pendientes.
 
 | Iteración | Épica | Historias | Puntos | Estado |
 |---|---|---|---|---|
@@ -29,10 +64,11 @@ Corresponde a la definida en el apartado 3.6 de la tesis.
 
 | Capa | Tecnología |
 |---|---|
-| Presentación | React, HTML5, CSS3 y Bootstrap 5 |
+| Presentación | React 19, HTML5, CSS3 con valores de diseño propios y Vite |
 | Lógica y servicios | FastAPI sobre Python, interfaz REST con formato JSON |
 | Inteligencia artificial | Python, TensorFlow 2.21 y Keras 3.15 |
 | Persistencia | PostgreSQL 16, administrado por Supabase en producción |
+| Evolución del esquema | Alembic, con revisión inicial y adopción validada |
 
 ## Requisitos previos
 
@@ -40,9 +76,8 @@ Corresponde a la definida en el apartado 3.6 de la tesis.
 - [uv](https://docs.astral.sh/uv/), que administra el entorno de Python.
 - Node.js 20 o superior.
 
-El backend se fija a **Python 3.12**: TensorFlow, que se incorpora en la
-iteración 3, aún no publica versiones compatibles con Python 3.14. `uv` descarga
-e instala esa versión automáticamente.
+El backend se fija a **Python 3.12** mediante `pyproject.toml` y el archivo de
+bloqueo de dependencias. `uv` administra el intérprete y las versiones instaladas.
 
 ## Puesta en marcha
 
@@ -81,6 +116,10 @@ contraseña antes de cualquier despliegue.**
 
 La documentación interactiva de los servicios queda en
 <http://127.0.0.1:8010/documentacion>.
+
+Para crear o incorporar una base al historial de migraciones, siga
+[MIGRACIONES.md](operaciones/MIGRACIONES.md). Las migraciones requieren un paso
+explícito; esta fase no cambia automáticamente el esquema de una base publicada.
 
 ### 3. Interfaz de cliente (frontend)
 
@@ -142,9 +181,9 @@ uv run python entrenar_modelo.py
 
 El script genera el conjunto de datos, entrena la red, mide su margen de error
 frente a las dos fórmulas de referencia y guarda en `backend/modelo/` el modelo,
-su normalizador y sus métricas. El modelo entrenado no se versiona porque se
-regenera con este script, lo que permite reentrenarlo sin modificar el código del
-servicio que lo consume (requerimiento no funcional 4.5.6).
+su normalizador y sus métricas. El modelo entrenado sí se versiona: el despliegue
+debe partir del mismo artefacto cuya precisión se midió. El reentrenamiento y la
+recarga del servicio se describen en `DESPLIEGUE.md` (requerimiento 4.5.6).
 
 La red recibe ocho variables —peso, estatura, edad, sexo, factor de actividad,
 ajuste del objetivo, nivel de experiencia y frecuencia semanal— y entrega cinco:
@@ -583,3 +622,25 @@ paralelo. Ejecutada contra PostgreSQL con cincuenta usuarios concurrentes y un s
 proceso de trabajo, las seis operaciones cumplen sus límites sin ningún fallo. Queda
 repetirla contra el sistema ya publicado, que corre en una instancia más modesta y con
 la base de datos al otro lado de la red.
+
+
+## Antecedente local de fase 6 · 30-10-2026
+
+Fase 6: grupos y retos privados en `/avance/amigos`, y plancha en segundos con referencia provisional. Aplicar migraciones `0004_duracion_sostenes` y `0005_comunidad_privada` antes de iniciar esta versión en una base existente. Suite final: 792 aprobadas y 4 omitidas; cliente: 32 aprobadas; construcción correcta. Véase [informe de fase 6](operaciones/FASE_6_COMUNIDAD_PRIVADA.md). Sin publicación de este incremento. Gmail, dictámenes profesionales, participantes y teléfono físico siguen pendientes por falta de recursos confirmada por el responsable.
+
+
+## Entrega individual y fase 7 · 30-10-2026
+
+Por decisión del autor, amigos, grupos, invitaciones y retos quedan pospuestos.
+Mi senda conserva puntos, niveles e insignias individuales. La dirección antigua
+`/avance/amigos` redirige a `/avance/senda`. Mantener `COMUNIDAD_HABILITADA=false`.
+La API social y su escritura de eventos permanecen desactivadas; no borrar su
+historial de migraciones ni datos. No se publicó este incremento.
+
+Se optimizó la inferencia de una fila y se añadió admisión asíncrona de cinco
+solicitudes activas por proceso (`SOLICITUDES_ACTIVAS_BD=5`), sin ampliar el pool
+actual. Los ensayos de 50 usuarios muestran mejoras y variación; no hay cumplimiento
+estable acreditado. Primera generación desde proceso nuevo: 7.46 s. Ver resultados,
+regresión, recuperación y pendientes en [fase 7](operaciones/FASE_7_VALIDACION_INDIVIDUAL.md).
+
+Verificación final de fase 7: 812 aprobadas y 4 omitidas en servidor; 21 + 11 aprobadas en cliente; compilación y verificador correctos. No sumar ejecuciones históricas.

@@ -136,6 +136,7 @@ class EjercicioDisponible:
     grupo_muscular: GrupoMuscular
     nivel_minimo: NivelExperiencia
     es_compuesto: bool
+    es_sostenido: bool = False
 
 
 @dataclass(frozen=True)
@@ -151,6 +152,8 @@ class EjercicioPrescrito:
     repeticiones_max: int
     repeticiones_en_reserva: int
     descanso_segundos: int
+    duracion_segundos_min: int | None = None
+    duracion_segundos_max: int | None = None
 
 
 @dataclass(frozen=True)
@@ -264,8 +267,10 @@ def _sesion_de_un_grupo(
             grupo_muscular=ejercicio.grupo_muscular,
             orden=posicion,
             series=series,
-            repeticiones_min=repeticiones_min,
-            repeticiones_max=repeticiones_max,
+            repeticiones_min=0 if ejercicio.es_sostenido else repeticiones_min,
+            duracion_segundos_min=20 if ejercicio.es_sostenido else None,
+            duracion_segundos_max=30 if ejercicio.es_sostenido else None,
+            repeticiones_max=0 if ejercicio.es_sostenido else repeticiones_max,
             repeticiones_en_reserva=REPETICIONES_EN_RESERVA[nivel_usuario],
             descanso_segundos=DESCANSO_COMPUESTO if ejercicio.es_compuesto else DESCANSO_AISLADO,
         )
@@ -307,8 +312,10 @@ def _sesion_de_cuerpo_completo(
                 grupo_muscular=ejercicio.grupo_muscular,
                 orden=len(ejercicios) + 1,
                 series=series,
-                repeticiones_min=repeticiones_min,
-                repeticiones_max=repeticiones_max,
+                repeticiones_min=0 if ejercicio.es_sostenido else repeticiones_min,
+                duracion_segundos_min=20 if ejercicio.es_sostenido else None,
+                duracion_segundos_max=30 if ejercicio.es_sostenido else None,
+                repeticiones_max=0 if ejercicio.es_sostenido else repeticiones_max,
                 repeticiones_en_reserva=REPETICIONES_EN_RESERVA[nivel_usuario],
                 descanso_segundos=(
                     DESCANSO_COMPUESTO if ejercicio.es_compuesto else DESCANSO_AISLADO

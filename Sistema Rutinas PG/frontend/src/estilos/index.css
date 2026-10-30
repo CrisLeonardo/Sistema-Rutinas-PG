@@ -1,6 +1,7 @@
 /* Punto único de entrada de los estilos. El orden importa: los tokens definen
    las variables que usan todas las demás hojas. */
 
+@import './paleta-senda.css';
 @import './tokens.css';
 @import './base.css';
 @import './componentes.css';
@@ -8,3 +9,7 @@
 @import './juego.css';
 @import './pantallas.css';
 @import './utilidades.css';
+@import '../prototipo/fase1.css';
+@import './sitio.css';
+@import './entrenamiento-visual.css';
+@import './interaccion.css';

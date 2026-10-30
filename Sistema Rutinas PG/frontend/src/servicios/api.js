@@ -5,7 +5,7 @@
  * construcción de encabezados ni el tratamiento de errores.
  */
 
-const URL_API = import.meta.env.VITE_URL_API ?? 'http://localhost:8000/api/v1'
+const URL_API = import.meta.env.VITE_URL_API ?? 'http://127.0.0.1:8010/api/v1'
 
 /**
  * Tiempo que se espera una respuesta antes de darla por perdida.
@@ -153,7 +153,66 @@ export async function peticion(ruta, { metodo = 'GET', datos = null, token = nul
   return respuesta.json()
 }
 
+/**
+ * Descarga un archivo de la interfaz de programación y lo entrega al navegador.
+ *
+ * No basta con un enlace: la ruta exige el token de sesión en el encabezado, y
+ * un enlace no puede enviarlo. Se pide el archivo, se convierte en un objeto
+ * local y se simula el clic sobre un enlace a ese objeto, que es lo que hace
+ * que el navegador lo guarde con su nombre en lugar de abrirlo.
+ *
+ * @returns {Promise<string>} El nombre con que se guardó el archivo.
+ */
+export async function descargarArchivo(ruta, { token = null, nombrePorOmision = 'informe' } = {}) {
+  const encabezados = {}
+  if (token) encabezados.Authorization = `Bearer ${token}`
+
+  const cancelacion = new AbortController()
+  const reloj = setTimeout(() => cancelacion.abort(), TIEMPO_LIMITE_MS)
+
+  let respuesta
+  try {
+    respuesta = await fetch(`${URL_API}${ruta}`, {
+      headers: encabezados,
+      signal: cancelacion.signal,
+    })
+  } catch (fallo) {
+    if (fallo?.name === 'AbortError') {
+      throw new ErrorApi('El servidor tardó demasiado en preparar el archivo. Intente de nuevo.', 0)
+    }
+    throw new ErrorApi(
+      'No se pudo comunicar con el servidor. Verifique su conexión e intente de nuevo.',
+      0,
+    )
+  } finally {
+    clearTimeout(reloj)
+  }
+
+  if (!respuesta.ok) {
+    throw new ErrorApi(await interpretarError(respuesta), respuesta.status)
+  }
+
+  const disposicion = respuesta.headers.get('Content-Disposition') ?? ''
+  const nombre = /filename="([^"]+)"/.exec(disposicion)?.[1] ?? nombrePorOmision
+  const objeto = URL.createObjectURL(await respuesta.blob())
+
+  const enlace = document.createElement('a')
+  enlace.href = objeto
+  enlace.download = nombre
+  document.body.appendChild(enlace)
+  enlace.click()
+  enlace.remove()
+  // Se libera después de que el navegador haya tomado el archivo; liberarlo de
+  // inmediato cancela la descarga en algunos navegadores de teléfono.
+  setTimeout(() => URL.revokeObjectURL(objeto), 10_000)
+
+  return nombre
+}
+
 export const servicioAcceso = {
+  opcionesPublicas: () => peticion('/autenticacion/opciones-publicas'),
+  recuperar: (datos) => peticion('/autenticacion/recuperacion', { metodo: 'POST', datos }),
+  restablecer: (datos) => peticion('/autenticacion/restablecimiento', { metodo: 'POST', datos }),
   registrar: (datos) => peticion('/autenticacion/registro', { metodo: 'POST', datos }),
   iniciarSesion: (datos) => peticion('/autenticacion/acceso', { metodo: 'POST', datos }),
   renovar: (token) => peticion('/autenticacion/renovacion', { metodo: 'POST', token }),
@@ -167,6 +226,16 @@ export const servicioPerfil = {
     peticion('/perfil-biometrico', { metodo: 'POST', datos, token }),
   consultarVigente: (token) => peticion('/perfil-biometrico', { token }),
   consultarHistorial: (token) => peticion('/perfil-biometrico/historial', { token }),
+}
+
+export const servicioAlimentacion = {
+  preferencias: (token) => peticion('/alimentacion/preferencias', { token }),
+  guardarPreferencias: (datos, token) => peticion('/alimentacion/preferencias', { metodo: 'PUT', datos, token }),
+  recetas: (token) => peticion('/alimentacion/recetas', { token }),
+  semana: (token) => peticion('/alimentacion/semana', { token }),
+  preparar: (token) => peticion('/alimentacion/semana', { metodo: 'POST', token }),
+  alternativas: (dia, tiempo, token) => peticion(`/alimentacion/alternativas?dia=${dia}&tiempo=${tiempo}`, { token }),
+  cambiar: (datos, token) => peticion('/alimentacion/semana/comida', { metodo: 'PUT', datos, token }),
 }
 
 export const servicioPlan = {
@@ -201,6 +270,16 @@ export const servicioProgreso = {
   registrar: (datos, token) => peticion('/progreso', { metodo: 'POST', datos, token }),
   consultarHistorial: (token) => peticion('/progreso', { token }),
   consultarReporte: (token) => peticion('/progreso/reporte', { token }),
+}
+
+export const servicioInformes = {
+  listar: (token) => peticion('/informes', { token }),
+  consultar: (clave, token) => peticion(`/informes/${clave}`, { token }),
+  descargar: (clave, formato, token) =>
+    descargarArchivo(`/informes/${clave}/${formato}`, {
+      token,
+      nombrePorOmision: `informe-${clave}.${formato}`,
+    }),
 }
 
 export const servicioCatalogos = {

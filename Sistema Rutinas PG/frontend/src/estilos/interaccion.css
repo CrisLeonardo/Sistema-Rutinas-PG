@@ -1,0 +1,35 @@
+/* Fase 5: respuesta breve. Ningún guardado depende del fin de una animación. */
+:root { --respuesta-duracion: 180ms; --entrada-duracion: 220ms; }
+.respuesta-accion { display: flex; gap: 12px; align-items: flex-start; padding: 14px 16px; border: 1px solid var(--u-hair-2); border-radius: var(--radius-lg); background: var(--adm-card); color: var(--u-text); animation: respuesta-aparece var(--respuesta-duracion) ease-out; }
+.respuesta-accion__marca { color: var(--brand-accent-ink); font-weight: 700; flex-shrink: 0; }
+.resultado-accion, .insignia-revelada { animation: respuesta-aparece var(--entrada-duracion) ease-out; }
+.series[data-hecha="true"] { border-radius: var(--radius-lg); background: color-mix(in srgb, var(--brand-accent) 8%, transparent); }
+.series { transition: background-color var(--respuesta-duracion) ease-out; }
+.anillo__recorrido, .barra-nivel__relleno { transition-duration: var(--entrada-duracion); }
+.tarjeta-logro { display: block; width: 100%; height: auto; border-radius: var(--radius-xl); }
+.tarjeta-logro__mensaje { overflow-wrap: anywhere; user-select: text; }
+.recompensa-detalle { list-style: none; padding: 0; }
+.recompensa-detalle li { display: flex; gap: 16px; justify-content: space-between; padding-block: 8px; }
+.senda-filtros { display: flex; gap: 8px; flex-wrap: wrap; }
+.senda-filtros .boton { width: auto; flex: 1; min-height: 44px; }
+.senda-filtros [aria-pressed="true"] { background: var(--brand-accent); color: var(--brand-on-accent); }
+.grafica-entrada { animation: respuesta-aparece var(--entrada-duracion) ease-out; }
+.datos-grafica { overflow-x: auto; }
+.datos-grafica table { width: 100%; border-collapse: collapse; }
+.datos-grafica td, .datos-grafica th { padding: 10px 6px; text-align: left; border-bottom: 1px solid var(--u-hair); }
+.datos-grafica summary, .recompensa-detalle summary { min-height: 44px; cursor: pointer; }
+.cambio-comida { animation: respuesta-aparece var(--entrada-duracion) ease-out; border-left: 3px solid var(--brand-accent); }
+.cambio-comida dl { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px 16px; }
+.cambio-comida dd { margin: 0; overflow-wrap: anywhere; }
+.cambio-comida dt { grid-column: 1 / -1; font-weight: 600; margin-top: 8px; }
+.cambio-comida__fila { display: contents; }
+.cambio-comida__porciones { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; }
+.cambio-comida summary { cursor: pointer; min-height: 44px; padding-block: 12px; }
+.insignia .boton-texto { min-height: 44px; text-align: left; }
+.envio-campos { margin: 0; padding: 0; border: 0; min-width: 0; }
+@keyframes respuesta-aparece { from { opacity: .3; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+/* Elimina también movimientos anteriores para que la preferencia sea coherente. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}
+@media print { .senda-filtros { display: none; } .datos-grafica > * { display: block; } }

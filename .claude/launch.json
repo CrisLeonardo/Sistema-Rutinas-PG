@@ -1,0 +1,25 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "servicios-demo",
+      "runtimeExecutable": "C:\\Users\\minec\\Documents\\Sistema-Rutinas-PG\\Sistema-Rutinas-PG\\Sistema Rutinas PG\\backend\\.venv\\Scripts\\python.exe",
+      "runtimeArgs": [
+        "C:\\Users\\minec\\AppData\\Local\\Temp\\claude\\C--Users-minec-Documents-Sistema-Rutinas-PG-Sistema-Rutinas-PG\\55b68deb-c4e9-4d75-b921-f5488fcbfc2a\\scratchpad\\tools\\servidor_demo.py"
+      ],
+      "port": 8000
+    },
+    {
+      "name": "interfaz",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "C:\\Users\\minec\\Documents\\Sistema-Rutinas-PG\\Sistema-Rutinas-PG\\Sistema Rutinas PG\\frontend\\node_modules\\vite\\bin\\vite.js",
+        "C:\\Users\\minec\\Documents\\Sistema-Rutinas-PG\\Sistema-Rutinas-PG\\Sistema Rutinas PG\\frontend",
+        "--port",
+        "5173",
+        "--strictPort"
+      ],
+      "port": 5173
+    }
+  ]
+}

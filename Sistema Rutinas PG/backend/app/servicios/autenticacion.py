@@ -7,13 +7,14 @@ adoptado en el apartado 3.1.2 de la tesis.
 
 from datetime import datetime, timezone
 
-from sqlalchemy import func, select
+from sqlalchemy import delete, func, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.esquemas.usuario import RegistroUsuario
 from app.modelos.enumeraciones import RolUsuario
 from app.modelos.usuario import Usuario
+from app.modelos.recuperacion import RecuperacionAcceso
 from app.nucleo.seguridad import cifrar_contrasena, verificar_contrasena
 
 # Resumen de una contrasena ficticia. Se verifica cuando el correo no existe para
@@ -105,7 +106,17 @@ def contrasena_coincide(usuario: Usuario, contrasena: str) -> bool:
 
 def cambiar_contrasena(sesion: Session, usuario: Usuario, contrasena_nueva: str) -> Usuario:
     """Sustituye la contrasena de la cuenta por su resumen criptografico nuevo."""
-    usuario.contrasena_cifrada = cifrar_contrasena(contrasena_nueva)
+    resultado = sesion.execute(update(Usuario).where(
+        Usuario.id == usuario.id,
+        Usuario.contrasena_cifrada == usuario.contrasena_cifrada,
+    ).values(
+        contrasena_cifrada=cifrar_contrasena(contrasena_nueva),
+        version_sesion=Usuario.version_sesion + 1,
+    ))
+    if resultado.rowcount != 1:
+        sesion.rollback()
+        raise CredencialesInvalidas
+    sesion.execute(delete(RecuperacionAcceso).where(RecuperacionAcceso.usuario_id == usuario.id))
     sesion.commit()
     sesion.refresh(usuario)
     return usuario

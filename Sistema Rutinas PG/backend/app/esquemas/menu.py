@@ -119,6 +119,8 @@ class MenuPublico(BaseModel):
     energia_objetivo_kcal: float
     proteina_objetivo_g: float
     tiempos: list[TiempoComidaPublico]
+    procede_de_semana: bool = False
+    costo_semana_calculado: float | None = None
 
     @computed_field(description="Energía que suman todos los tiempos de comida")
     @property
@@ -143,7 +145,9 @@ class MenuPublico(BaseModel):
 
     @computed_field(description="Costo aproximado de una semana completa, en quetzales")
     @property
-    def costo_semanal_quetzales(self) -> float:
+    def costo_semanal_quetzales(self) -> float | None:
+        if self.procede_de_semana:
+            return self.costo_semana_calculado
         return round(self.costo_diario_quetzales * 7, 2)
 
     @computed_field(description="Costo aproximado de un mes de treinta días, en quetzales")

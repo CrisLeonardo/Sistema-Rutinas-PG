@@ -43,6 +43,7 @@ const ACCESOS = [
 const ADMINISTRACION = [
   { ruta: '/admin/catalogos', etiqueta: 'Catálogos' },
   { ruta: '/admin/cuentas', etiqueta: 'Cuentas' },
+  { ruta: '/admin/informes', etiqueta: 'Informes' },
 ]
 
 export default function AjustesCuenta() {
@@ -123,8 +124,8 @@ export default function AjustesCuenta() {
 
       <div className="bloque-tenue">
         <p className="nota-al-pie">
-          Sus medidas, su plan y su avance solo los ve usted. Ni el administrador del
-          sistema tiene acceso a ellos.
+          Sus medidas, su plan y su avance se consultan desde su cuenta. Las pantallas
+          de administración no permiten consultar el perfil biométrico de otras personas.
         </p>
         <p className="nota-al-pie mono">
           Miembro desde el {fechaLegible(usuario?.fecha_registro)}

@@ -61,6 +61,8 @@ def _componer(sesion: SesionBD, plan: Plan) -> RutinaPublica:
                 descripcion=prescrito.ejercicio.descripcion,
                 orden=prescrito.orden,
                 series=prescrito.series,
+                duracion_segundos_min=prescrito.duracion_segundos_min,
+                duracion_segundos_max=prescrito.duracion_segundos_max,
                 repeticiones_min=prescrito.repeticiones_min,
                 repeticiones_max=prescrito.repeticiones_max,
                 repeticiones_en_reserva=prescrito.repeticiones_en_reserva,

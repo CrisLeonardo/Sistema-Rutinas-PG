@@ -26,6 +26,11 @@ una herramienta de carga solo para esto.
 """
 
 import argparse
+import json
+from math import ceil
+from pathlib import Path
+from uuid import uuid4
+from datetime import datetime, timezone
 import asyncio
 import statistics
 import sys
@@ -70,6 +75,8 @@ class Medicion:
     limite_segundos: float
     tiempos: list[float] = field(default_factory=list)
     fallos: int = 0
+    esperadas: int = 0
+    causas: dict[str, int] = field(default_factory=dict)
 
     @property
     def promedio(self) -> float:
@@ -89,7 +96,7 @@ class Medicion:
         if not self.tiempos:
             return 0.0
         ordenados = sorted(self.tiempos)
-        posicion = max(int(len(ordenados) * 0.95) - 1, 0)
+        posicion = max(ceil(len(ordenados) * 0.95) - 1, 0)
         return ordenados[posicion]
 
     @property
@@ -106,7 +113,8 @@ class Medicion:
         """
         if not self.tiempos:
             return False
-        return self.fallos == 0 and self.percentil_95 <= self.limite_segundos
+        return (self.fallos == 0 and (not self.esperadas or len(self.tiempos) == self.esperadas)
+                and self.maximo <= self.limite_segundos)
 
 
 async def _medir(medicion: Medicion, corrutina) -> httpx.Response | None:
@@ -114,21 +122,24 @@ async def _medir(medicion: Medicion, corrutina) -> httpx.Response | None:
     inicio = time.perf_counter()
     try:
         respuesta = await corrutina
-    except Exception:  # pragma: no cover - depende del sistema bajo prueba
+    except Exception as error:  # solo clase; nunca URL, token ni cuerpo
         medicion.fallos += 1
+        causa = type(error).__name__
+        medicion.causas[causa] = medicion.causas.get(causa, 0) + 1
         return None
-
-    transcurrido = time.perf_counter() - inicio
-    if respuesta.status_code >= 400:
-        medicion.fallos += 1
+    else:
+        causa = str(respuesta.status_code)
+        medicion.causas[causa] = medicion.causas.get(causa, 0) + 1
+        if respuesta.status_code >= 400:
+            medicion.fallos += 1
         return respuesta
-
-    medicion.tiempos.append(transcurrido)
-    return respuesta
+    finally:
+        # El tiempo de los fallos también pertenece al denominador.
+        medicion.tiempos.append(time.perf_counter() - inicio)
 
 
 async def _preparar_usuario(
-    cliente: httpx.AsyncClient, numero: int
+    cliente: httpx.AsyncClient, numero: int, corrida: str = "ensayo"
 ) -> dict[str, str] | None:
     """Crea la cuenta y el perfil de un usuario. No se mide.
 
@@ -137,7 +148,7 @@ async def _preparar_usuario(
     # El dominio debe ser uno que el validador de correo acepte: los reservados
     # como .local se rechazan, igual que en el registro real.
     credenciales = {
-        "correo": f"carga{numero}@pruebadecarga.gt",
+        "correo": f"carga-{corrida}-{numero}@example.com",
         "contrasena": "PruebaCarga2026",
     }
 
@@ -190,7 +201,17 @@ async def _uso_concurrente(
     )
 
 
-async def ejecutar(url_base: str, usuarios: int) -> tuple[dict[str, Medicion], int]:
+@dataclass
+class ResultadoCarga:
+    mediciones: dict[str, Medicion]
+    solicitados: int
+    preparados: int
+    preparacion_segundos: float
+    calentamiento_segundos: float
+    medicion_segundos: float
+
+
+async def ejecutar(url_base: str, usuarios: int) -> ResultadoCarga:
     """Prepara las cuentas y despues somete al sistema a la carga concurrente."""
     mediciones = {
         "plan": Medicion("Generación del plan", LIMITE_PLAN_SEGUNDOS),
@@ -201,6 +222,8 @@ async def ejecutar(url_base: str, usuarios: int) -> tuple[dict[str, Medicion], i
         "perfil": Medicion("Historial de medidas", LIMITE_PANTALLA_SEGUNDOS),
     }
 
+    corrida = uuid4().hex[:12]
+    inicio_preparacion = time.perf_counter()
     limites = httpx.Limits(max_connections=usuarios * 2, max_keepalive_connections=usuarios)
     async with httpx.AsyncClient(base_url=url_base, timeout=60.0, limits=limites) as cliente:
         # Se comprueba primero que el sistema responde, para no confundir un
@@ -221,22 +244,32 @@ async def ejecutar(url_base: str, usuarios: int) -> tuple[dict[str, Medicion], i
         for principio in range(0, usuarios, tamanio_lote):
             lote = range(principio, min(principio + tamanio_lote, usuarios))
             resultados = await asyncio.gather(
-                *(_preparar_usuario(cliente, numero) for numero in lote)
+                *(_preparar_usuario(cliente, numero, corrida) for numero in lote)
             )
             sesiones.extend(encabezados for encabezados in resultados if encabezados)
 
         if not sesiones:
             raise SystemExit("No se pudo preparar ninguna cuenta. Revise el sistema.")
 
-        print(f"Midiendo con {len(sesiones)} usuarios concurrentes…")
+        preparacion = time.perf_counter() - inicio_preparacion
+        inicio_calentamiento = time.perf_counter()
+        # Registra el coste aparte. Una entrada se repite; las otras son distintas.
+        calentada = await cliente.post("/api/v1/plan-nutricional", headers=sesiones[0])
+        if calentada.status_code != 201:
+            raise SystemExit("Falló el calentamiento del plan; no se certifica una medición en caliente.")
+        calentamiento = time.perf_counter() - inicio_calentamiento
+        for medicion in mediciones.values():
+            medicion.esperadas = usuarios
+        print(f"Midiendo con {len(sesiones)} de {usuarios} usuarios preparados…")
+        inicio_medicion = time.perf_counter()
         await asyncio.gather(
             *(_uso_concurrente(cliente, encabezados, mediciones) for encabezados in sesiones)
         )
 
-    return mediciones, len(sesiones)
+    return ResultadoCarga(mediciones, usuarios, len(sesiones), preparacion, calentamiento, time.perf_counter()-inicio_medicion)
 
 
-def informar(mediciones: dict[str, Medicion], usuarios: int, duracion: float) -> bool:
+def informar(mediciones: dict[str, Medicion], usuarios: int, duracion: float, solicitados: int | None = None) -> bool:
     """Imprime el informe y devuelve si el sistema cumple el requerimiento."""
     print()
     print(f"Prueba de carga con {usuarios} usuarios concurrentes")
@@ -245,7 +278,7 @@ def informar(mediciones: dict[str, Medicion], usuarios: int, duracion: float) ->
     print(f"{'Operación':<24}{'Med.':>8}{'p95':>8}{'Máx.':>8}{'Límite':>8}{'Fallos':>8}  ")
     print("-" * 72)
 
-    todo_bien = True
+    todo_bien = solicitados is None or usuarios == solicitados
     for medicion in mediciones.values():
         if not medicion.tiempos:
             marca = "SIN DATOS"
@@ -265,6 +298,10 @@ def informar(mediciones: dict[str, Medicion], usuarios: int, duracion: float) ->
         )
 
     print()
+    if solicitados is not None and usuarios != solicitados:
+        print(f"Preparación incompleta: {usuarios}/{solicitados}; no acredita la concurrencia solicitada.")
+    for clave, medicion in mediciones.items():
+        print(f"{clave}: {len(medicion.tiempos)} intentos; estados/causas {medicion.causas}")
     if todo_bien:
         print(
             f"El sistema atiende a {usuarios} usuarios concurrentes dentro de los "
@@ -297,13 +334,35 @@ def principal() -> int:
         default=50,
         help="Usuarios concurrentes a simular (predeterminado: 50).",
     )
+    analizador.add_argument("--json", type=Path, help="Guarda evidencia sin cuentas, tokens ni cuerpos de respuesta.")
     argumentos = analizador.parse_args()
+    if not 1 <= argumentos.usuarios <= 500:
+        analizador.error("--usuarios debe estar entre 1 y 500")
 
-    inicio_total = time.perf_counter()
-    mediciones, preparados = asyncio.run(ejecutar(argumentos.url, argumentos.usuarios))
-    duracion = time.perf_counter() - inicio_total
+    resultado = asyncio.run(ejecutar(argumentos.url, argumentos.usuarios))
+    cumple = informar(resultado.mediciones, resultado.preparados,
+                      resultado.medicion_segundos, resultado.solicitados)
+    print(f"Preparación: {resultado.preparacion_segundos:.2f} s; calentamiento: {resultado.calentamiento_segundos:.2f} s. Ambos separados de la medición.")
+    if argumentos.json:
+        datos = {
+            "version_instrumento": 3,
+            "criterio": "cero fallos, muestra completa y cada petición observada dentro del límite; p95 informativo",
+            "fecha_utc": datetime.now(timezone.utc).isoformat(),
+            "escenario": "usuarios simultáneos en seis operaciones secuenciales por cuenta; plan calentado; perfiles distintos; una entrada repetida por calentamiento",
+            "solicitados": resultado.solicitados, "preparados": resultado.preparados,
+            "preparacion_segundos": resultado.preparacion_segundos,
+            "calentamiento_segundos": resultado.calentamiento_segundos,
+            "medicion_segundos": resultado.medicion_segundos, "cumple_local": cumple,
+            "operaciones": {k: {"intentos": len(m.tiempos), "esperadas": m.esperadas,
+                "fallos": m.fallos, "causas": m.causas, "p95_segundos": m.percentil_95,
+                "mediana_segundos": m.mediana, "maximo_segundos": m.maximo,
+                "limite_segundos": m.limite_segundos, "cumple": m.cumple,
+                "tiempos_segundos": m.tiempos} for k,m in resultado.mediciones.items()},
+        }
+        argumentos.json.parent.mkdir(parents=True, exist_ok=True)
+        argumentos.json.write_text(json.dumps(datos, ensure_ascii=False, indent=2), encoding="utf-8")
+    return 0 if cumple else 1
 
-    return 0 if informar(mediciones, preparados, duracion) else 1
 
 
 if __name__ == "__main__":

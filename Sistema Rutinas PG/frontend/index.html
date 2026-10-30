@@ -7,22 +7,23 @@
       name="description"
       content="Sistema web que genera planes de nutrición y rutinas de entrenamiento personalizadas."
     />
-    <meta name="theme-color" content="#0a0a0d" />
+    <meta name="theme-color" content="#151e1b" />
+    <meta name="robots" content="noindex, nofollow" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="preconnect" href="https://cdn.hugeicons.com" />
 
     <!-- Icono e instalación como aplicación (Android/escritorio vía manifest,
          iOS vía las etiquetas apple-*: Safari ignora el manifest para esto). -->
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="icon" type="image/png" sizes="96x96" href="/favicon-96x96.png" />
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="icon" type="image/svg+xml" href="/favicon-camino.svg" />
+    <link rel="icon" type="image/png" sizes="96x96" href="/favicon-96x96-camino.png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon-camino.png" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="Rutinas" />
+    <meta name="apple-mobile-web-app-title" content="Senda" />
 
-    <title>Sistema de rutinas y planes nutricionales</title>
+    <title>Senda · Mi cuenta</title>
     <script>
       // Se aplica el tema antes de pintar nada. Si esto esperara a que React
       // monte, la pantalla aparecería un instante en claro y saltaría a oscuro.
@@ -39,7 +40,7 @@
           document.documentElement.setAttribute('data-scheme', tema)
           document
             .querySelector('meta[name="theme-color"]')
-            .setAttribute('content', tema === 'light' ? '#f4f4f6' : '#0a0a0d')
+            .setAttribute('content', tema === 'light' ? '#f6f3eb' : '#151e1b')
         } catch (error) {
           document.documentElement.setAttribute('data-scheme', 'dark')
         }

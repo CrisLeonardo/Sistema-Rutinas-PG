@@ -37,7 +37,7 @@ export function aplicarTema(tema) {
   // La barra del navegador se pinta del mismo color que el fondo: en un
   // teléfono, una franja blanca sobre una pantalla oscura se nota.
   const meta = document.querySelector('meta[name="theme-color"]')
-  if (meta) meta.setAttribute('content', tema === 'light' ? '#f4f4f6' : '#0a0a0d')
+  if (meta) meta.setAttribute('content', tema === 'light' ? '#f6f3eb' : '#151e1b')
 
   try {
     localStorage.setItem(CLAVE_TEMA, tema)

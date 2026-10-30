@@ -14,6 +14,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.v1 import enrutador_v1
 from app.nucleo.arranque import inicializar
 from app.nucleo.configuracion import configuracion
+from app.nucleo.concurrencia import LimiteSolicitudesBD
 
 logging.basicConfig(
     level=logging.INFO,
@@ -89,9 +90,14 @@ aplicacion.add_middleware(
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
+    # La interfaz lee de aqui el nombre del informe descargado. Sin declararlo,
+    # el navegador lo oculta en las peticiones de origen cruzado del entorno de
+    # desarrollo y el archivo se guardaria con un nombre generico.
+    expose_headers=["Content-Disposition"],
 )
 
 aplicacion.include_router(enrutador_v1)
+aplicacion.add_middleware(LimiteSolicitudesBD, capacidad=configuracion.solicitudes_activas_bd)
 
 
 @aplicacion.get("/api/v1/estado", tags=["Estado"], summary="Verificar disponibilidad")

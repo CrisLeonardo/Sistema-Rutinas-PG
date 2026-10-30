@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 
 import { useSesion } from '../contexto/ContextoSesion.jsx'
+import CabeceraCuenta from '../componentes/MarcaProducto.jsx'
 
 /**
  * Pantalla de inicio de sesión (historia HU-02).
@@ -60,9 +61,9 @@ export default function Acceso() {
   }
 
   return (
-    <div className="entrada">
+    <div className="entrada cuenta-senda">
+      <CabeceraCuenta />
       <div className="pila-5">
-        <img src="/pwa-192x192.png" alt="" className="marca" />
         <h1 className="titulo-grande">Entrar</h1>
         <p className="apoyo">Ingrese con la cuenta que registró para consultar sus planes.</p>
       </div>
@@ -134,9 +135,12 @@ export default function Acceso() {
         </button>
       </form>
 
+      <p className="apoyo centrado"><Link to="/recuperar-acceso">Olvidé mi contraseña</Link></p>
+
       <p className="apoyo centrado">
         ¿Aún no tiene cuenta? <Link to="/registro">Regístrese</Link>
       </p>
+      <p className="nota-al-pie centrado"><Link to="/privacidad">Privacidad</Link> · <Link to="/ayuda">Ayuda</Link></p>
     </div>
   )
 }

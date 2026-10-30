@@ -1,0 +1,21 @@
+.alimentacion { min-width: 0; }
+.alimentacion__grupo { border: 1px solid var(--u-hair-2); border-radius: var(--radius-xl); padding: 20px; min-width: 0; }
+.alimentacion__grupo legend { padding: 0 8px; font-weight: 600; }
+.alimentacion__campo { display: grid; gap: 8px; }
+.alimentacion__campo input, .alimentacion__campo select { width: 100%; min-width: 0; min-height: 44px; padding: 10px 12px; color: var(--u-text); background: var(--adm-card); border: 1px solid var(--u-hair-2); border-radius: var(--radius-lg); font: inherit; }
+.alimentacion__casillas { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 8px 16px; margin-top: 12px; }
+.alimentacion__casillas label, .alimentacion__otra { display: flex; align-items: center; gap: 10px; min-height: 44px; cursor: pointer; }
+.alimentacion input[type=checkbox] { width: 20px; height: 20px; flex-shrink: 0; accent-color: var(--brand-accent); }
+.alimentacion__dias { display: flex; flex-wrap: wrap; gap: 8px; }
+.alimentacion__dias .boton { width: auto; flex: 1 0 60px; padding-inline: 12px; background: var(--adm-card); color: var(--u-text); border: 1px solid var(--u-hair-2); }
+.alimentacion__dias [aria-pressed=true] { background: var(--brand-accent); color: var(--brand-on-accent); }
+.alimentacion__acciones, .alimentacion__resumen { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; justify-content: space-between; }
+.alimentacion__aportes { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: .85rem; color: var(--u-text-3); font-variant-numeric: tabular-nums; }
+.alimentacion__recetas { display: grid; gap: 16px; }
+.alimentacion__ingredientes { padding-left: 20px; margin-block: 16px; display: grid; gap: 12px; }
+.alimentacion__ingredientes li span { display: block; color: var(--u-text-3); font-size: .85rem; }
+.alimentacion__pasos { padding-left: 20px; display: grid; gap: 12px; line-height: 1.6; }
+.alimentacion summary { cursor: pointer; min-height: 44px; padding-block: 12px; }
+.alimentacion button, .alimentacion a { overflow-wrap: anywhere; }
+.alimentacion .lista__fila { gap: 12px; flex-wrap: wrap; }
+@media print { .alimentacion details > * { display: block; } .alimentacion .tarjeta { break-inside: avoid; } }

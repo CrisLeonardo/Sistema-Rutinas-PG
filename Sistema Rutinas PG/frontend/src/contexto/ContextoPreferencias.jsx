@@ -14,17 +14,18 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 
 import { aplicarTema, leerTema } from '../utilidades/tema.js'
+import { vibracionHabilitada } from '../interaccion/respuestas.mjs'
 
 const CLAVE_VIBRACION = 'rutinas.vibracion'
 
 const ContextoPreferencias = createContext(null)
 
-/** La vibración está encendida salvo que el usuario la haya apagado. */
+/** Se activa únicamente después de elegirla expresamente. */
 function leerVibracion() {
   try {
-    return localStorage.getItem(CLAVE_VIBRACION) !== 'apagada'
+    return vibracionHabilitada(localStorage.getItem(CLAVE_VIBRACION))
   } catch {
-    return true
+    return false
   }
 }
 
@@ -42,6 +43,10 @@ export function ProveedorPreferencias({ children }) {
     setTema((actual) => (actual === 'dark' ? 'light' : 'dark'))
   }, [])
 
+  const elegirTema = useCallback((siguiente) => {
+    if (siguiente === 'light' || siguiente === 'dark') setTema(siguiente)
+  }, [])
+
   const alternarVibracion = useCallback(() => {
     setVibracion((actual) => {
       const siguiente = !actual
@@ -55,8 +60,8 @@ export function ProveedorPreferencias({ children }) {
   }, [])
 
   const valor = useMemo(
-    () => ({ tema, alternarTema, vibracion, alternarVibracion }),
-    [tema, alternarTema, vibracion, alternarVibracion],
+    () => ({ tema, elegirTema, alternarTema, vibracion, alternarVibracion }),
+    [tema, elegirTema, alternarTema, vibracion, alternarVibracion],
   )
 
   return <ContextoPreferencias.Provider value={valor}>{children}</ContextoPreferencias.Provider>

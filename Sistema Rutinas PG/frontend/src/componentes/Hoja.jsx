@@ -20,8 +20,22 @@ export default function Hoja({ titulo, descripcion, alCerrar, children, pie }) {
   const panel = useRef(null)
 
   useEffect(() => {
+    const focoAnterior = document.activeElement
     const alPulsarTecla = (evento) => {
       if (evento.key === 'Escape') alCerrar()
+      if (evento.key === 'Tab') {
+        const controles = Array.from(panel.current?.querySelectorAll('a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), summary, [tabindex="0"]') ?? [])
+          .filter(elemento => {
+            const desplegableCerrado = elemento.closest('details:not([open])')
+            // Chrome puede conservar rectángulos de hijos de <details> cerrado.
+            // Su enlace no acepta foco hasta abrirlo; el resumen sí.
+            return elemento.getClientRects().length > 0 && (!desplegableCerrado || elemento === desplegableCerrado.querySelector('summary'))
+          })
+        const primero = controles[0], ultimo = controles.at(-1)
+        if (!primero) { evento.preventDefault(); panel.current?.focus() }
+        else if (evento.shiftKey && (document.activeElement === primero || document.activeElement === panel.current)) { evento.preventDefault(); ultimo.focus() }
+        else if (!evento.shiftKey && document.activeElement === ultimo) { evento.preventDefault(); primero.focus() }
+      }
     }
     document.addEventListener('keydown', alPulsarTecla)
 
@@ -35,6 +49,7 @@ export default function Hoja({ titulo, descripcion, alCerrar, children, pie }) {
     return () => {
       document.removeEventListener('keydown', alPulsarTecla)
       document.body.style.overflow = desbordeAnterior
+      if (focoAnterior?.isConnected) focoAnterior.focus({ preventScroll: true })
     }
   }, [alCerrar])
 

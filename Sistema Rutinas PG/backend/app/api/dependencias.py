@@ -57,6 +57,11 @@ def obtener_usuario_actual(
     if usuario is None or not usuario.activo:
         raise _SIN_SESION
 
+    # Los tokens previos a esta ampliación equivalen a la versión inicial 0.
+    # Un cambio de contraseña incrementa la versión y revoca también renovaciones.
+    if contenido.get("ver", 0) != usuario.version_sesion:
+        raise _SIN_SESION
+
     return usuario
 
 

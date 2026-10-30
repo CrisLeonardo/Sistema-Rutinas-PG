@@ -1,15 +1,18 @@
 # Despliegue en producción
 
+**Estado local de fase 7 (30-10-2026):** mantener `COMUNIDAD_HABILITADA=false` y `SOLICITUDES_ACTIVAS_BD=5`. No se desplegó este incremento ni se migró producción. Consultar [validación individual](operaciones/FASE_7_VALIDACION_INDIVIDUAL.md): carga de 50 usuarios sin estabilidad acreditada y primera generación de 7.46 s. Conservar esquema 0005 aunque la comunidad esté apagada.
+
 Guía del apartado 3.8 de la tesis, del principio al final. El sistema se publica
-sobre **Render** —la aplicación— y **Supabase** —la base de datos—, ambos con
-plan de bajo costo, que es la restricción técnica que fija el apartado 4.5.6.
+sobre **Render** —la aplicación— y **Supabase** —la base de datos—. El autor
+confirmó el 29 de octubre de 2026 que todos los servicios actuales son gratuitos.
+La fase 0 no modificó el despliegue publicado.
 
 > **Antes de empezar.** Todo lo que sigue se hace una sola vez. Después, cada
 > cambio que se envíe al repositorio se publica solo.
 
 ## Índice
 
-1. [Qué se contrata y cuánto cuesta](#1-qué-se-contrata-y-cuánto-cuesta)
+1. [Servicios actuales y presupuesto](#1-servicios-actuales-y-presupuesto)
 2. [Publicar el repositorio](#2-publicar-el-repositorio)
 3. [Crear la base de datos en Supabase](#3-crear-la-base-de-datos-en-supabase)
 4. [Crear los servicios en Render](#4-crear-los-servicios-en-render)
@@ -22,26 +25,27 @@ plan de bajo costo, que es la restricción técnica que fija el apartado 4.5.6.
 
 ---
 
-## 1. Qué se contrata y cuánto cuesta
+## 1. Servicios actuales y presupuesto
 
 | Componente | Servicio | Plan | Costo mensual |
 |---|---|---|---|
-| Servicios y motor neuronal | Render, servicio web con contenedor | `0.5c-512mb` | US$ 7.00 |
-| Disco del modelo entrenado | Render, disco persistente de 1 GB | — | US$ 0.25 |
+| Servicios y motor neuronal | Render, servicio web con contenedor | gratuito, según el autor y `render.yaml` | US$ 0.00 |
+| Disco persistente del modelo | No habilitado en `render.yaml` | sin contratación declarada | US$ 0.00 |
 | Interfaz de cliente | Render, sitio estático | gratuito | US$ 0.00 |
 | Base de datos | Supabase, PostgreSQL administrado | gratuito | US$ 0.00 |
-| Dominio y certificado | Registrador de su elección; el certificado lo emite Render | — | ≈ US$ 12.00 anuales |
+| Dominio propio | Sin contratación declarada; se usa la dirección del proveedor | sin costo declarado | US$ 0.00 |
 
-Son **US$ 7.25 al mes**, unos **Q57.00**, contra los Q150.00 mensuales que la
-Tabla 13 presupuesta para alojamiento. El presupuesto alcanza con holgura.
+El gasto recurrente declarado es **US$ 0.00 / Q0.00**, según la confirmación del
+autor; no es una auditoría de facturación. Las cifras anteriores de alojamiento,
+disco y dominio eran estimaciones de otra configuración y no representan pagos
+actuales. El presupuesto de la tesis debe diferenciar estimación y ejecución real.
 
-**Por qué el servicio web no puede ser gratuito.** El plan gratuito de Render
-suspende el servicio tras quince minutos sin tráfico, y despertarlo tarda cerca
-de un minuto. El criterio de aceptación de HU-06 concede tres segundos para
-generar un plan: un usuario que llegara al sistema dormido esperaría veinte
-veces eso. Para una presentación final es, además, un riesgo innecesario.
+**Rendimiento por verificar en el servicio publicado.** Se deben medir por separado
+el arranque en frío y la generación con el modelo disponible. La gratuidad no
+acredita ni impide por sí sola cumplir el criterio de HU-06. La fase 0 verificó el
+recorrido local; no certificó los tiempos ni las cuotas actuales del proveedor.
 
-**Por qué media unidad de procesamiento y 512 MB alcanzan.** Se midió: el
+**Medición histórica de recursos.** Se midió: el
 servicio ocupa 271 MB con un proceso de trabajo, de los cuales 190 son la
 biblioteca TensorFlow. El cómputo de un plan —predicción neuronal, rutina y
 menú— tarda 44 milisegundos. Un segundo proceso de trabajo no cabría en la
@@ -293,6 +297,16 @@ Para detenerlo, conservando los datos:
 ```bash
 docker compose -f docker-compose.pruebas.yml --env-file .env.pruebas down
 ```
+
+## Preparación de la fase 2
+
+Antes de publicar el sitio y las cuentas renovadas, respaldar y aplicar
+`0002_recuperacion_acceso` siguiendo [MIGRACIONES.md](operaciones/MIGRACIONES.md).
+El arranque no incorpora columnas a tablas existentes. Autorizar el remitente
+mediante [CORREO_GMAIL.md](operaciones/CORREO_GMAIL.md), configurar el origen HTTPS
+del frontend y ensayar la entrega real. La configuración de `render.yaml` por sí
+sola no autoriza Google ni demuestra que el correo funcione. Consultar el
+[informe de fase 2](operaciones/FASE_2_SITIO_Y_CUENTAS.md) antes del despliegue.
 
 ## Reexpresión de los costos del catálogo
 

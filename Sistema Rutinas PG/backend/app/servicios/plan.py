@@ -15,6 +15,7 @@ from sqlalchemy.orm import Session
 from app.modelos.catalogo import Alimento, Ejercicio
 from app.modelos.enumeraciones import Objetivo
 from app.modelos.perfil import PerfilBiometrico
+from app.nucleo.medicion import es_plancha
 from app.modelos.plan import ComidaPlan, EjercicioSesion, Plan, SesionEntrenamiento
 from app.modelos.usuario import Usuario
 from app.motor import formulas, seguridad
@@ -185,6 +186,7 @@ def ejercicios_disponibles(sesion: Session) -> list[EjercicioDisponible]:
             grupo_muscular=ejercicio.grupo_muscular,
             nivel_minimo=ejercicio.nivel_minimo,
             es_compuesto=ejercicio.es_compuesto,
+            es_sostenido=es_plancha(ejercicio),
         )
         for ejercicio in sesion.execute(sentencia).scalars()
     ]
@@ -234,6 +236,8 @@ def _persistir_rutina(sesion: Session, plan: Plan, rutina: RutinaSemanal) -> Non
                 ejercicio_id=ejercicio.ejercicio_id,
                 orden=ejercicio.orden,
                 series=ejercicio.series,
+                duracion_segundos_min=ejercicio.duracion_segundos_min,
+                duracion_segundos_max=ejercicio.duracion_segundos_max,
                 repeticiones_min=ejercicio.repeticiones_min,
                 repeticiones_max=ejercicio.repeticiones_max,
                 repeticiones_en_reserva=ejercicio.repeticiones_en_reserva,
@@ -278,10 +282,11 @@ def alimentos_disponibles(sesion: Session) -> list[AlimentoDisponible]:
 
 def construir_menu(sesion: Session, plan: Plan) -> MenuDiario:
     """Arma el menu diario que corresponde al plan con el catalogo local."""
+    from app.servicios.restricciones_alimentarias import filtrar, preferencias
     return generar_menu(
         energia_kcal=float(plan.calorias_objetivo),
         proteina_g=float(plan.proteina_g),
-        disponibles=alimentos_disponibles(sesion),
+        disponibles=filtrar(alimentos_disponibles(sesion), preferencias(sesion, plan.usuario_id)),
     )
 
 

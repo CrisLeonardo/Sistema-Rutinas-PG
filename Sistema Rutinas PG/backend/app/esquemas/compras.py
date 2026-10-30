@@ -35,6 +35,7 @@ class RenglonDeCompra(BaseModel):
     gramos_semana: int
     costo_quetzales: float | None = None
     medida_casera: str | None = None
+    estado: str | None = None
 
     @computed_field(description="Nombre legible de la categoría")
     @property
@@ -90,6 +91,7 @@ class ListaDeCompras(BaseModel):
     fecha_generacion: datetime
     dias: int = DIAS_DE_LA_SEMANA
     grupos: list[GrupoDeCompra]
+    procede_de_semana: bool = False
 
     @computed_field(description="Costo aproximado de la semana completa, en quetzales")
     @property

@@ -76,6 +76,7 @@ export default function MenuDiario() {
         <Link to="/comer/plan" className="boton boton--principal">
           Generar mi plan
         </Link>
+        <Link to="/comer/semana" className="boton-texto">Preparar una semana con recetas</Link>
       </div>
     )
   }
@@ -96,7 +97,7 @@ export default function MenuDiario() {
     <div className="pila">
       <div className="fila--entre">
         <div className="pila-2">
-          <h1 className="titulo-pantalla">Qué comer hoy</h1>
+          <h1 className="titulo-pantalla">{menu.procede_de_semana ? 'Día 1 de su semana' : 'Qué comer hoy'}</h1>
           <p className="apoyo">Cinco tiempos · gramos y medida de cocina</p>
         </div>
         <button
@@ -110,6 +111,7 @@ export default function MenuDiario() {
       </div>
 
       <Pildoras etiquetaGrupo="Secciones de alimentación" opciones={PESTANAS_COMER} />
+      <Link to="/comer/semana" className="boton-texto">{menu.procede_de_semana ? 'Ver los siete días, recetas y compras' : 'Preparar una semana con recetas'}</Link>
 
       <div className="cifras">
         <div className="cifras__columna">
@@ -168,14 +170,16 @@ export default function MenuDiario() {
         <p className="nota-al-pie">
           El menú queda a {menu.desviacion_energia_porcentaje} % de lo que su plan pide, con{' '}
           {menu.alimentos_distintos} alimentos distintos. Esa diferencia viene de redondear las
-          porciones a cantidades que se puedan servir. Seguirlo cuesta cerca de{' '}
-          {quetzalesEnteros(menu.costo_mensual_quetzales)} al mes con los precios del catálogo.
+          porciones a cantidades que se puedan servir.{' '}
+          {menu.procede_de_semana
+            ? 'Las compras y el costo de los siete días se consultan en Semana.'
+            : `Repetir este día cuesta cerca de ${quetzalesEnteros(menu.costo_mensual_quetzales)} al mes con los precios provisionales del catálogo.`}
           {menu.porciones_sin_precio > 0 &&
             ` ${menu.porciones_sin_precio} porciones todavía no tienen precio registrado, de modo que el total se queda corto.`}
         </p>
         <p className="nota-al-pie">
           <strong>Importante.</strong> Este menú es una propuesta, no una obligación. Puede
-          intercambiar alimentos de una misma categoría respetando las cantidades. Ante
+          consultar cambios calculados y sus restricciones en Semana. Ante
           cualquier condición de salud, consulte a un profesional.
         </p>
       </div>
