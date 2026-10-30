@@ -20,4 +20,7 @@ for (const ruta of ['privado.html', 'acceso/index.html', 'registro/index.html', 
 }
 const ayuda = await readFile('dist/ayuda/index.html', 'utf8')
 assert.match(ayuda, /mailto:/, 'El contacto público debe estar disponible antes de ejecutar JS')
+const manifiesto = JSON.parse(await readFile('dist/manifest.webmanifest', 'utf8'))
+assert.equal(manifiesto.start_url, '/acceso', 'La aplicación instalada debe abrir el acceso')
+assert.equal(manifiesto.id, '/', 'La identidad de la aplicación instalada debe mantenerse')
 console.log('Verificado: 10 páginas con contenido, títulos únicos e indexación; 6 armazones privados sin datos; contacto público en HTML.')

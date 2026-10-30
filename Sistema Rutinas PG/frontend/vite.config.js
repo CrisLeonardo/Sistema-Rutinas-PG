@@ -23,7 +23,8 @@ export default defineConfig({
         description:
           'Planes de nutrición y rutinas de entrenamiento personalizadas.',
         lang: 'es',
-        start_url: '/panel',
+        // La app instalada abre el acceso; una sesión activa continúa al panel.
+        start_url: '/acceso',
         scope: '/',
         display: 'standalone',
         background_color: '#151e1b',
