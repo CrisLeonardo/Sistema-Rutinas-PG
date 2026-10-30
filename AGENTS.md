@@ -2,6 +2,8 @@
 
 Leer `PLAN_MAESTRO_EVOLUCION.md` y los informes de `Sistema Rutinas PG/operaciones`,
 empezando por `FASE_7_VALIDACION_INDIVIDUAL.md`, y `CONTINUAR_SIGUIENTE_CHAT.md`.
+Consultar también `FASE_7_REVISION_PRUEBAS_Y_MARCA.md`: Camino elegido e integrado;
+32 pruebas actuales de cliente pasan. Arranque nuevo 6.29 s; fase 7 sigue abierta.
 
 Decisión vigente del autor (30-10-2026): puntos, niveles e insignias individuales;
 amigos, grupos, invitaciones y retos colectivos pospuestos. Continuar la fase 7

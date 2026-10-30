@@ -11,6 +11,7 @@
 .cuenta-senda { max-width: 460px; padding-block: 28px 45px; gap: 24px; }
 .cuenta-senda .cabecera-cuenta { margin-bottom: 10px; }
 .cuenta-senda .campo__control { border-radius: 10px; }
+.cuenta-senda .apoyo a, .cuenta-senda .nota-al-pie a { text-decoration: underline; text-underline-offset: .18em; }
 .bienvenida-senda { max-width: 640px; margin: 25px auto; width: 100%; }
 .bienvenida-pasos { counter-reset: paso; display: grid; gap: 20px; list-style: none; padding: 24px; margin: 0; border: 1px solid var(--u-hair-2); background: var(--adm-card); border-radius: 16px; }
 .bienvenida-pasos li { counter-increment: paso; display: grid; grid-template-columns: 32px 1fr; gap: 5px 12px; }

@@ -2,6 +2,9 @@
 
 Lee `PLAN_MAESTRO_EVOLUCION.md` y los informes de `Sistema Rutinas PG/operaciones`,
 en especial `FASE_7_VALIDACION_INDIVIDUAL.md`. Conserva los cambios locales.
+Leer también `FASE_7_REVISION_PRUEBAS_Y_MARCA.md`: Camino ya fue elegido e integrado,
+incluidos favicon y PWA. Nueva medición de primer plan: 6.29 s, aún fuera de meta.
+Docker/API no estaban disponibles al final de la revisión visual; Vite reiniciado.
 
 El autor decidió posponer amigos, grupos, invitaciones y retos sociales. La entrega
 actual conserva Mi senda individual: puntos, niveles, insignias e historial. La ruta

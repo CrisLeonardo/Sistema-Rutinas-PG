@@ -176,7 +176,7 @@ export default function Registro() {
                   type="button"
                   className="campo__accion"
                   onClick={() => setVisible((anterior) => !anterior)}
-                  aria-label="Mostrar la contraseña"
+                  aria-label={visible ? 'Ocultar la contraseña' : 'Ver la contraseña'}
                   aria-pressed={visible}
                 >
                   {visible ? 'Ocultar' : 'Ver'}

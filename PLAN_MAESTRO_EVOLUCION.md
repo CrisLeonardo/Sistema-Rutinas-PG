@@ -2,6 +2,12 @@
 
 Fecha de elaboración: 29 de octubre de 2026.
 
+**Revisión del 30 de octubre de 2026:** Camino fue elegido e integrado como símbolo
+de Senda, incluidos favicon e iconos de instalación. Pasan 32 pruebas actuales del
+cliente y la construcción. Primer plan desde proceso nuevo: 6.29 s, aún fuera de
+meta; la fase 7 y el plan completo siguen abiertos. Detalle en
+[FASE_7_REVISION_PRUEBAS_Y_MARCA.md](Sistema%20Rutinas%20PG/operaciones/FASE_7_REVISION_PRUEBAS_Y_MARCA.md).
+
 **Decisión vigente del autor, 30 de octubre de 2026:** conservar puntos, niveles
  e insignias **individuales**; amigos, grupos, invitaciones y retos colectivos
 quedan **pospuestos**. Se retiraron sus accesos y se desactivó la API social,
