@@ -1,0 +1,23 @@
+[
+  {
+    "file": "Presentacion\\intro-senda\\senda-intro-web-1080p.mp4",
+    "bytes": 2435825,
+    "sha256": "ddb3e0304f23152f33c10c92e892ed832b6e86a512f2d31047b9b35f7fd2277b",
+    "full_decode": "passed",
+    "faststart": true
+  },
+  {
+    "file": "Presentacion\\intro-senda\\senda-intro-presentacion-1080p.mp4",
+    "bytes": 2432880,
+    "sha256": "e05049019e5481bbc1659b6cafd8217925fb898d67fbb68ed9bf2b3ffa895e04",
+    "full_decode": "passed",
+    "faststart": true
+  },
+  {
+    "file": "Sistema Rutinas PG\\frontend\\public\\media\\senda-intro-v1.mp4",
+    "bytes": 1325180,
+    "sha256": "3b7268e8ecd354983eae7c627fe9133e1bbe9ff64d263fe36948b53bd112c048",
+    "full_decode": "passed",
+    "faststart": true
+  }
+]

@@ -1,0 +1,47 @@
+{
+  "version": 1,
+  "duration_seconds": 30,
+  "fps": 30,
+  "master_resolution": [
+    1920,
+    1080
+  ],
+  "web_resolution": [
+    1280,
+    720
+  ],
+  "audio": "Música instrumental original sintetizada; sin voz",
+  "date": "2026-10-31",
+  "scenes": [
+    {
+      "start": 0,
+      "end": 4,
+      "scene": "draw_hook"
+    },
+    {
+      "start": 4,
+      "end": 8,
+      "scene": "draw_intro"
+    },
+    {
+      "start": 8,
+      "end": 13,
+      "scene": "draw_training"
+    },
+    {
+      "start": 13,
+      "end": 18,
+      "scene": "draw_food"
+    },
+    {
+      "start": 18,
+      "end": 24,
+      "scene": "draw_progress"
+    },
+    {
+      "start": 24,
+      "end": 30,
+      "scene": "draw_close"
+    }
+  ]
+}

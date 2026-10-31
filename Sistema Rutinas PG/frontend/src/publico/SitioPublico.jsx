@@ -4,6 +4,7 @@ import { useSesion } from '../contexto/ContextoSesion.jsx'
 import { CambiarTema, NombreSenda } from '../componentes/MarcaProducto.jsx'
 import { Icono, PaisajeSenda } from '../prototipo/MarcaSenda.jsx'
 import { CORREO_CONTACTO, PAGINAS_PUBLICAS, PREGUNTAS } from './contenido.js'
+import IntroSenda from './IntroSenda.jsx'
 
 function Accion({ children, to = '/registro', secundaria = false }) {
   return <Link className={`s1-boton${secundaria ? ' s1-boton--secundario' : ''}`} to={to}>{children}<Icono nombre="flecha" /></Link>
@@ -46,7 +47,8 @@ export default function SitioPublico() {
 
 function Portada({ autenticado }) {
   return <>
-    <section className="s1-hero"><div className="s1-hero-texto"><p className="s1-ceja"><span className="s1-linea" /> ENTRENAMIENTO + ALIMENTACIÓN</p><h1 tabIndex={-1}>Tu siguiente paso.<br /><em>Tu propia senda.</em></h1><p className="s1-entradilla">Menos dudas sobre qué hacer hoy. Una guía para entrenar, organizar tus comidas y construir constancia, paso a paso.</p><Accion to={autenticado ? '/panel' : '/registro'}>{autenticado ? 'Ir a mi día' : 'Crear cuenta gratis'}</Accion><Link to="/como-funciona" className="publico-accion-secundaria">Ver cómo funciona <Icono nombre="flecha" /></Link><p className="s1-micro">Para personas adultas · Sin tarjeta de pago</p><div className="s1-nota-local"><span className="s1-nota-icono"><Icono nombre="sol" /></span><p>Pensado para tu día a día.<br /><strong>Desde El Progreso, Guatemala.</strong></p></div></div><div className="s1-hero-arte"><span className="s1-arte-rotulo">CADA PASO CUENTA</span><PaisajeSenda /><div className="s1-tarjeta-flotante"><span className="s1-icono-caja"><Icono nombre="check" /></span><div><strong>El progreso empieza con un paso.</strong><span>Encuentra el tuyo hoy.</span></div></div><span className="s1-arte-pie">EMPIEZA DONDE ESTÁS</span></div></section>
+    <section className="s1-hero"><div className="s1-hero-texto"><p className="s1-ceja"><span className="s1-linea" /> ENTRENAMIENTO + ALIMENTACIÓN</p><h1 tabIndex={-1}>Tu siguiente paso.<br /><em>Tu propia senda.</em></h1><p className="s1-entradilla">Menos dudas sobre qué hacer hoy. Una guía para entrenar, organizar tus comidas y construir constancia, paso a paso.</p><Accion to={autenticado ? '/panel' : '/registro'}>{autenticado ? 'Ir a mi día' : 'Crear cuenta gratis'}</Accion><a href="#intro-senda" className="publico-accion-secundaria">Ver Senda en 30 segundos <Icono nombre="flecha" /></a><p className="s1-micro">Para personas adultas · Sin tarjeta de pago</p><div className="s1-nota-local"><span className="s1-nota-icono"><Icono nombre="sol" /></span><p>Pensado para tu día a día.<br /><strong>Desde El Progreso, Guatemala.</strong></p></div></div><div className="s1-hero-arte"><span className="s1-arte-rotulo">CADA PASO CUENTA</span><PaisajeSenda /><div className="s1-tarjeta-flotante"><span className="s1-icono-caja"><Icono nombre="check" /></span><div><strong>El progreso empieza con un paso.</strong><span>Encuentra el tuyo hoy.</span></div></div><span className="s1-arte-pie">EMPIEZA DONDE ESTÁS</span></div></section>
+    <IntroSenda autenticado={autenticado} />
     <Pasos />
     <section className="s1-seccion"><div className="s1-titulo-seccion"><p className="s1-ceja">CONOCE EL RECORRIDO</p><h2>Una muestra antes<br />de dar el primer paso.</h2></div><Demostracion /></section>
     <section className="s1-seccion"><p className="s1-ceja">LO QUE NECESITAS SABER</p><h2 className="publico-titulo">Preguntas antes de empezar.</h2><Preguntas /></section>
