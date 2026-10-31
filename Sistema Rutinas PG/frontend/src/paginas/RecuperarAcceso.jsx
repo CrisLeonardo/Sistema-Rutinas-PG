@@ -14,6 +14,7 @@ export default function RecuperarAcceso({ restablecer = false }) {
   const [error, setError] = useState('')
   const [mensaje, setMensaje] = useState('')
   const [enviando, setEnviando] = useState(false)
+  const [intento, setIntento] = useState(0)
   useEffect(() => {
     if (restablecer) {
       // Se retira el secreto de la barra y de la entrada actual del historial.
@@ -22,9 +23,10 @@ export default function RecuperarAcceso({ restablecer = false }) {
       return undefined
     }
     let vigente = true
-    servicioAcceso.opcionesPublicas().then(datos => { if (vigente) setOpciones(datos) }).catch(() => { if (vigente) setError('No se pudo consultar la disponibilidad. Intenta recargar la página.') })
+    setError('')
+    servicioAcceso.opcionesPublicas().then(datos => { if (vigente) setOpciones(datos) }).catch(() => { if (vigente) setError('No se pudo consultar la disponibilidad del correo. Puede volver a consultar sin salir de esta pantalla.') })
     return () => { vigente = false }
-  }, [restablecer])
+  }, [restablecer, intento])
   async function enviar(evento) {
     evento.preventDefault()
     setError('')
@@ -44,6 +46,7 @@ export default function RecuperarAcceso({ restablecer = false }) {
   const sinToken = restablecer && !/^[A-Za-z0-9_-]{43,128}$/.test(token)
   return <div className="entrada cuenta-senda"><CabeceraCuenta /><div className="pila-3"><p className="rotulo">TU CUENTA / SENDA</p><h1 className="titulo-grande">{restablecer ? 'Elige una nueva contraseña' : 'Recupera tu acceso'}</h1><p className="apoyo">{restablecer ? 'El enlace se puede usar una sola vez. Al cambiar la contraseña se cerrarán las sesiones anteriores.' : 'Te enviaremos un enlace al correo de tu cuenta. No necesitas compartir tu contraseña con nadie.'}</p></div>
     {error && <p className="aviso aviso--peligro" role="alert">{error}</p>}
+    {!restablecer && !opciones && error && <button type="button" className="boton boton--secundario" onClick={() => setIntento(n => n + 1)}>Volver a consultar</button>}
     {mensaje ? <div className="pila-5"><p className="aviso aviso--neutro" role="status">{mensaje}</p><Link className="boton boton--principal" to="/acceso">Volver al acceso</Link></div> : sinToken ? <div className="pila-3"><p className="aviso aviso--aviso">Abre el enlace completo que recibiste por correo. Si recargaste esta página, vuelve a abrirlo desde el mensaje.</p><Link to="/recuperar-acceso">Solicitar un enlace nuevo</Link></div> : <>
       {!restablecer && opciones && !opciones.recuperacion_habilitada && <p className="aviso aviso--aviso" role="status">La recuperación por correo todavía no está disponible. Consulta los canales de <Link to="/ayuda">ayuda</Link>.</p>}
       <form onSubmit={enviar} className="pila-5">

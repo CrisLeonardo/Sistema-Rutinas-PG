@@ -22,8 +22,6 @@ import AvisoDeError from '../componentes/AvisoDeError.jsx'
 import Icono from '../componentes/Icono.jsx'
 import ResultadoAccion from '../componentes/ResultadoAccion.jsx'
 import RecompensaAccion from '../componentes/RecompensaAccion.jsx'
-import Pildoras from '../componentes/Pildoras.jsx'
-import { PESTANAS_AVANCE } from '../datos/secciones.js'
 import { useSesion } from '../contexto/ContextoSesion.jsx'
 import { ErrorApi, servicioPerfil, servicioProgreso } from '../servicios/api.js'
 import { conSigno, fechaLarga } from '../utilidades/formatos.js'
@@ -56,7 +54,7 @@ export default function RegistroProgreso() {
     peso_kg: '',
     perimetro_cintura_cm: '',
     sesiones_cumplidas: '0',
-    adherencia_nutricional: '80',
+    adherencia_nutricional: '',
     fecha_registro: hoyEnTextoLocal(),
   })
   const [error, setError] = useState(null)
@@ -64,6 +62,7 @@ export default function RegistroProgreso() {
   const [resultado, setResultado] = useState(null)
   const [sinPlan, setSinPlan] = useState(false)
   const [anterior, setAnterior] = useState(null)
+  const [avisoPeso, setAvisoPeso] = useState('')
   const [cinturaVisible, setCinturaVisible] = useState(false)
   const [fechaVisible, setFechaVisible] = useState(false)
 
@@ -78,12 +77,12 @@ export default function RegistroProgreso() {
       .consultarVigente(token)
       .then((perfil) => {
         if (vigente) {
-          setFormulario((valores) => ({ ...valores, peso_kg: String(perfil.peso_kg) }))
+          setFormulario((valores) => ({ ...valores, peso_kg: valores.peso_kg || String(perfil.peso_kg) }))
           setAnterior({ peso_kg: perfil.peso_kg, fecha: perfil.fecha_registro })
         }
       })
-      .catch(() => {
-        // Sin perfil previo el campo queda vacío.
+      .catch((fallo) => {
+        if (vigente && fallo.codigo !== 404) setAvisoPeso('No pudimos consultar el peso anterior. Puede escribir su peso actual para continuar.')
       })
     return () => {
       vigente = false
@@ -144,7 +143,7 @@ export default function RegistroProgreso() {
             ? Number(formulario.perimetro_cintura_cm)
             : null,
           sesiones_cumplidas: Number(formulario.sesiones_cumplidas),
-          adherencia_nutricional: Number(formulario.adherencia_nutricional),
+          adherencia_nutricional: formulario.adherencia_nutricional === '' ? null : Number(formulario.adherencia_nutricional),
           fecha_registro: formulario.fecha_registro,
         },
         token,
@@ -196,7 +195,7 @@ export default function RegistroProgreso() {
         </button>
       </div>
 
-      <Pildoras etiquetaGrupo="Secciones de avance" opciones={PESTANAS_AVANCE} />
+
 
       {fechaVisible && (
         <label className="campo">
@@ -223,6 +222,7 @@ export default function RegistroProgreso() {
         </div>
       )}
 
+      {avisoPeso && <p className="aviso aviso--neutro" role="status">{avisoPeso}</p>}
       <form onSubmit={enviar} noValidate className="pila-5" aria-busy={enviando}>
         <fieldset disabled={enviando} className="envio-campos pila-5">
         <div className="tarjeta tarjeta--protagonista control-peso">
@@ -265,13 +265,15 @@ export default function RegistroProgreso() {
           </div>
 
           {cambio !== null && cambio !== 0 && (
-            <span className={`chip ${cambio < 0 ? 'chip--ok' : 'chip--neutro'} mono`}>
+            <span className="chip chip--neutro mono">
               {conSigno(cambio, 1)} kg desde el {fechaLarga(anterior.fecha)}
             </span>
           )}
         </div>
 
         <div className="pila-3">
+          <label className="guia-check"><input type="checkbox" checked={formulario.adherencia_nutricional !== ''} onChange={evento => setFormulario(valores => ({ ...valores, adherencia_nutricional: evento.target.checked ? '50' : '' }))} />Quiero estimar cuánto seguí mi plan de comidas (opcional)</label>
+          {formulario.adherencia_nutricional !== '' && <>
           <div className="fila--entre">
             <span className="lista__titulo">¿Qué tanto siguió su plan de comidas?</span>
             <span className="cifra-pequena tinta-acento">
@@ -290,9 +292,9 @@ export default function RegistroProgreso() {
             aria-label="Qué tanto siguió su plan de comidas"
           />
           <p className="campo__ayuda">
-            Sea honesto: el sistema usa este dato para saber si el plan está funcionando o si
-            el problema fue el cumplimiento.
+            Es una estimación de su semana, no una calificación. Mueva el control para indicar el porcentaje que mejor la describe.
           </p>
+          </>}
         </div>
 
         <div className="pila-3">

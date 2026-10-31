@@ -27,9 +27,17 @@ evaluación con participantes, teléfono físico y despliegue en pruebas.
 La [fase 3](operaciones/FASE_3_ENTRENAMIENTO_VISUAL.md) añade la biblioteca en
 `/entrenar/biblioteca` y las fichas consultables desde la sesión. El piloto de
 diez ejercicios se revisa en `/prototipo/fase-3`; usa una figura esquemática
-simple y permite comparar posiciones y descargar observaciones. La reproducción
-en el piloto está disponible para revisión; en las cuentas normales se conserva
-la vista estática hasta registrar la validación técnica.
+simple y permite comparar posiciones y descargar observaciones. Desde la revisión
+del 31-10-2026, las fichas normales también ofrecen el movimiento esquemático, con
+pausa, velocidad, fases y movimiento reducido. La plancha conserva su posición de
+sostén. Esto no registra una validación técnica ni sustituye su revisión pendiente.
+La revisión de conexión y experiencia está en
+[CONEXION_Y_EXPERIENCIA_2026_10_31.md](operaciones/CONEXION_Y_EXPERIENCIA_2026_10_31.md).
+La ampliación posterior cubre los 25 ejercicios iniciales (24 recorridos y una
+plancha estática), ayuda por pantalla, navegación común y movimiento configurable.
+Pasan 69 pruebas actuales de cliente y 36 de informes en ejecución separada;
+véase [EXPERIENCIA_INTEGRAL_2026_10_31.md](operaciones/EXPERIENCIA_INTEGRAL_2026_10_31.md).
+Implementación local, con revisión profesional y publicación pendientes.
 El [plan maestro](../PLAN_MAESTRO_EVOLUCION.md) organiza la evolución;
 la [fase 4](operaciones/FASE_4_ALIMENTACION_PRACTICA.md) añade restricciones en
 `/comer/preferencias`, 18 recetas en borrador en `/comer/recetas` y siete días con

@@ -24,9 +24,7 @@ import { Link } from 'react-router-dom'
 import AnilloNivel from '../componentes/AnilloNivel.jsx'
 import AvisoDeError from '../componentes/AvisoDeError.jsx'
 import Icono from '../componentes/Icono.jsx'
-import Pildoras from '../componentes/Pildoras.jsx'
 import TarjetaLogro from '../componentes/TarjetaLogro.jsx'
-import { PESTANAS_AVANCE } from '../datos/secciones.js'
 import { useSesion } from '../contexto/ContextoSesion.jsx'
 import { servicioJuego } from '../servicios/api.js'
 import { entero, fechaBreve } from '../utilidades/formatos.js'
@@ -81,7 +79,7 @@ export default function Senda() {
         <p className="apoyo">Su nivel, sus insignias y el camino que lleva recorrido</p>
       </div>
 
-      <Pildoras etiquetaGrupo="Secciones de avance" opciones={PESTANAS_AVANCE} />
+
 
       <Cabecera estado={estado} />
       <section className="tarjeta pila-3">

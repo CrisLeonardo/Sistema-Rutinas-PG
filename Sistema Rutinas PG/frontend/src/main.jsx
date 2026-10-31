@@ -7,6 +7,7 @@ import { BrowserRouter } from 'react-router-dom'
 import './estilos/index.css'
 
 import App from './App.jsx'
+import EstadoConexion from './componentes/EstadoConexion.jsx'
 import { ProveedorPreferencias } from './contexto/ContextoPreferencias.jsx'
 import { ProveedorSesion } from './contexto/ContextoSesion.jsx'
 
@@ -15,6 +16,7 @@ createRoot(document.getElementById('raiz')).render(
     <BrowserRouter>
       <ProveedorPreferencias>
         <ProveedorSesion>
+          <EstadoConexion />
           <App />
         </ProveedorSesion>
       </ProveedorPreferencias>

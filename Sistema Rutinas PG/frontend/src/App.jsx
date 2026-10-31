@@ -2,6 +2,7 @@ import { lazy, Suspense } from 'react'
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 
 import BarraNavegacion from './componentes/BarraNavegacion.jsx'
+import ContextoPantalla from './componentes/ContextoPantalla.jsx'
 import RutaProtegida from './componentes/RutaProtegida.jsx'
 import { useSesion } from './contexto/ContextoSesion.jsx'
 import AvisoDeSesion from './componentes/AvisoDeSesion.jsx'
@@ -105,6 +106,8 @@ export default function App() {
       <MetadatosPrivados />
       <main className={clases.join(' ')}>
         {autenticado && !modoEnfoque && !esRecuperacion && !esAdministracion && <div className="cabecera-producto"><CabeceraCuenta /></div>}
+        {autenticado && !esRecuperacion && <ContextoPantalla />}
+        <div className="vista-senda" key={pathname}>
         <Routes>
           <Route path="/recuperar-acceso" element={<RecuperarAcceso key="solicitar" />} />
           <Route path="/restablecer-acceso" element={<RecuperarAcceso key="restablecer" restablecer />} />
@@ -290,6 +293,7 @@ export default function App() {
 
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
+        </div>
       </main>
 
       {!sinBarra && <BarraNavegacion />}

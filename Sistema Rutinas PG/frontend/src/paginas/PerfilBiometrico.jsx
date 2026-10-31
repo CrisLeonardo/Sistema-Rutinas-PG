@@ -103,12 +103,16 @@ export default function PerfilBiometrico() {
   const [enviando, setEnviando] = useState(false)
   const [cargando, setCargando] = useState(true)
   const [teniaPerfil, setTeniaPerfil] = useState(false)
+  const [errorCarga, setErrorCarga] = useState('')
+  const [intentoCarga, setIntentoCarga] = useState(0)
 
   // Precarga la última medición para que actualizar los datos no obligue a
   // escribirlo todo de nuevo. Aun así, al guardar se crea un registro nuevo y el
   // anterior se conserva (historia HU-05).
   useEffect(() => {
     let vigente = true
+    setCargando(true)
+    setErrorCarga('')
     servicioPerfil
       .consultarVigente(token)
       .then((perfil) => {
@@ -127,8 +131,8 @@ export default function PerfilBiometrico() {
           condiciones: perfil.condiciones ?? [],
         })
       })
-      .catch(() => {
-        // Sin perfil previo se conserva el formulario vacío.
+      .catch((fallo) => {
+        if (vigente && fallo.codigo !== 404) setErrorCarga(fallo.message)
       })
       .finally(() => {
         if (vigente) setCargando(false)
@@ -136,7 +140,7 @@ export default function PerfilBiometrico() {
     return () => {
       vigente = false
     }
-  }, [token])
+  }, [token, intentoCarga])
 
   const actualizar = (evento) => {
     const { name, value } = evento.target
@@ -271,6 +275,8 @@ export default function PerfilBiometrico() {
       </div>
     )
   }
+
+  if (errorCarga) return <div className="pila-3"><h1 className="titulo-pantalla">Consultar sus medidas</h1><AvisoDeError mensaje={errorCarga} alReintentar={() => setIntentoCarga(n => n + 1)} /></div>
 
   return (
     <div className="pila-5">

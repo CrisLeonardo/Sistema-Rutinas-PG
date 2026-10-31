@@ -496,7 +496,7 @@ function BloqueEjercicio({ ejercicio, filas, alCambiar, alMarcar, alVerTecnica }
         <div className="series series__encabezado">
           <span />
           <span>{ejercicio.duracion_segundos_min != null ? "Segundos" : "Reps"}</span>
-          <span>Peso</span>
+          <span>kg extra</span>
           <span />
         </div>
 
@@ -512,6 +512,8 @@ function BloqueEjercicio({ ejercicio, filas, alCambiar, alMarcar, alVerTecnica }
           />
         ))}
       </div>
+
+      <p className="nota-al-pie">El peso es la carga adicional. Registre 0 kg si trabaja solo con su peso corporal.</p>
 
       {ejercicio.ultima_vez.length > 0 && (
         <p className="nota-al-pie">
@@ -549,7 +551,7 @@ function FilaDeSerie({ fila, indice, ejercicio, primeraVez, alCambiar, alMarcar 
 
       <span>
         <label className="solo-lectores" htmlFor={`peso-${identificador}`}>
-          Peso de la serie {fila.numero_serie} de {ejercicio.nombre}
+          Peso adicional en kg de la serie {fila.numero_serie} de {ejercicio.nombre}
         </label>
         <input
           disabled={ejercicio.duracion_segundos_min != null}

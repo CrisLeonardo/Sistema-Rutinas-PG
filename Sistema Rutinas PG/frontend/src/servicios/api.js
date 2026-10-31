@@ -5,7 +5,7 @@
  * construcción de encabezados ni el tratamiento de errores.
  */
 
-const URL_API = import.meta.env.VITE_URL_API ?? 'http://127.0.0.1:8010/api/v1'
+import { conexion, URL_API } from './conexion.mjs'
 
 /**
  * Tiempo que se espera una respuesta antes de darla por perdida.
@@ -17,11 +17,8 @@ const URL_API = import.meta.env.VITE_URL_API ?? 'http://127.0.0.1:8010/api/v1'
  * síntoma de «no inicia sesión» que se reportó, y el corte lo convierte en un
  * mensaje que dice qué pasó.
  *
- * Treinta segundos es holgado para todo lo que el sistema hace: el criterio de
- * aceptación de la historia HU-06 concede tres segundos para generar el plan
- * completo, que es la operación más costosa. Lo que no alcanza a cubrir es el
- * arranque en frío de una instancia dormida, y eso es deliberado: más vale
- * decírselo al usuario que hacerle esperar un minuto en blanco.
+ * El acceso comprueba disponibilidad antes de enviar las credenciales. Este
+ * corte de red no sustituye las metas de rendimiento de 3 s y 2 s.
  */
 const TIEMPO_LIMITE_MS = 30_000
 
@@ -111,7 +108,7 @@ async function interpretarError(respuesta) {
  * @param {string} ruta Ruta relativa dentro de la interfaz, por ejemplo `/usuarios`.
  * @param {object} opciones Método, cuerpo y token de sesión.
  */
-export async function peticion(ruta, { metodo = 'GET', datos = null, token = null } = {}) {
+async function solicitar(ruta, { metodo = 'GET', datos = null, token = null } = {}, archivo = false) {
   const encabezados = { Accept: 'application/json' }
   if (datos !== null) encabezados['Content-Type'] = 'application/json'
   if (token) encabezados.Authorization = `Bearer ${token}`
@@ -119,39 +116,48 @@ export async function peticion(ruta, { metodo = 'GET', datos = null, token = nul
   const cancelacion = new AbortController()
   const reloj = setTimeout(() => cancelacion.abort(), TIEMPO_LIMITE_MS)
 
-  let respuesta
   try {
-    respuesta = await fetch(`${URL_API}${ruta}`, {
+    const respuesta = await fetch(`${URL_API}${ruta}`, {
       method: metodo,
       headers: encabezados,
       body: datos !== null ? JSON.stringify(datos) : undefined,
       signal: cancelacion.signal,
+      cache: 'no-store',
     })
+    if (!respuesta.ok) {
+      const mensaje = await interpretarError(respuesta)
+      if (respuesta.status >= 500) conexion.fallo(mensaje)
+      throw new ErrorApi(mensaje, respuesta.status)
+    }
+    if (respuesta.status === 204) { conexion.disponible(); return null }
+    const tipo = respuesta.headers.get('Content-Type') ?? ''
+    if ((!archivo && !tipo.includes('application/json')) || (archivo && tipo.includes('text/html'))) {
+      const mensaje = 'El servicio devolvió una página en lugar de los datos. Intente de nuevo o consulte Ayuda.'
+      conexion.fallo(mensaje)
+      throw new ErrorApi(mensaje, 0)
+    }
+    const contenido = archivo ? await respuesta.blob() : await respuesta.json()
+    conexion.disponible()
+    return archivo ? { contenido, disposicion: respuesta.headers.get('Content-Disposition') ?? '' } : contenido
   } catch (fallo) {
+    if (fallo instanceof ErrorApi) throw fallo
     // Se distingue el corte por tiempo de la falta de conexión: son dos
     // problemas distintos y el usuario puede hacer algo distinto con cada uno.
     if (fallo?.name === 'AbortError') {
-      throw new ErrorApi(
-        'El servidor tardó demasiado en responder. Puede estar iniciando; ' +
-          'espere un momento e intente de nuevo.',
-        0,
-      )
+      const mensaje = metodo === 'GET' ? 'La consulta tardó demasiado. Vuelva a intentarlo en un momento.'
+        : 'No recibimos la confirmación a tiempo. Consulte si el cambio se guardó antes de volver a enviarlo.'
+      conexion.fallo(mensaje)
+      throw new ErrorApi(mensaje, 0)
     }
-    throw new ErrorApi(
-      'No se pudo comunicar con el servidor. Verifique su conexión e intente de nuevo.',
-      0,
-    )
+    const mensaje = 'No se pudo comunicar con el servidor. Verifique su conexión e intente de nuevo.'
+    conexion.fallo(mensaje)
+    throw new ErrorApi(mensaje, 0)
   } finally {
     clearTimeout(reloj)
   }
-
-  if (!respuesta.ok) {
-    throw new ErrorApi(await interpretarError(respuesta), respuesta.status)
-  }
-
-  if (respuesta.status === 204) return null
-  return respuesta.json()
 }
+
+export const peticion = (ruta, opciones) => solicitar(ruta, opciones)
 
 /**
  * Descarga un archivo de la interfaz de programación y lo entrega al navegador.
@@ -164,37 +170,9 @@ export async function peticion(ruta, { metodo = 'GET', datos = null, token = nul
  * @returns {Promise<string>} El nombre con que se guardó el archivo.
  */
 export async function descargarArchivo(ruta, { token = null, nombrePorOmision = 'informe' } = {}) {
-  const encabezados = {}
-  if (token) encabezados.Authorization = `Bearer ${token}`
-
-  const cancelacion = new AbortController()
-  const reloj = setTimeout(() => cancelacion.abort(), TIEMPO_LIMITE_MS)
-
-  let respuesta
-  try {
-    respuesta = await fetch(`${URL_API}${ruta}`, {
-      headers: encabezados,
-      signal: cancelacion.signal,
-    })
-  } catch (fallo) {
-    if (fallo?.name === 'AbortError') {
-      throw new ErrorApi('El servidor tardó demasiado en preparar el archivo. Intente de nuevo.', 0)
-    }
-    throw new ErrorApi(
-      'No se pudo comunicar con el servidor. Verifique su conexión e intente de nuevo.',
-      0,
-    )
-  } finally {
-    clearTimeout(reloj)
-  }
-
-  if (!respuesta.ok) {
-    throw new ErrorApi(await interpretarError(respuesta), respuesta.status)
-  }
-
-  const disposicion = respuesta.headers.get('Content-Disposition') ?? ''
+  const { contenido, disposicion } = await solicitar(ruta, { token }, true)
   const nombre = /filename="([^"]+)"/.exec(disposicion)?.[1] ?? nombrePorOmision
-  const objeto = URL.createObjectURL(await respuesta.blob())
+  const objeto = URL.createObjectURL(contenido)
 
   const enlace = document.createElement('a')
   enlace.href = objeto

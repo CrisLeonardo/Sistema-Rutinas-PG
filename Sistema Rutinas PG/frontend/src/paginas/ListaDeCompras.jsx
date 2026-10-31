@@ -24,25 +24,23 @@ import { Link } from 'react-router-dom'
 import AvisoDeError from '../componentes/AvisoDeError.jsx'
 import CabeceraPantalla from '../componentes/CabeceraPantalla.jsx'
 import Icono from '../componentes/Icono.jsx'
-import Pildoras from '../componentes/Pildoras.jsx'
-import { PESTANAS_COMER } from '../datos/secciones.js'
 import { useSesion } from '../contexto/ContextoSesion.jsx'
 import { ErrorApi, servicioPlan } from '../servicios/api.js'
 import { quetzales, quetzalesEnteros } from '../utilidades/formatos.js'
 
 const CLAVE_MARCADOS = 'rutinas.compras.marcados'
 
-function leerMarcados() {
+function leerMarcados(clave) {
   try {
-    return new Set(JSON.parse(localStorage.getItem(CLAVE_MARCADOS) ?? '[]'))
+    return new Set(JSON.parse(localStorage.getItem(clave) ?? '[]'))
   } catch {
     return new Set()
   }
 }
 
-function guardarMarcados(marcados) {
+function guardarMarcados(marcados, clave) {
   try {
-    localStorage.setItem(CLAVE_MARCADOS, JSON.stringify([...marcados]))
+    localStorage.setItem(clave, JSON.stringify([...marcados]))
   } catch {
     // El navegador puede tener el almacenamiento bloqueado. La lista sigue
     // sirviendo sin la marca; no hay nada que informar al usuario.
@@ -50,12 +48,13 @@ function guardarMarcados(marcados) {
 }
 
 export default function ListaDeCompras() {
-  const { token } = useSesion()
+  const { token, usuario } = useSesion()
+  const claveMarcados = `${CLAVE_MARCADOS}.${usuario.id}`
 
   const [lista, setLista] = useState(null)
   const [cargando, setCargando] = useState(true)
   const [error, setError] = useState(null)
-  const [marcados, setMarcados] = useState(leerMarcados)
+  const [marcados, setMarcados] = useState(() => leerMarcados(claveMarcados))
 
   const cargar = useCallback(async () => {
     setCargando(true)
@@ -83,14 +82,14 @@ export default function ListaDeCompras() {
       const siguiente = new Set(anterior)
       if (siguiente.has(alimentoId)) siguiente.delete(alimentoId)
       else siguiente.add(alimentoId)
-      guardarMarcados(siguiente)
+      guardarMarcados(siguiente, claveMarcados)
       return siguiente
     })
   }
 
   const limpiar = () => {
     setMarcados(new Set())
-    guardarMarcados(new Set())
+    guardarMarcados(new Set(), claveMarcados)
   }
 
   if (cargando) {
@@ -144,7 +143,7 @@ export default function ListaDeCompras() {
         }
       />
 
-      <Pildoras etiquetaGrupo="Secciones de alimentación" opciones={PESTANAS_COMER} />
+
       {lista.procede_de_semana && <p className="apoyo">Suma de los siete días calculados. Cantidades de parte comestible en el estado indicado: los gramos cocidos no equivalen al peso que debe comprar crudo. Consulte recetas y detalles en <Link to="/comer/semana">Semana</Link>. Precios provisionales sin fecha de observación.</p>}
 
       <div className="tarjeta tarjeta--protagonista">

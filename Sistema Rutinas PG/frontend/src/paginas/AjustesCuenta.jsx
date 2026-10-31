@@ -48,7 +48,7 @@ const ADMINISTRACION = [
 
 export default function AjustesCuenta() {
   const { usuario, token, esAdministrador, cerrarSesion } = useSesion()
-  const { tema, alternarTema, vibracion, alternarVibracion } = usePreferencias()
+  const { tema, alternarTema, vibracion, alternarVibracion, reducirMovimiento, alternarMovimiento } = usePreferencias()
   const navegar = useNavigate()
 
   const [pesoVigente, setPesoVigente] = useState(null)
@@ -100,6 +100,7 @@ export default function AjustesCuenta() {
 
       <div className="lista">
         <Interruptor etiqueta="Tema oscuro" encendido={tema === 'dark'} alCambiar={alternarTema} />
+        <Interruptor etiqueta="Reducir movimiento" encendido={reducirMovimiento} alCambiar={alternarMovimiento} />
         <Interruptor
           etiqueta="Cronómetro con vibración"
           encendido={vibracion}

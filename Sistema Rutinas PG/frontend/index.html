@@ -38,6 +38,7 @@
                 ? 'light'
                 : 'dark'
           document.documentElement.setAttribute('data-scheme', tema)
+          document.documentElement.dataset.movimiento = localStorage.getItem('senda.movimiento') === 'reducido' ? 'reducido' : 'normal'
           document
             .querySelector('meta[name="theme-color"]')
             .setAttribute('content', tema === 'light' ? '#f6f3eb' : '#151e1b')

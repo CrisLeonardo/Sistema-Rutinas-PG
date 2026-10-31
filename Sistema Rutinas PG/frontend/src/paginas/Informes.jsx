@@ -12,13 +12,11 @@
  * que encontrará en el archivo que descargue.
  */
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 import ArmazonAdmin from '../componentes/ArmazonAdmin.jsx'
 import AvisoDeError from '../componentes/AvisoDeError.jsx'
 import Icono from '../componentes/Icono.jsx'
-import Pildoras from '../componentes/Pildoras.jsx'
-import { PESTANAS_AVANCE } from '../datos/secciones.js'
 import { useSesion } from '../contexto/ContextoSesion.jsx'
 import { servicioInformes } from '../servicios/api.js'
 import { entero, fechaYHora, quetzales } from '../utilidades/formatos.js'
@@ -80,8 +78,10 @@ export default function Informes({ ambito = 'personal' }) {
   const [error, setError] = useState(null)
   const [descargando, setDescargando] = useState(null)
   const [aviso, setAviso] = useState(null)
+  const cargaVigente = useRef(0)
 
   const cargarCatalogo = useCallback(async () => {
+    setCargando(true)
     setError(null)
     try {
       const disponibles = (await servicioInformes.listar(token)).filter(
@@ -98,15 +98,18 @@ export default function Informes({ ambito = 'personal' }) {
 
   const cargarInforme = useCallback(async () => {
     if (!clave) return
+    const carga = ++cargaVigente.current
     setCargando(true)
+    setInforme(null)
     setError(null)
     setAviso(null)
     try {
-      setInforme(await servicioInformes.consultar(clave, token))
+      const resultado = await servicioInformes.consultar(clave, token)
+      if (carga === cargaVigente.current) setInforme(resultado)
     } catch (fallo) {
-      setError(fallo.message)
+      if (carga === cargaVigente.current) setError(fallo.message)
     } finally {
-      setCargando(false)
+      if (carga === cargaVigente.current) setCargando(false)
     }
   }, [clave, token])
 
@@ -116,6 +119,7 @@ export default function Informes({ ambito = 'personal' }) {
 
   useEffect(() => {
     cargarInforme()
+    return () => { cargaVigente.current++ }
   }, [cargarInforme])
 
   const descargar = async (formato) => {
@@ -136,13 +140,13 @@ export default function Informes({ ambito = 'personal' }) {
 
   const contenido = (
     <>
-      <div className="selector-informes no-imprimir" role="radiogroup" aria-label="Informe">
+      <div className="selector-informes no-imprimir" role="group" aria-label="Informe">
         {catalogo.map((entrada) => (
           <button
             key={entrada.clave}
             type="button"
-            role="radio"
-            aria-checked={entrada.clave === clave}
+            aria-pressed={entrada.clave === clave}
+            disabled={descargando !== null}
             className={`selector-informes__opcion${
               entrada.clave === clave ? ' selector-informes__opcion--activa' : ''
             }`}
@@ -183,7 +187,8 @@ export default function Informes({ ambito = 'personal' }) {
           {aviso}
         </p>
       )}
-      {error && <AvisoDeError mensaje={error} alReintentar={cargarInforme} />}
+      {error && <AvisoDeError mensaje={error} alReintentar={clave ? cargarInforme : cargarCatalogo} />}
+      {!cargando && !error && !catalogo.length && <p className="aviso" role="status">No hay informes disponibles para esta cuenta.</p>}
 
       {cargando && !informe ? (
         <div className="pila-3" aria-busy="true">
@@ -278,7 +283,7 @@ export default function Informes({ ambito = 'personal' }) {
         <p className="apoyo">Consulte su información y llévesela en el formato que necesite.</p>
       </div>
 
-      <Pildoras etiquetaGrupo="Secciones de avance" opciones={PESTANAS_AVANCE} />
+
 
       {contenido}
     </div>

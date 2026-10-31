@@ -15,8 +15,6 @@ import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 
 import AvisoDeError from '../componentes/AvisoDeError.jsx'
-import Pildoras from '../componentes/Pildoras.jsx'
-import { PESTANAS_AVANCE } from '../datos/secciones.js'
 import {
   CONDICIONES_MEDICAS,
   NIVELES_ACTIVIDAD,
@@ -36,7 +34,7 @@ function describirCambio(actual, anterior) {
   if (diferencia === 0) return { texto: 'Sin cambio', clase: 'tinta-4' }
   return {
     texto: `${conSigno(diferencia, 2)} kg`,
-    clase: diferencia > 0 ? 'tinta-peligro' : 'tinta-ok',
+    clase: 'tinta-acento',
   }
 }
 
@@ -109,7 +107,7 @@ export default function HistorialMedidas() {
         <p className="apoyo">Las que el sistema usa para calcular su plan.</p>
       </div>
 
-      <Pildoras etiquetaGrupo="Secciones de avance" opciones={PESTANAS_AVANCE} />
+
 
       <div className="tarjeta tarjeta--protagonista">
         <div className="fila--entre">

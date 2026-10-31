@@ -15,6 +15,7 @@
 
 import { useEffect, useRef } from 'react'
 import { Link, useLocation } from 'react-router-dom'
+import { rutaActiva } from '../datos/recorridos.mjs'
 
 export default function Pildoras({ etiquetaGrupo, opciones }) {
   const { pathname } = useLocation()
@@ -25,22 +26,21 @@ export default function Pildoras({ etiquetaGrupo, opciones }) {
   }, [pathname])
 
   return (
-    <div className="pildoras no-imprimir" role="tablist" aria-label={etiquetaGrupo}>
+    <nav className="pildoras no-imprimir" aria-label={etiquetaGrupo}>
       {opciones.map((opcion) => {
-        const esActiva = pathname === opcion.ruta
+        const esActiva = rutaActiva(pathname, opciones) === opcion.ruta
         return (
           <Link
             key={opcion.ruta}
             ref={esActiva ? activa : undefined}
             to={opcion.ruta}
-            role="tab"
-            aria-selected={esActiva}
+            aria-current={esActiva ? 'page' : undefined}
             className={`pildora${esActiva ? ' pildora--activa' : ''}`}
           >
             {opcion.etiqueta}
           </Link>
         )
       })}
-    </div>
+    </nav>
   )
 }

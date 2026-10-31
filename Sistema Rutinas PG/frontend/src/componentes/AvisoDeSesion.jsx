@@ -24,13 +24,17 @@ import { useSesion } from '../contexto/ContextoSesion.jsx'
 export default function AvisoDeSesion() {
   const { porExpirar, autenticado, continuarSesion } = useSesion()
   const [continuando, setContinuando] = useState(false)
+  const [error, setError] = useState('')
 
   if (!autenticado || !porExpirar) return null
 
   const continuar = async () => {
     setContinuando(true)
+    setError('')
     try {
       await continuarSesion()
+    } catch (fallo) {
+      setError(fallo.message)
     } finally {
       setContinuando(false)
     }
@@ -42,6 +46,7 @@ export default function AvisoDeSesion() {
         <strong>Su sesión está por cerrarse</strong> por inactividad. Si sigue aquí, continúe
         para no perder lo que haya escrito.
       </p>
+      {error && <p role="alert">{error}</p>}
       <button
         type="button"
         className="boton boton--principal"

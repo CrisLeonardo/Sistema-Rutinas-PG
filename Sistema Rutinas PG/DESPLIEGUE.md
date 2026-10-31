@@ -332,3 +332,49 @@ revisarlo.
 Sin este paso, la lista de compras y el costo del menú muestran cifras sin
 sentido.
 
+# Conexión y monitor del servicio (31-10-2026)
+
+El autor confirmó que la URL pública actual es `https://senda-gt.onrender.com`
+(antes `rutinas-interfaz`). La portada estática y la API son servicios separados.
+Para comprobar el servidor,
+configure el monitor con **GET** a
+`https://rutinas-servicios.onrender.com/api/v1/estado`, cada cinco minutos.
+La respuesta esperada es HTTP 200, `Content-Type: application/json` y
+`"estado":"disponible"`. Una visita a la portada no verifica la API; una petición
+HEAD puede devolver 405, ya que el controlador de salud declara GET.
+
+Compruebe en el historial del monitor que las peticiones se ejecutan y que no
+reciben una página HTML de arranque. El reenvío de la interfaz puede comprobarse
+por separado en `https://senda-gt.onrender.com/api/v1/estado`.
+Ambas rutas de salud respondieron JSON en la comprobación del 31-10-2026.
+Usar cualquiera de esas dos rutas en el monitor; no basta con vigilar `/`.
+No se cambió el monitor externo desde esta revisión.
+La salud confirma que el proceso responde; no comprueba la base de datos ni la
+generación neuronal. Si el acceso tarda con salud disponible, revisar los logs
+del servicio, la conexión con Supabase y los tiempos de autenticación antes de
+atribuirlo a suspensión. No compartir contraseñas ni tokens en esos registros.
+
+Render documenta suspensión tras 15 minutos sin tráfico y alrededor de un minuto
+para reactivar el servicio gratuito; también puede reiniciarlo en cualquier
+momento. Un monitor no elimina esas limitaciones ni acredita rendimiento:
+[documentación oficial](https://render.com/docs/free).
+
+Desde la carpeta del sistema, diagnóstico público sin credenciales:
+
+```powershell
+backend/.venv/Scripts/python.exe operaciones/diagnosticar_conexion.py --salida operaciones/evidencias/conexion-ensayo-01.json
+```
+
+Usar un nombre nuevo para cada ensayo. Se comparan API directa y reenvío; un 401
+al catálogo sin token es esperado, y no equivale a una consulta autenticada.
+El cliente comienza una comprobación de salud al abrir la aplicación y la comparte
+con el acceso: espera hasta 75 s por disponibilidad antes de enviar las credenciales
+una sola vez. Las consultas y escrituras conservan su corte de red de 30 s,
+incluida la lectura del cuerpo. Estos cortes no reemplazan los requisitos de
+3 s para plan y 2 s para consultas. No hay pings periódicos desde el navegador.
+
+Los cambios de cliente se construyen con `npm run build` desde `frontend`.
+`VITE_URL_API=/api/v1` sigue siendo el valor de Render; si falta, la construcción
+productiva también usa `/api/v1`, y desarrollo usa `127.0.0.1:8010`.
+Esta revisión es local: no se publicaron cambios ni se migró producción.
+

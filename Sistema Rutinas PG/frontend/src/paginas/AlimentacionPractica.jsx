@@ -2,12 +2,11 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useSesion } from '../contexto/ContextoSesion.jsx'
 import { servicioAlimentacion as api, servicioCatalogos } from '../servicios/api.js'
-import Pildoras from '../componentes/Pildoras.jsx'
 import Hoja from '../componentes/Hoja.jsx'
 import RespuestaAccion from '../componentes/RespuestaAccion.jsx'
 import CambioComidaGuardado from '../componentes/CambioComidaGuardado.jsx'
 import { compararComidas } from '../interaccion/respuestas.mjs'
-import { PESTANAS_COMER } from '../datos/secciones.js'
+import { cargarRecursos } from '../servicios/recursos.mjs'
 import { quetzales } from '../utilidades/formatos.js'
 import '../estilos/alimentacion.css'
 
@@ -18,7 +17,9 @@ export default function AlimentacionPractica({ vista }) {
   const { token } = useSesion()
   const [datos, setDatos] = useState(null)
   const [alimentos, setAlimentos] = useState([])
+  const [avisoAlimentos, setAvisoAlimentos] = useState('')
   const [cargando, setCargando] = useState(true)
+  const [cargaFallida, setCargaFallida] = useState(false)
   const [ocupado, setOcupado] = useState(false)
   const [error, setError] = useState('')
   const [mensaje, setMensaje] = useState('')
@@ -47,17 +48,25 @@ export default function AlimentacionPractica({ vista }) {
   const cargar = useCallback(async () => {
     setCargando(true)
     setError('')
+    setCargaFallida(false)
     try {
       if (vista === 'preferencias') {
-        const [p, a] = await Promise.all([api.preferencias(token), servicioCatalogos.listarAlimentos(token)])
-        setDatos(p); setAlimentos(a)
+        const resultado = await cargarRecursos({ preferencias: api.preferencias(token), alimentos: servicioCatalogos.listarAlimentos(token) })
+        if (resultado.fallos.preferencias) throw resultado.fallos.preferencias
+        setDatos(resultado.preferencias); setAlimentos(resultado.alimentos ?? [])
+        setAvisoAlimentos(resultado.fallos.alimentos ? 'No pudimos consultar los alimentos para evitar. Sus exclusiones guardadas se conservan.' : '')
       } else setDatos(await api[vista](token))
     } catch (fallo) {
       setDatos(null)
-      if (vista !== 'semana' || fallo.codigo !== 404) setError(fallo.message)
+      if (vista !== 'semana' || fallo.codigo !== 404) { setError(fallo.message); setCargaFallida(true) }
     } finally { setCargando(false) }
   }, [token, vista])
   useEffect(() => { cargar() }, [cargar])
+
+  async function recargarAlimentos() {
+    try { setAlimentos(await servicioCatalogos.listarAlimentos(token)); setAvisoAlimentos('') }
+    catch { setAvisoAlimentos('No pudimos consultar los alimentos para evitar. Sus exclusiones guardadas se conservan.') }
+  }
 
   async function preparar() {
     setOcupado(true); setError(''); setMensaje('')
@@ -101,7 +110,7 @@ export default function AlimentacionPractica({ vista }) {
   return <div className="pila alimentacion">
     <header className="pila-2"><p className="apoyo">ALIMENTACIÓN PRÁCTICA</p><h1 className="titulo-pantalla" ref={cabecera} tabIndex={-1}>{TITULOS[vista]}</h1>
       <p className="apoyo">Comidas sencillas, cantidades claras y una compra para siete días.</p></header>
-    <Pildoras etiquetaGrupo="Secciones de alimentación" opciones={PESTANAS_COMER} />
+
     {error && <div className="tarjeta" role="alert"><p>{error}</p><button className="boton-texto" onClick={cargar} disabled={ocupado}>Volver a consultar</button></div>}
     {mensaje ? <RespuestaAccion mensaje={mensaje} /> : <p role="status" className="solo-lectores" />}
     {cargando ? <p role="status">Cargando…</p> : <>
@@ -118,7 +127,7 @@ export default function AlimentacionPractica({ vista }) {
         </fieldset>)}
         <fieldset disabled={ocupado} className="alimentacion__grupo"><legend>Alimentos que prefiere evitar</legend>
           <p className="nota-al-pie">Se excluyen por su identificador del catálogo. Una alergia debe declararse arriba.</p>
-          <details><summary>Elegir alimentos</summary><div className="alimentacion__casillas">{alimentos.map(a => <label key={a.id}><input type="checkbox" checked={datos.preferencias.alimentos_excluidos.includes(a.id)} onChange={() => alternar('alimentos_excluidos', a.id)} />{a.nombre}</label>)}</div></details>
+          {avisoAlimentos ? <div className="pila-2"><p role="status">{avisoAlimentos}</p><button type="button" className="boton-texto" onClick={recargarAlimentos}>Consultar alimentos otra vez</button></div> : <details><summary>Elegir alimentos</summary><div className="alimentacion__casillas">{alimentos.map(a => <label key={a.id}><input type="checkbox" checked={datos.preferencias.alimentos_excluidos.includes(a.id)} onChange={() => alternar('alimentos_excluidos', a.id)} />{a.nombre}</label>)}</div></details>}
         </fieldset>
         <label className="alimentacion__otra"><input type="checkbox" checked={datos.preferencias.otra_restriccion} disabled={ocupado} onChange={e => actualizar('otra_restriccion', e.target.checked)} />Tengo otra alergia o restricción que no aparece en la lista</label>
         {datos.preferencias.otra_restriccion && <p className="apoyo">La propuesta quedará detenida para solicitar valoración profesional.</p>}
@@ -132,7 +141,7 @@ export default function AlimentacionPractica({ vista }) {
         <div className="alimentacion__recetas">{filtradas.map(r => <Comida key={r.receta_id} comida={r} referencia />)}</div>
         <Fuentes fuentes={datos.fuentes} />
       </>}
-      {vista === 'semana' && <>
+      {vista === 'semana' && !cargaFallida && <>
         <div className="tarjeta pila-2"><h2 className="titulo-tarjeta">Primero, lo que necesita evitar</h2><p className="apoyo">Revise alergias, intolerancias y preferencias antes de preparar la semana.</p><Link className="boton-texto" to="/comer/preferencias">Revisar mis restricciones</Link></div>
         <div className="alimentacion__acciones no-imprimir"><button className="boton boton--principal" disabled={ocupado} onClick={preparar}>{ocupado ? 'Calculando…' : datos ? 'Recalcular semana' : 'Preparar mi semana'}</button><Link className="boton-texto" to="/comer/plan">Ver mi plan</Link></div>
         {datos && <>

@@ -13,11 +13,13 @@
  * sección en la barra y repetirlo en el panel solo alargaba la pantalla.
  */
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 
 import AvisoDeError from '../componentes/AvisoDeError.jsx'
 import AnilloNivel from '../componentes/AnilloNivel.jsx'
+import { IconoAvance, IconoComer, IconoEntrenar } from '../componentes/Iconos.jsx'
+import { cargarRecursos } from '../servicios/recursos.mjs'
 import { useSesion } from '../contexto/ContextoSesion.jsx'
 import {
   ErrorApi,
@@ -67,45 +69,50 @@ export default function Panel() {
   const [datos, setDatos] = useState(null)
   const [cargando, setCargando] = useState(true)
   const [error, setError] = useState(null)
+  const ultimaCarga = useRef(0)
 
   const cargar = useCallback(async () => {
+    const carga = ++ultimaCarga.current
     setCargando(true)
     try {
       // Las consultas salen a la vez: en serie, sobre una conexión móvil, el
       // panel tardaría seis veces más en dibujarse.
-      const [plan, rutina, menu, reporte, entrenamiento, perfil, senda] = await Promise.all([
-        opcional(servicioPlan.consultarVigente(token)),
-        opcional(servicioRutina.consultarVigente(token)),
-        opcional(servicioPlan.consultarMenu(token)),
-        opcional(servicioProgreso.consultarReporte(token)),
-        opcional(servicioEntrenamiento.consultarResumen(token)),
-        opcional(servicioPerfil.consultarVigente(token)),
-        opcional(servicioJuego.consultarEstado(token)),
-      ])
-      setDatos({ plan, rutina, menu, reporte, entrenamiento, perfil, senda })
+      const resultado = await cargarRecursos({
+        plan: opcional(servicioPlan.consultarVigente(token)),
+        rutina: opcional(servicioRutina.consultarVigente(token)),
+        menu: opcional(servicioPlan.consultarMenu(token)),
+        reporte: opcional(servicioProgreso.consultarReporte(token)),
+        entrenamiento: opcional(servicioEntrenamiento.consultarResumen(token)),
+        perfil: opcional(servicioPerfil.consultarVigente(token)),
+        senda: opcional(servicioJuego.consultarEstado(token)),
+      })
+      if (carga !== ultimaCarga.current) return
+      setDatos(resultado)
       setError(null)
     } catch (fallo) {
-      setError(fallo.message)
+      if (carga === ultimaCarga.current) setError(fallo.message)
     } finally {
-      setCargando(false)
+      if (carga === ultimaCarga.current) setCargando(false)
     }
   }, [token])
 
   useEffect(() => {
     cargar()
+    return () => { ultimaCarga.current++ }
   }, [cargar])
 
   if (cargando) return <PanelCargando />
 
   if (error) return <AvisoDeError mensaje={error} alReintentar={cargar} />
 
-  const { plan, rutina, menu, reporte, entrenamiento, perfil, senda } = datos
+  const { plan, rutina, menu, reporte, entrenamiento, perfil, senda, fallos } = datos
   const hoy = diaDeLaSemana()
   const sesionDeHoy =
     rutina?.sesiones?.find((sesion) => sesion.dia === hoy && sesion.ejercicios.length > 0) ??
     null
   const primerNombre = usuario?.nombre?.split(' ')[0] ?? ''
 
+  if (!plan && (fallos.plan || fallos.perfil)) return <div className="pila"><h1 className="titulo-pantalla">Su día en Senda</h1><AvisoDeError mensaje={(fallos.plan || fallos.perfil).message} alReintentar={cargar} /><AccesosRapidos /></div>
   if (!plan) return <PrimerDia tienePerfil={Boolean(perfil)} />
 
   return (
@@ -121,6 +128,8 @@ export default function Panel() {
           {iniciales(usuario?.nombre)}
         </Link>
       </div>
+
+      {Object.keys(fallos).length > 0 && <div className="aviso aviso--aviso" role="status"><p>Algunas consultas no se completaron: {Object.keys(fallos).map(clave => ({ rutina: 'rutina', menu: 'menú', reporte: 'medidas', entrenamiento: 'resumen de sesiones', perfil: 'perfil', senda: 'Mi senda' })[clave] ?? clave).join(', ')}. Puede usar las secciones disponibles.</p><button type="button" className="boton-texto" onClick={cargar}>Volver a consultar</button></div>}
 
       {plan.advertencias_de_salud?.length > 0 && (
         <div className="aviso aviso--aviso" role="alert">
@@ -139,15 +148,17 @@ export default function Panel() {
         <Link className="boton boton--principal" to={sesionDeHoy ? `/entrenar/${sesionDeHoy.id}` : '/comer'}>{sesionDeHoy ? 'Iniciar entrenamiento' : 'Ver mi menú de hoy'}</Link>
       </section>
 
+      <AccesosRapidos />
+
       <div className="rejilla-doble">
-        {sesionDeHoy ? <><TarjetaEntrenar sesion={sesionDeHoy} rutina={rutina} entrenamiento={entrenamiento} /><TarjetaComer plan={plan} menu={menu} /></> : <><TarjetaComer plan={plan} menu={menu} /><TarjetaEntrenar sesion={sesionDeHoy} rutina={rutina} entrenamiento={entrenamiento} /></>}
+        {sesionDeHoy ? <><TarjetaEntrenar sesion={sesionDeHoy} rutina={rutina} entrenamiento={entrenamiento} fallo={fallos.rutina} /><TarjetaComer plan={plan} menu={menu} /></> : <><TarjetaComer plan={plan} menu={menu} /><TarjetaEntrenar sesion={sesionDeHoy} rutina={rutina} entrenamiento={entrenamiento} fallo={fallos.rutina} /></>}
       </div>
 
       {entrenamiento && <section className="panel-resumen" aria-label="Resumen semanal de entrenamiento"><p><strong>{entero(entrenamiento.sesiones_esta_semana)}</strong><span>Sesiones esta semana</span></p><p><strong>{entero(entrenamiento.racha_semanas)}</strong><span>Semanas de constancia</span></p><p><strong>{entero(entrenamiento.sesiones_totales)}</strong><span>Sesiones registradas</span></p></section>}
 
       {senda && <FranjaSenda senda={senda} />}
 
-      <FilaDelPeso reporte={reporte} />
+      <FilaDelPeso reporte={reporte} fallo={fallos.reporte} />
     </div>
   )
 }
@@ -315,10 +326,12 @@ function clasePorMacro(nombre) {
   return 'carbohidrato'
 }
 
-function TarjetaEntrenar({ sesion, rutina, entrenamiento }) {
+function TarjetaEntrenar({ sesion, rutina, entrenamiento, fallo }) {
   const racha = entrenamiento?.racha_semanas ?? 0
   const visibles = sesion?.ejercicios?.slice(0, 2) ?? []
   const restantes = (sesion?.ejercicios?.length ?? 0) - visibles.length
+
+  if (fallo) return <div className="tarjeta"><span className="rotulo">Entrenamiento</span><h2 className="titulo-tarjeta">Falta consultar su rutina</h2><p className="apoyo">No pudimos comprobar qué le toca hoy.</p><Link to="/entrenar" className="boton boton--secundario">Consultar mi semana</Link></div>
 
   return (
     <div className={`tarjeta${sesion ? ' tarjeta--destacada' : ''}`}>
@@ -346,7 +359,7 @@ function TarjetaEntrenar({ sesion, rutina, entrenamiento }) {
               <div key={ejercicio.ejercicio_id} className="lista__fila">
                 <span className="cuerpo crece">{ejercicio.nombre}</span>
                 <span className="lista__valor lista__valor--pequeno">
-                  {ejercicio.series}×{ejercicio.repeticiones_min}–{ejercicio.repeticiones_max}
+                  {ejercicio.duracion_segundos_min != null ? <>{ejercicio.series}×{ejercicio.duracion_segundos_min}–{ejercicio.duracion_segundos_max} s<small className="panel-dosis-provisional">Referencia provisional</small></> : <>{ejercicio.series}×{ejercicio.repeticiones_min}–{ejercicio.repeticiones_max} reps</>}
                 </span>
               </div>
             ))}
@@ -382,12 +395,13 @@ function TarjetaEntrenar({ sesion, rutina, entrenamiento }) {
 }
 
 /** La única fila punteada de la pantalla: lo que falta por hacer esta semana. */
-function FilaDelPeso({ reporte }) {
+function FilaDelPeso({ reporte, fallo }) {
   const puntos = reporte?.puntos ?? []
   const ultimo = puntos[puntos.length - 1] ?? null
   const dias = diasDesde(ultimo?.fecha)
 
   let detalle = 'Todavía no ha anotado ningún peso.'
+  if (fallo) detalle = 'Sus medidas no pudieron consultarse. Abra Avance para reintentar.'
   if (ultimo) {
     if (dias === 0) detalle = `Último: ${ultimo.peso_kg} kg, hoy`
     else if (dias === 1) detalle = `Último: ${ultimo.peso_kg} kg, hace 1 día`
@@ -403,4 +417,12 @@ function FilaDelPeso({ reporte }) {
       <span className="boton-texto">Anotar</span>
     </Link>
   )
+}
+
+function AccesosRapidos() {
+  return <nav className="accesos-hoy" aria-label="Accesos rápidos de su día">{[
+    ['/entrenar/biblioteca', 'Aprender', 'Ver ejercicios', IconoEntrenar],
+    ['/comer/semana', 'Organizar', 'Mis comidas', IconoComer],
+    ['/avance/senda', 'Motivarme', 'Mi senda', IconoAvance],
+  ].map(([ruta, titulo, detalle, Icono]) => <Link key={ruta} to={ruta}><Icono tamano={24} /><strong>{titulo}</strong><span>{detalle}</span><span className="accesos-hoy__flecha" aria-hidden="true">↗</span></Link>)}</nav>
 }

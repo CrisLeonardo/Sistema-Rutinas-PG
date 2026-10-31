@@ -2,6 +2,31 @@
 
 Fecha de elaboración: 29 de octubre de 2026.
 
+**Autorización posterior del 31-10-2026:** el autor solicita el push de la mejora
+de conexión y experiencia a `main`. Se prepara ese envío con las pruebas ya
+registradas; el despliegue de Render se verifica por separado. No se autoriza
+una migración manual de producción ni se dan por resueltos los pendientes de fase 7.
+
+**Ampliación de experiencia, 31 de octubre de 2026:** terminada la implementación
+local de 25 guías (24 dinámicas y plancha estática), ayuda por pantalla,
+navegación común, movimiento configurable y recuperación de consultas parciales.
+Pasan 69 pruebas actuales del cliente, 36 de informes en ejecución separada,
+construcción y verificador. El autor confirmó el cambio del monitor de API.
+Se conserva la revisión profesional pendiente de todas las guías y los límites
+de fase 7. Sin publicación ni migración, conforme a las instrucciones vigentes.
+Detalle en [Experiencia integral](Sistema%20Rutinas%20PG/operaciones/EXPERIENCIA_INTEGRAL_2026_10_31.md).
+
+**Revisión del 31 de octubre de 2026:** se atendieron conexión y experiencia por
+petición del autor: comprobación anticipada de API, sesión conservada ante fallos
+temporales, panel con consultas parciales, respuestas animadas y reproducción de
+los esquemas desde las fichas normales (sin registrar revisión profesional).
+El autor confirmó el dominio `senda-gt.onrender.com`; su monitor vigilaba la
+portada y debe usar GET `/api/v1/estado`. Pasan 46 pruebas actuales de cliente,
+33 focalizadas de despliegue en ejecución separada y la construcción.
+Implementación local; sin publicación ni nueva certificación de rendimiento.
+Detalle en [Conexión y experiencia](Sistema%20Rutinas%20PG/operaciones/CONEXION_Y_EXPERIENCIA_2026_10_31.md).
+La fase 7 permanece abierta y conserva los ensayos anteriores, incluidos fallos.
+
 **Revisión del 30 de octubre de 2026:** Camino fue elegido e integrado como símbolo
 de Senda, incluidos favicon e iconos de instalación. Pasan 32 pruebas actuales del
 cliente y la construcción. Primer plan desde proceso nuevo: 6.29 s, aún fuera de

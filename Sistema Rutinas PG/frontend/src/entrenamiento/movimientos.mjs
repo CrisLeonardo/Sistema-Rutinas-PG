@@ -1,5 +1,6 @@
 // Esquemas 2D propios: coordenadas en un lienzo de 420 × 300.
 // Las longitudes son gráficas, no medidas antropométricas ni una evaluación.
+import { CLAVES_ADICIONALES, poseAdicional } from './posesAdicionales.mjs'
 export const acotar = (n, min = 0, max = 1) => Math.min(max, Math.max(min, Number.isFinite(n) ? n : min))
 const mezclar = (a, b, t) => a.map((n, i) => n + (b[i] - n) * t)
 
@@ -49,11 +50,18 @@ const posiciones = {
   ],
 }
 
-export const CLAVES_MOVIMIENTO = Object.keys(posiciones)
-export function faseActual(progreso) { return Math.min(2, Math.floor(acotar(progreso) * 3)) }
+export const CLAVES_MOVIMIENTO = [...Object.keys(posiciones), ...CLAVES_ADICIONALES]
+export function faseActual(progreso, ficha) {
+  const p = acotar(progreso)
+  if (ficha?.clave === 'curl-alterno') return p < .12 ? 0 : p > .88 ? 2 : 1
+  return Math.min(2, Math.floor(p * 3))
+}
+export const fotogramasPara = ficha => [0, ficha?.clave === 'curl-alterno' ? .25 : .5, 1]
 export function avanzar(progreso, milisegundos, velocidad = 1) { return acotar(progreso + Math.max(0, milisegundos) / 6000 * velocidad) }
 
 export function posePara(clave, progreso = 0) {
+  const adicional = poseAdicional(clave, acotar(progreso), articulacion)
+  if (adicional) return adicional
   const estados = posiciones[clave]
   if (!estados) return null
   const p = acotar(progreso)

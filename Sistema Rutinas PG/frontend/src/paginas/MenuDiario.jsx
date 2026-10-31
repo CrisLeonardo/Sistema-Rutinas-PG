@@ -19,8 +19,6 @@ import { Link } from 'react-router-dom'
 import AvisoDeError from '../componentes/AvisoDeError.jsx'
 import Hoja from '../componentes/Hoja.jsx'
 import Icono from '../componentes/Icono.jsx'
-import Pildoras from '../componentes/Pildoras.jsx'
-import { PESTANAS_COMER } from '../datos/secciones.js'
 import { useSesion } from '../contexto/ContextoSesion.jsx'
 import { ErrorApi, servicioPlan } from '../servicios/api.js'
 import { entero, quetzales, quetzalesEnteros } from '../utilidades/formatos.js'
@@ -110,7 +108,7 @@ export default function MenuDiario() {
         </button>
       </div>
 
-      <Pildoras etiquetaGrupo="Secciones de alimentación" opciones={PESTANAS_COMER} />
+
       <Link to="/comer/semana" className="boton-texto">{menu.procede_de_semana ? 'Ver los siete días, recetas y compras' : 'Preparar una semana con recetas'}</Link>
 
       <div className="cifras">

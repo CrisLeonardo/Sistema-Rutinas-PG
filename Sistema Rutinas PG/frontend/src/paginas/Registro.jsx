@@ -49,6 +49,7 @@ export default function Registro() {
     if (formulario.nombre.trim().length < 2) {
       return 'Escriba su nombre completo.'
     }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formulario.correo.trim())) return 'Escriba un correo electrónico válido antes de continuar.'
     if (formulario.contrasena.length < LONGITUD_MINIMA) {
       return `La contraseña debe tener al menos ${LONGITUD_MINIMA} caracteres.`
     }

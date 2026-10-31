@@ -22,6 +22,7 @@ import ArmazonAdmin from '../componentes/ArmazonAdmin.jsx'
 import AvisoDeError from '../componentes/AvisoDeError.jsx'
 import Icono from '../componentes/Icono.jsx'
 import { useSesion } from '../contexto/ContextoSesion.jsx'
+import { cargarRecursos } from '../servicios/recursos.mjs'
 import { servicioCatalogos } from '../servicios/api.js'
 import { quetzales } from '../utilidades/formatos.js'
 
@@ -96,6 +97,7 @@ export default function AdministracionCatalogos() {
   const [ejercicios, setEjercicios] = useState([])
   const [cargando, setCargando] = useState(true)
   const [error, setError] = useState(null)
+  const [fallosCarga, setFallosCarga] = useState({})
   const [aviso, setAviso] = useState(null)
   const [busqueda, setBusqueda] = useState('')
   const [filtro, setFiltro] = useState('todos')
@@ -110,13 +112,11 @@ export default function AdministracionCatalogos() {
   const cargar = useCallback(async () => {
     setCargando(true)
     try {
-      const [listaAlimentos, listaEjercicios] = await Promise.all([
-        servicioCatalogos.listarAlimentos(token),
-        servicioCatalogos.listarEjercicios(token),
-      ])
-      setAlimentos(listaAlimentos)
-      setEjercicios(listaEjercicios)
-      setError(null)
+      const resultado = await cargarRecursos({ alimentos: servicioCatalogos.listarAlimentos(token), ejercicios: servicioCatalogos.listarEjercicios(token) })
+      setAlimentos(resultado.alimentos ?? [])
+      setEjercicios(resultado.ejercicios ?? [])
+      setFallosCarga(resultado.fallos)
+      setError(Object.values(resultado.fallos)[0]?.message ?? null)
     } catch (fallo) {
       setError(fallo.message)
     } finally {
@@ -401,6 +401,8 @@ export default function AdministracionCatalogos() {
           <div className="esqueleto esqueleto--fila" />
           <span className="solo-lectores">Cargando los catálogos…</span>
         </div>
+      ) : fallosCarga[esAlimentos ? 'alimentos' : 'ejercicios'] ? (
+        <p className="aviso" role="status">No se pudo consultar este catálogo. Puede reintentar o abrir el otro catálogo.</p>
       ) : visibles.length === 0 ? (
         <div className="vacio">
           <h2 className="vacio__titulo">No hay nada que coincida</h2>
@@ -600,7 +602,7 @@ const APORTES = [
 
 function FormularioAlimento({ formulario, alCambiar, alEnviar, guardando, editando, alCancelar }) {
   return (
-    <form onSubmit={alEnviar} noValidate className="pila-4">
+    <form onSubmit={alEnviar} noValidate className="pila-4" aria-busy={guardando}>
       <label className="campo">
         <span className="campo__etiqueta">Nombre</span>
         <input
@@ -698,7 +700,7 @@ function FormularioAlimento({ formulario, alCambiar, alEnviar, guardando, editan
 
 function FormularioEjercicio({ formulario, alCambiar, alEnviar, guardando, editando, alCancelar }) {
   return (
-    <form onSubmit={alEnviar} noValidate className="pila-4">
+    <form onSubmit={alEnviar} noValidate className="pila-4" aria-busy={guardando}>
       <label className="campo">
         <span className="campo__etiqueta">Nombre</span>
         <input

@@ -4,8 +4,8 @@ import { FICHAS, GRUPOS, animacionPublicable, fichaPara, filtrarEjercicios } fro
 import { avanzar, faseActual, posePara, CLAVES_MOVIMIENTO } from '../src/entrenamiento/movimientos.mjs'
 
 test('ningún borrador se anuncia como técnicamente validado', () => {
-  assert.equal(FICHAS.length, 10)
-  assert.equal(new Set(FICHAS.map(f => f.clave)).size, 10)
+  assert.equal(FICHAS.length, 25)
+  assert.equal(new Set(FICHAS.map(f => f.clave)).size, 25)
   for (const ficha of FICHAS) {
     assert.equal(animacionPublicable(ficha), false)
     assert.equal(ficha.validacion.responsable, null)
@@ -15,7 +15,7 @@ test('ningún borrador se anuncia como técnicamente validado', () => {
     assert.ok(new URL(ficha.fuente.url).protocol === 'https:')
   }
 })
-test('publicar movimiento exige estado, responsable y fecha', () => {
+test('registrar la validación técnica exige estado, responsable y fecha', () => {
   const ficha = FICHAS[0]
   assert.equal(animacionPublicable({ ...ficha, validacion: { estado: 'revisada' } }), false)
   assert.equal(animacionPublicable({ ...ficha, validacion: { estado: 'revisada', responsable: 'Revisor', fecha: '2026-10-30' } }), true)
@@ -73,8 +73,8 @@ for (const ficha of FICHAS) test(`${ficha.nombre}: posiciones dentro del lienzo 
     }
     for (const [hombro, codo, mano] of [[pose.hombroDer, pose.codoDer, pose.mano], [pose.hombroIzq, pose.codoIzq, pose.manoIzq]]) {
       if (ficha.esIsometrico) continue
-      assert.ok(Math.abs(Math.hypot(codo[0] - hombro[0], codo[1] - hombro[1]) - 38) < .02)
-      assert.ok(Math.abs(Math.hypot(mano[0] - codo[0], mano[1] - codo[1]) - 38) < .02)
+      assert.ok(Math.abs(Math.hypot(codo[0] - hombro[0], codo[1] - hombro[1]) - (pose.longitudBrazo ?? 38)) < .02)
+      assert.ok(Math.abs(Math.hypot(mano[0] - codo[0], mano[1] - codo[1]) - (pose.longitudBrazo ?? 38)) < .02)
     }
   }
 })

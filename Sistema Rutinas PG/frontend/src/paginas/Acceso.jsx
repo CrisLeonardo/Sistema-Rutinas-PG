@@ -1,8 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 
 import { useSesion } from '../contexto/ContextoSesion.jsx'
 import CabeceraCuenta from '../componentes/MarcaProducto.jsx'
+import { useConexion } from '../componentes/EstadoConexion.jsx'
+import { conexion } from '../servicios/conexion.mjs'
 
 /**
  * Pantalla de inicio de sesión (historia HU-02).
@@ -11,14 +13,10 @@ import CabeceraCuenta from '../componentes/MarcaProducto.jsx'
  * pantalla entera es el formulario, centrada verticalmente, con la marca arriba
  * para saber dónde se está antes de escribir nada.
  *
- * Lleva un aviso que aparece cuando la verificación se alarga. El despliegue
- * gratuito duerme el servicio tras un rato sin tráfico, y el primer acceso del
- * día paga el arranque: sin el aviso, el botón se queda en «Verificando…» y no
- * hay forma de distinguir un servidor que despierta de una aplicación colgada.
+ * Comparte la comprobación iniciada al abrir Senda y envía las credenciales una
+ * sola vez cuando la API responde. Una espera por sí sola no prueba suspensión.
  */
 
-/** Segundos tras los cuales la espera deja de parecer normal y se explica. */
-const SEGUNDOS_PARA_AVISAR = 6
 export default function Acceso() {
   const { iniciarSesion, expiroPorInactividad } = useSesion()
   const navegar = useNavigate()
@@ -27,16 +25,7 @@ export default function Acceso() {
   const [error, setError] = useState(null)
   const [enviando, setEnviando] = useState(false)
   const [visible, setVisible] = useState(false)
-  const [tardando, setTardando] = useState(false)
-
-  useEffect(() => {
-    if (!enviando) {
-      setTardando(false)
-      return undefined
-    }
-    const reloj = setTimeout(() => setTardando(true), SEGUNDOS_PARA_AVISAR * 1000)
-    return () => clearTimeout(reloj)
-  }, [enviando])
+  const { fase } = useConexion()
 
   const actualizar = (evento) => {
     const { name, value } = evento.target
@@ -48,6 +37,7 @@ export default function Acceso() {
     setError(null)
     setEnviando(true)
     try {
+      if (!await conexion.comprobar()) return
       await iniciarSesion({
         correo: formulario.correo.trim(),
         contrasena: formulario.contrasena,
@@ -64,8 +54,9 @@ export default function Acceso() {
     <div className="entrada cuenta-senda">
       <CabeceraCuenta />
       <div className="pila-5">
-        <h1 className="titulo-grande">Entrar</h1>
-        <p className="apoyo">Ingrese con la cuenta que registró para consultar sus planes.</p>
+        <p className="rotulo">SU SIGUIENTE PASO EMPIEZA AQUÍ</p>
+        <h1 className="titulo-grande">Qué gusto volver.</h1>
+        <p className="apoyo">Entre para ver qué le toca hoy: entrenar, comer y seguir avanzando.</p>
       </div>
 
       {expiroPorInactividad && (
@@ -80,14 +71,7 @@ export default function Acceso() {
         </p>
       )}
 
-      {enviando && tardando && (
-        <p className="aviso aviso--neutro" role="status">
-          El servidor está iniciando. El primer acceso tras un rato sin uso puede
-          tardar hasta medio minuto.
-        </p>
-      )}
-
-      <form onSubmit={enviar} noValidate className="pila-5">
+      <form onSubmit={enviar} className="pila-5" aria-busy={enviando}>
         <div className="pila-3">
           <label className="campo">
             <span className="campo__etiqueta">Correo electrónico</span>
@@ -131,8 +115,10 @@ export default function Acceso() {
         </div>
 
         <button type="submit" className="boton boton--principal" disabled={enviando}>
-          {enviando ? 'Verificando…' : 'Entrar'}
+          {enviando && <span className="carga-boton" aria-hidden="true" />}
+          {enviando ? fase === 'conectando' ? 'Conectando…' : 'Verificando…' : 'Entrar a mi día'}
         </button>
+        <p className="acceso-conexion" role="status"><span className={`conexion-indicador${fase === 'conectando' ? ' conexion-indicador--espera' : ''}`} aria-hidden="true" />{fase === 'disponible' ? 'Senda está disponible' : fase === 'sin-conexion' ? 'Conexión pendiente · puede volver a intentar' : 'Preparando la conexión mientras escribe'}</p>
       </form>
 
       <p className="apoyo centrado"><Link to="/recuperar-acceso">Olvidé mi contraseña</Link></p>

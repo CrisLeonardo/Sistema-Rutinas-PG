@@ -118,7 +118,7 @@ export default function CambioContrasena() {
         </p>
       )}
 
-      <form onSubmit={enviar} noValidate className="pila-5">
+      <form onSubmit={enviar} noValidate className="pila-5" aria-busy={enviando}>
         <div className="pila-3">
           <label className="campo">
             <span className="campo__etiqueta">Contraseña actual</span>

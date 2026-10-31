@@ -19,8 +19,6 @@ import AvisoDeError from '../componentes/AvisoDeError.jsx'
 import CabeceraPantalla from '../componentes/CabeceraPantalla.jsx'
 import Hoja from '../componentes/Hoja.jsx'
 import Icono from '../componentes/Icono.jsx'
-import Pildoras from '../componentes/Pildoras.jsx'
-import { PESTANAS_COMER } from '../datos/secciones.js'
 import { useSesion } from '../contexto/ContextoSesion.jsx'
 import { ErrorApi, servicioPlan } from '../servicios/api.js'
 import { entero, fechaYHora } from '../utilidades/formatos.js'
@@ -38,6 +36,7 @@ export default function PlanNutricional() {
 
   const [plan, setPlan] = useState(null)
   const [cargando, setCargando] = useState(true)
+  const [consultaFallida, setConsultaFallida] = useState(false)
   const [generando, setGenerando] = useState(false)
   const [error, setError] = useState(null)
   const [sinPerfil, setSinPerfil] = useState(false)
@@ -46,6 +45,7 @@ export default function PlanNutricional() {
 
   const cargar = useCallback(async () => {
     setCargando(true)
+    setConsultaFallida(false)
     try {
       setPlan(await servicioPlan.consultarVigente(token))
       setError(null)
@@ -55,6 +55,7 @@ export default function PlanNutricional() {
         setPlan(null)
         setError(null)
       } else {
+        setConsultaFallida(true)
         setError(fallo.message)
       }
     } finally {
@@ -93,10 +94,12 @@ export default function PlanNutricional() {
     )
   }
 
+  if (consultaFallida) return <AvisoDeError mensaje={error} alReintentar={cargar} />
+
   if (!plan) {
     return (
       <div className="pila">
-        <Pildoras etiquetaGrupo="Secciones de alimentación" opciones={PESTANAS_COMER} />
+
         {error && <AvisoDeError mensaje={error} />}
         <div className="vacio">
           <h1 className="vacio__titulo">Todavía no ha generado su plan</h1>
@@ -141,7 +144,7 @@ export default function PlanNutricional() {
         }
       />
 
-      <Pildoras etiquetaGrupo="Secciones de alimentación" opciones={PESTANAS_COMER} />
+
 
       {parametros.get('inicio') === '1' && <div className="aviso aviso--neutro pila-3"><p>Su plan está listo. Revise sus indicaciones y advertencias; después puede abrir su inicio para ver qué sigue hoy.</p><Link to="/panel" className="boton boton--principal">Ir a mi día</Link></div>}
 

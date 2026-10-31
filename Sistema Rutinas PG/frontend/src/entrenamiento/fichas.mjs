@@ -1,5 +1,6 @@
 // Contenido editorial versionado; no modifica la prescripción ni el catálogo.
 // Las fuentes se consultaron el 30-10-2026. Textos e ilustraciones propios.
+import { FICHAS_ADICIONALES } from './fichasAdicionales.mjs'
 const nasm = slug => `https://www.nasm.org/resource-center/exercise-library/${slug}`
 const ace = ruta => `https://www.acefitness.org/resources/everyone/exercise-library/${ruta}/`
 
@@ -119,7 +120,7 @@ export const FICHAS = [
 ].map(ficha => ({ ...ficha, version: '0.1.1', preparadaEl: '2026-10-30',
   autoria: 'Senda · redacción e ilustración vectorial originales', licencia: 'Mismas condiciones de uso que el código del proyecto; sin recursos gráficos de terceros.',
   validacion: { estado: 'pendiente', responsable: null, fecha: null },
-}))
+})).concat(FICHAS_ADICIONALES)
 
 // No se utilizan IDs supuestos, coincidencias parciales ni similitud de nombres.
 export function fichaPara(ejercicio) {

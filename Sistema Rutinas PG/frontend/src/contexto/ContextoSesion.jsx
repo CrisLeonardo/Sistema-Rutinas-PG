@@ -10,6 +10,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 
 import { servicioAcceso } from '../servicios/api.js'
+import { sesionRechazada } from '../servicios/conexion.mjs'
 
 const CLAVE_TOKEN = 'rutinas.token'
 const CLAVE_USUARIO = 'rutinas.usuario'
@@ -48,6 +49,7 @@ export function ProveedorSesion({ children }) {
   const ultimaActividad = useRef(Date.now())
   const vigenciaMs = useRef(30 * 60_000)
   const emitidoEn = useRef(Date.now())
+  const tokenVerificado = useRef(null)
 
   const guardarSesion = useCallback((respuesta) => {
     sessionStorage.setItem(CLAVE_TOKEN, respuesta.token_acceso)
@@ -55,6 +57,7 @@ export function ProveedorSesion({ children }) {
     vigenciaMs.current = respuesta.expira_en_segundos * 1000
     emitidoEn.current = Date.now()
     ultimaActividad.current = Date.now()
+    tokenVerificado.current = respuesta.token_acceso
     setToken(respuesta.token_acceso)
     setUsuario(respuesta.usuario)
     setExpiroPorInactividad(false)
@@ -87,9 +90,11 @@ export function ProveedorSesion({ children }) {
     try {
       ultimaActividad.current = Date.now()
       guardarSesion(await servicioAcceso.renovar(token))
-    } catch {
-      limpiarSesion()
-      setExpiroPorInactividad(true)
+    } catch (fallo) {
+      if (sesionRechazada(fallo)) {
+        limpiarSesion()
+        setExpiroPorInactividad(true)
+      } else throw fallo
     }
   }, [token, guardarSesion, limpiarSesion])
 
@@ -128,9 +133,11 @@ export function ProveedorSesion({ children }) {
       if (transcurrido >= vigenciaMs.current - MARGEN_RENOVACION_MS) {
         try {
           guardarSesion(await servicioAcceso.renovar(token))
-        } catch {
-          limpiarSesion()
-          setExpiroPorInactividad(true)
+        } catch (fallo) {
+          if (sesionRechazada(fallo)) {
+            limpiarSesion()
+            setExpiroPorInactividad(true)
+          }
         }
       }
     }
@@ -141,17 +148,18 @@ export function ProveedorSesion({ children }) {
 
   // Verifica contra el servidor que el token recuperado del almacenamiento siga vigente.
   useEffect(() => {
-    if (!token) return
+    if (!token || tokenVerificado.current === token) return
     let vigente = true
     servicioAcceso
       .consultarSesion(token)
       .then((cuenta) => {
         if (!vigente) return
         sessionStorage.setItem(CLAVE_USUARIO, JSON.stringify(cuenta))
+        tokenVerificado.current = token
         setUsuario(cuenta)
       })
-      .catch(() => {
-        if (vigente) limpiarSesion()
+      .catch((fallo) => {
+        if (vigente && sesionRechazada(fallo)) limpiarSesion()
       })
     return () => {
       vigente = false

@@ -10,7 +10,9 @@
     "preview": "vite preview",
     "verificar:construccion": "node operaciones/verificar-construccion.mjs",
     "test:entrenamiento": "node --test operaciones/entrenamiento.test.mjs",
-    "test:interaccion": "node --test operaciones/interaccion.test.mjs"
+    "test:interaccion": "node --test operaciones/interaccion.test.mjs",
+    "test:conexion": "node --test operaciones/conexion.test.mjs",
+    "test:experiencia": "node --test operaciones/experiencia.test.mjs"
   },
   "dependencies": {
     "react": "^19.0.0",

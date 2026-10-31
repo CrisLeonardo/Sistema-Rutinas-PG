@@ -32,6 +32,15 @@ function leerVibracion() {
 export function ProveedorPreferencias({ children }) {
   const [tema, setTema] = useState(leerTema)
   const [vibracion, setVibracion] = useState(leerVibracion)
+  const [reducirMovimiento, setReducirMovimiento] = useState(() => {
+    try { return localStorage.getItem('senda.movimiento') === 'reducido' } catch { return false }
+  })
+  useEffect(() => {
+    document.documentElement.dataset.movimiento = reducirMovimiento ? 'reducido' : 'normal'
+    try { localStorage.setItem('senda.movimiento', reducirMovimiento ? 'reducido' : 'normal') } catch { /* Preferencia de esta visita. */ }
+    window.dispatchEvent(new Event('senda:movimiento'))
+  }, [reducirMovimiento])
+  const alternarMovimiento = useCallback(() => setReducirMovimiento(actual => !actual), [])
 
   // El script en línea de index.html ya puso el atributo antes de que React
   // montara. Este efecto lo mantiene al día cuando el usuario lo cambia.
@@ -60,8 +69,8 @@ export function ProveedorPreferencias({ children }) {
   }, [])
 
   const valor = useMemo(
-    () => ({ tema, elegirTema, alternarTema, vibracion, alternarVibracion }),
-    [tema, elegirTema, alternarTema, vibracion, alternarVibracion],
+    () => ({ tema, elegirTema, alternarTema, vibracion, alternarVibracion, reducirMovimiento, alternarMovimiento }),
+    [tema, elegirTema, alternarTema, vibracion, alternarVibracion, reducirMovimiento, alternarMovimiento],
   )
 
   return <ContextoPreferencias.Provider value={valor}>{children}</ContextoPreferencias.Provider>

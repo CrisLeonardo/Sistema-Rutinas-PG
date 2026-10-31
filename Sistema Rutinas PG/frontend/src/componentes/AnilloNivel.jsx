@@ -35,6 +35,7 @@ export default function AnilloNivel({ porcentaje = 0, nivel = 1, tamano = 132, g
         />
         <circle
           className="anillo__recorrido"
+          style={{ '--anillo-vuelta': vuelta }}
           cx={tamano / 2}
           cy={tamano / 2}
           r={radio}

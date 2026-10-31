@@ -12,16 +12,15 @@
  * la segunda quedaba enterrada bajo la primera.
  */
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 
 import AvisoDeError from '../componentes/AvisoDeError.jsx'
 import GraficaLineas from '../componentes/GraficaLineas.jsx'
 import Icono from '../componentes/Icono.jsx'
-import Pildoras from '../componentes/Pildoras.jsx'
-import { PESTANAS_ENTRENAR } from '../datos/secciones.js'
 import { useSesion } from '../contexto/ContextoSesion.jsx'
 import { servicioEntrenamiento } from '../servicios/api.js'
+import { cargarRecursos } from '../servicios/recursos.mjs'
 import { conSigno, entero, fechaBreve } from '../utilidades/formatos.js'
 
 export default function HistorialEntrenamiento({ vista = 'bitacora' }) {
@@ -33,23 +32,25 @@ export default function HistorialEntrenamiento({ vista = 'bitacora' }) {
   const [error, setError] = useState(null)
   const [ejercicioAbierto, setEjercicioAbierto] = useState(null)
   const [evolucion, setEvolucion] = useState(null)
+  const [errorDetalle, setErrorDetalle] = useState('')
+  const [falloSesiones, setFalloSesiones] = useState(false)
+  const consultaDetalle = useRef(0)
 
   const cargar = useCallback(async () => {
     setCargando(true)
     try {
-      const [datosResumen, datosSesiones] = await Promise.all([
-        servicioEntrenamiento.consultarResumen(token),
-        servicioEntrenamiento.consultarBitacora(token),
-      ])
-      setResumen(datosResumen)
-      setSesiones(datosSesiones)
-      setError(null)
+      const resultado = await cargarRecursos({ resumen: servicioEntrenamiento.consultarResumen(token), sesiones: vista === 'bitacora' ? servicioEntrenamiento.consultarBitacora(token) : Promise.resolve([]) })
+      if (resultado.fallos.resumen) throw resultado.fallos.resumen
+      setResumen(resultado.resumen)
+      setSesiones(resultado.sesiones ?? [])
+      setFalloSesiones(Boolean(resultado.fallos.sesiones))
+      setError(resultado.fallos.sesiones?.message ?? null)
     } catch (fallo) {
       setError(fallo.message)
     } finally {
       setCargando(false)
     }
-  }, [token])
+  }, [token, vista])
 
   useEffect(() => {
     cargar()
@@ -58,12 +59,15 @@ export default function HistorialEntrenamiento({ vista = 'bitacora' }) {
   /** La primera marca se abre sola: la pantalla ya trae algo que enseñar. */
   const abrirEjercicio = useCallback(
     async (ejercicioId) => {
+      const consulta = ++consultaDetalle.current
       setEjercicioAbierto(ejercicioId)
       setEvolucion(null)
+      setErrorDetalle('')
       try {
-        setEvolucion(await servicioEntrenamiento.consultarEjercicio(ejercicioId, token))
+        const resultado = await servicioEntrenamiento.consultarEjercicio(ejercicioId, token)
+        if (consulta === consultaDetalle.current) setEvolucion(resultado)
       } catch (fallo) {
-        setError(fallo.message)
+        if (consulta === consultaDetalle.current) setErrorDetalle(fallo.message)
       }
     },
     [token],
@@ -115,23 +119,23 @@ export default function HistorialEntrenamiento({ vista = 'bitacora' }) {
             : 'Lo que ha levantado y cómo ha subido'}
         </p>
       </div>
-
-      <Pildoras etiquetaGrupo="Secciones de entrenamiento" opciones={PESTANAS_ENTRENAR} />
-
+      {error && <AvisoDeError mensaje={error} alReintentar={cargar} />}
+      {errorDetalle && <AvisoDeError mensaje={errorDetalle} alReintentar={() => abrirEjercicio(ejercicioAbierto)} />}
       {esMarcas ? (
         <Marcas
           marcas={resumen.marcas}
           abierto={ejercicioAbierto}
           evolucion={evolucion}
+          fallo={errorDetalle}
           alAbrir={abrirEjercicio}
         />
       ) : (
         <>
           <Cifras resumen={resumen} />
-          {resumen.marcas.length > 0 && (
+          {resumen.marcas.length > 0 && !errorDetalle && (
             <MarcaAbierta marca={resumen.marcas[0]} evolucion={evolucion} />
           )}
-          <Sesiones sesiones={sesiones} />
+          {!falloSesiones && <Sesiones sesiones={sesiones} />}
         </>
       )}
     </div>
@@ -223,7 +227,7 @@ function Sesiones({ sesiones }) {
   )
 }
 
-function Marcas({ marcas, abierto, evolucion, alAbrir }) {
+function Marcas({ marcas, abierto, evolucion, alAbrir, fallo }) {
   if (marcas.length === 0) {
     return (
       <div className="vacio">
@@ -268,7 +272,7 @@ function Marcas({ marcas, abierto, evolucion, alAbrir }) {
               />
             </button>
 
-            {estaAbierta &&
+            {estaAbierta && !fallo &&
               (evolucion ? (
                 <>
                   <GraficaLineas

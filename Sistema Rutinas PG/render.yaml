@@ -80,7 +80,7 @@ services:
       # no la dirección pública. Corrija este valor si Render tuvo que
       # renombrar el sitio, y agregue el dominio propio separado por coma.
       - key: ORIGENES_PERMITIDOS
-        value: https://rutinas-interfaz.onrender.com
+        value: https://senda-gt.onrender.com
       - key: ADMIN_CORREO
         sync: false
       - key: ADMIN_CONTRASENA
@@ -95,7 +95,7 @@ services:
         value: gmail_api
       # Completar en el servidor; no poner secretos en el sitio estático.
       - key: URL_PUBLICA_FRONTEND
-        sync: false
+        value: https://senda-gt.onrender.com
       - key: GMAIL_CLIENTE_ID
         sync: false
       - key: GMAIL_CLIENTE_SECRETO
@@ -108,6 +108,9 @@ services:
   # contenido estático. No hay proceso de Node en producción.
   # ------------------------------------------------------------------
   - type: web
+    # Nombre histórico del recurso del Blueprint. El autor confirmó que su URL
+    # pública actual es https://senda-gt.onrender.com (31-10-2026). No crear otro
+    # sitio ni cambiar su identidad solo para hacer coincidir ambos nombres.
     name: rutinas-interfaz
     runtime: static
     rootDir: Sistema Rutinas PG/frontend

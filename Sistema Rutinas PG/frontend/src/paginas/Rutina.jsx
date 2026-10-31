@@ -18,8 +18,6 @@ import { Link } from 'react-router-dom'
 import AvisoDeError from '../componentes/AvisoDeError.jsx'
 import Hoja from '../componentes/Hoja.jsx'
 import Icono from '../componentes/Icono.jsx'
-import Pildoras from '../componentes/Pildoras.jsx'
-import { PESTANAS_ENTRENAR } from '../datos/secciones.js'
 import { useSesion } from '../contexto/ContextoSesion.jsx'
 import { ErrorApi, servicioPlan, servicioRutina } from '../servicios/api.js'
 
@@ -167,7 +165,7 @@ export default function Rutina() {
         </p>
       </div>
 
-      <Pildoras etiquetaGrupo="Secciones de entrenamiento" opciones={PESTANAS_ENTRENAR} />
+
 
       {alFrente && (
         <div className="tarjeta tarjeta--destacada tarjeta--densa">
