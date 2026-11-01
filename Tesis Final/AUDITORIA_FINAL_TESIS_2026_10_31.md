@@ -200,3 +200,26 @@ versiones anteriores, incluida la de 667 pruebas, no se modificaron.
 Comprobado después: 120 tablas y 86 figuras numeradas en secuencia y coincidentes con sus índices,
 305 encabezados coincidentes, márgenes 2.5/2.5/3/2.5 cm, Times New Roman 12, 64 referencias todas
 citadas y ninguna frase de «pendiente», «provisional» o «versión local».
+
+## G. Requisitos de «Complementos 2026» (31-10-2026)
+
+Aplicados en `Entrega Final.docx` y su PDF (286 páginas físicas):
+
+| Requisito | Estado |
+|---|---|
+| Márgenes 2.5 / 2.5 / 2.5 y 3 cm izquierdo | Cumple en las tres secciones |
+| Carátula exterior e interior según el ejemplo, TNR 12 negrita, escudo de 11 cm | Hechas con el texto y el escudo de la plantilla; la portada del curso («Entrega 3», docentes, carné) se retiró |
+| Hoja iii Autoridades y asesor | Decano Ing. Jorge Alberto Arias Tobar, secretario Ing. Hugo Adalberto Hernández Santizo, asesor Ing. Sheyla Yadira Esquivel, tal como en la plantilla |
+| Hoja iv Autorización para la impresión | Página con su título; **la autorización firmada la emite la facultad y debe insertarse ahí** |
+| Hoja v Reglamento, artículo 8 | Texto literal de la plantilla |
+| Hoja vi Índice; luego índices de tablas y de figuras con romanos correlativos | vi–xi índice, xix índice de tablas, xxiv índice de figuras |
+| Numeración abajo, centrada, sin guiones; preliminares en romanos minúsculos; Introducción = 1 | Cumple: carátulas sin número, iii–xxvi, 1–260 continuo |
+| Sin gerundios | 103 reescritos; quedan dos a propósito: el título citado de otra tesis y el enunciado aprobado de la hipótesis (1.7) |
+| Sin «ya que», «puesto que», «hoy en día», «aquí», «ahí», «acá» | 0 (había 11, 1, 0, 3, 0, 0) |
+| Voz activa en lugar de pasiva perifrástica | 0 «fue/fueron + participio», 0 «ha/han sido» |
+| «Etcétera» por «entre otros» | No había |
+| Sin viñetas; subdivisión con a, b, c | Cumple: ninguna viñeta ni numeración automática |
+| Adverbios sin exceso | Se retiraron 11 de relleno («efectivamente», «precisamente»); quedan 178, muchos son opciones de la encuesta («definitivamente sí») |
+
+Para confirmar: el grado del asesor (la plantilla dice «ING.»; la portada anterior decía «DRA.») y
+el mes de la fecha de las carátulas («GUATEMALA, OCTUBRE 2026.»).
