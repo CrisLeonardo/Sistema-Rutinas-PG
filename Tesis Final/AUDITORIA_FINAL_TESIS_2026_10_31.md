@@ -173,3 +173,30 @@ la tesis debe declararlo como limitación.
 - 4.10.3, 5.5.2, 5.8.2 («Observación prevista con participantes; pendiente de realizarse»), Capítulo
   VI introducción y 8.3: pasar de «pendiente» a «no incluida en esta investigación», y dejar la
   evaluación con participantes como recomendación para futuras investigaciones (8.3 ya la plantea).
+
+## F. Aplicado en la copia versionada (31-10-2026, por encargo del autor: «haz todo»)
+
+Archivo entregable: `Tesis Final/Leonardo Zepeda - Proyecto de Graduacion II - Entrega Final.docx`
+y su PDF (282 páginas), creados a partir de la versión «verificada PostgreSQL» de Descargas. Las
+versiones anteriores, incluida la de 667 pruebas, no se modificaron.
+
+- 136 correcciones de texto con las propuestas de las secciones B y E.
+- **Postura sobre la hipótesis (decisión tomada por encargo del autor):** se acepta en los términos
+  en que fue operacionalizada, con tres limitaciones declaradas: perfiles sintéticos, tres reglas
+  empíricas representativas y primer plan tras arranque en frío por encima de 3 s (componente
+  «Automatiza»: Parcial). Es una posición intermedia entre «se acepta» (667 pruebas) y «no queda
+  validada» (versión de Descargas). Conviene confirmarla con la asesora.
+- **Anuencia del gimnasio:** «Favorable», con la evidencia declarada por el autor (un entrenador del
+  gimnasio revisó las 25 guías).
+- El objetivo 1.5.2 c se conservó tal como fue aprobado; 7.1 c explica que la comparación se aplicó
+  a perfiles sintéticos que cubren el dominio de la población.
+- Figuras 57 y 81: nueva captura de la pantalla de acceso de la versión entregada.
+- El Índice de Figuras era texto fijo: se sustituyó por un índice automático (`TOC \c "Figura"`).
+  Se actualizaron con Word el índice general, el de tablas y el de figuras.
+- Se restituyó el formato de 16 celdas de tabla y 9 viñetas que la versión de Descargas había
+  perdido al reescribirlas.
+- Se restituyeron las citas de FDA (2024), NHS (2023) y Field (2024).
+
+Comprobado después: 120 tablas y 86 figuras numeradas en secuencia y coincidentes con sus índices,
+305 encabezados coincidentes, márgenes 2.5/2.5/3/2.5 cm, Times New Roman 12, 64 referencias todas
+citadas y ninguna frase de «pendiente», «provisional» o «versión local».
