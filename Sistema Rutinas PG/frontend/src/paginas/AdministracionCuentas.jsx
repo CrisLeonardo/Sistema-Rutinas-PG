@@ -29,6 +29,7 @@ export default function AdministracionCuentas() {
   const [error, setError] = useState(null)
   const [aviso, setAviso] = useState(null)
   const [enProceso, setEnProceso] = useState(null)
+  const [temporal, setTemporal] = useState(null)
 
   const cargar = useCallback(async () => {
     setCargando(true)
@@ -78,6 +79,23 @@ export default function AdministracionCuentas() {
       `La cuenta ${cuenta.correo} quedó ${cuenta.activo ? 'desactivada' : 'activada'}.`,
     )
 
+  // Sustituye a la recuperación por correo: la contraseña se muestra una sola vez.
+  const generarTemporal = async (cuenta) => {
+    if (!window.confirm(`¿Generar una contraseña temporal para ${cuenta.correo}? Su contraseña actual dejará de servir y se cerrarán sus sesiones.`)) return
+    setEnProceso(cuenta.id)
+    setError(null)
+    setAviso(null)
+    setTemporal(null)
+    try {
+      const resultado = await servicioUsuarios.contrasenaTemporal(cuenta.id, token)
+      setTemporal({ correo: cuenta.correo, ...resultado })
+    } catch (fallo) {
+      setError(fallo.message)
+    } finally {
+      setEnProceso(null)
+    }
+  }
+
   const administradores = cuentas.filter((cuenta) => cuenta.rol === 'administrador').length
   const desactivadas = cuentas.filter((cuenta) => !cuenta.activo).length
   const conAccesoReciente = cuentas.filter(
@@ -105,6 +123,14 @@ export default function AdministracionCuentas() {
         <p className="aviso aviso--ok" role="status">
           {aviso}
         </p>
+      )}
+      {temporal && (
+        <div className="aviso aviso--ok pila-2" role="status">
+          <p>Contraseña temporal de {temporal.correo}:</p>
+          <p className="mono"><strong>{temporal.contrasena_temporal}</strong></p>
+          <p>{temporal.mensaje}</p>
+          <button type="button" className="boton-texto" onClick={() => setTemporal(null)}>Ya la entregué, ocultar</button>
+        </div>
       )}
 
       <div className="cifras cifras--envuelve">
@@ -187,6 +213,16 @@ export default function AdministracionCuentas() {
                     >
                       {cuenta.activo ? 'Desactivar' : 'Activar'}
                     </button>
+                    {!esPropia && (
+                      <button
+                        type="button"
+                        className="boton-texto"
+                        onClick={() => generarTemporal(cuenta)}
+                        disabled={ocupada}
+                      >
+                        Contraseña temporal
+                      </button>
+                    )}
                   </span>
                 </div>
               )

@@ -245,4 +245,6 @@ export const servicioUsuarios = {
     peticion(`/usuarios/${id}/rol`, { metodo: 'PUT', datos: { rol }, token }),
   cambiarEstado: (id, activo, token) =>
     peticion(`/usuarios/${id}/estado`, { metodo: 'PUT', datos: { activo }, token }),
+  contrasenaTemporal: (id, token) =>
+    peticion(`/usuarios/${id}/contrasena-temporal`, { metodo: 'POST', token }),
 }

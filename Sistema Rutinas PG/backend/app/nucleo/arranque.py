@@ -19,6 +19,46 @@ import app.modelos  # noqa: F401  isort:skip
 bitacora = logging.getLogger(__name__)
 
 
+# Resultado de la última comprobación del esquema, publicado por /api/v1/estado
+# para poder verificar un despliegue sin credenciales: «al_dia», «incompleto»
+# o «sin_comprobar» si el arranque no llegó a revisarlo.
+estado_esquema = "sin_comprobar"
+
+
+def columnas_faltantes() -> list[str]:
+    """Columnas de los modelos que no existen en la base, como «tabla.columna»."""
+    inspector = inspect(motor)
+    existentes = set(inspector.get_table_names())
+    faltantes = []
+    for nombre, tabla in Base.metadata.tables.items():
+        if nombre not in existentes:
+            faltantes.append(f"{nombre}.*")
+            continue
+        presentes = {columna["name"] for columna in inspector.get_columns(nombre)}
+        faltantes += [f"{nombre}.{c.name}" for c in tabla.columns if c.name not in presentes]
+    return faltantes
+
+
+def incorporar_base_anterior() -> None:
+    """Pone al día, una sola vez, la base creada con `create_all` antes de Alembic.
+
+    Es el caso de producción descrito en `app.nucleo.incorporacion`. La
+    comprobación es de solo lectura; los cambios ocurren únicamente si la base
+    está exactamente en esa situación, en una transacción y sin borrar datos.
+    """
+    from app.nucleo import incorporacion
+
+    try:
+        with motor.begin() as conexion:
+            if not incorporacion.es_base_anterior(conexion):
+                return
+            pasos = incorporacion.incorporar(conexion, confirmar=True)
+    except incorporacion.BaseNoReconocida as error:
+        bitacora.error("La base tiene columnas pendientes y no se incorporó: %s", error)
+        return
+    bitacora.warning("Base anterior incorporada a las migraciones: %s", " ".join(pasos))
+
+
 def tablas_faltantes() -> list[str]:
     """Enumera las tablas del modelo que todavia no existen en la base de datos."""
     existentes = set(inspect(motor).get_table_names())
@@ -232,8 +272,14 @@ def verificar_credenciales() -> None:
 
 def inicializar() -> None:
     """Ejecuta en orden todas las tareas de arranque."""
+    global estado_esquema
     verificar_credenciales()
+    incorporar_base_anterior()
     crear_esquema()
+    faltantes = columnas_faltantes()
+    estado_esquema = "incompleto" if faltantes else "al_dia"
+    if faltantes:
+        bitacora.error("El esquema no coincide con los modelos. Faltan: %s", ", ".join(faltantes))
     asegurar_administrador()
     asegurar_catalogos_iniciales()
     precargar_modelo_neuronal()

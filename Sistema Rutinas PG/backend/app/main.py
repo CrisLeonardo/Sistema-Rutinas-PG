@@ -12,6 +12,7 @@ from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.v1 import enrutador_v1
+from app.nucleo import arranque
 from app.nucleo.arranque import inicializar
 from app.nucleo.configuracion import configuracion
 from app.nucleo.concurrencia import LimiteSolicitudesBD
@@ -107,4 +108,6 @@ def estado() -> dict[str, str]:
         "estado": "disponible",
         "sistema": configuracion.nombre_sistema,
         "version": configuracion.version,
+        # Solo dice si la estructura coincide con los modelos; no revela tablas.
+        "esquema": arranque.estado_esquema,
     }

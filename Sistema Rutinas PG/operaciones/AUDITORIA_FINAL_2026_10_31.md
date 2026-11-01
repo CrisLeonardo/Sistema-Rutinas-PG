@@ -88,3 +88,17 @@ aún carga; los siguientes tardan 0.04 s), estabilidad bajo 50 usuarios no acred
    20–30 s— y los precios de los mercados de El Progreso, ambos de octubre de 2026, se registran en
    `backend/app/nucleo/revision.py` y en las pantallas, sin nombres de revisores. Sin recuperación
    por correo, una persona que olvide su contraseña no tiene vía automática para recuperarla.
+
+## Cierre y publicación (31-10-2026, autorizado por el autor: «haz todo»)
+
+- **Contraseña temporal del administrador** (`POST /api/v1/usuarios/{id}/contrasena-temporal`,
+  botón en Administración → Cuentas). Sustituye a la recuperación por correo descartada: genera 12
+  caracteres que cumplen las reglas del registro, se muestra una vez, cierra las sesiones de esa
+  cuenta y no se aplica a la cuenta propia. Pruebas: `tests/test_contrasena_temporal.py`.
+- **Incorporación automática y protegida al arrancar** (`app/nucleo/incorporacion.py`, llamada desde
+  `arranque.incorporar_base_anterior`). Solo actúa si la base no tiene versión y le faltan las
+  columnas nuevas; se detiene ante cualquier otra diferencia o si alguna tabla nueva tiene filas.
+  Ensayada en PostgreSQL 16 y SQLite, incluido el arranque completo.
+- **`/api/v1/estado` publica `esquema`** («al_dia», «incompleto» o «sin_comprobar»), para verificar
+  un despliegue sin credenciales. No revela tablas ni columnas.
+- Suite del servidor con PostgreSQL 16: **829 aprobadas, 4 omitidas, 0 fallos**. Cliente: 74.

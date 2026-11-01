@@ -79,3 +79,37 @@ def test_no_retira_una_tabla_nueva_con_filas(base_de_septiembre):
             guion.incorporar(conexion, confirmar=True)
     with conexion.begin():
         assert migraciones.revision_actual(conexion) is None
+
+
+def test_el_arranque_incorpora_la_base_anterior_y_publica_el_esquema_al_dia(tmp_path, monkeypatch):
+    """Lo que ocurrirá en producción al publicar: sin pasos manuales ni pérdida de cuentas."""
+    from app.nucleo import arranque
+    from app.nucleo import incorporacion
+
+    motor = create_engine(f"sqlite:///{tmp_path / 'septiembre.db'}")
+    with motor.begin() as conexion:
+        command.upgrade(migraciones.configurar(conexion), migraciones.REVISION_INICIAL)
+        conexion.exec_driver_sql("DROP TABLE alembic_version")
+        conexion.execute(text("INSERT INTO usuarios (correo, contrasena_cifrada, nombre, rol, activo) "
+                              "VALUES ('persona@ejemplo.gt', 'x', 'Persona', 'usuario', 1)"))
+    with motor.begin() as conexion:
+        Base.metadata.create_all(bind=conexion)
+    monkeypatch.setattr(arranque, "motor", motor)
+    assert "usuarios.version_sesion" in arranque.columnas_faltantes()
+
+    arranque.incorporar_base_anterior()
+
+    assert arranque.columnas_faltantes() == []
+    with motor.begin() as conexion:
+        assert migraciones.revision_actual(conexion) == migraciones.REVISION_ACTUAL
+        assert not incorporacion.es_base_anterior(conexion)
+        assert conexion.execute(text("SELECT count(*) FROM usuarios")).scalar() == 1
+    # Un segundo arranque no vuelve a tocar la base.
+    arranque.incorporar_base_anterior()
+    motor.dispose()
+
+
+def test_la_salud_publica_el_estado_del_esquema(cliente):
+    datos = cliente.get("/api/v1/estado").json()
+    assert datos["estado"] == "disponible"
+    assert datos["esquema"] in {"al_dia", "incompleto", "sin_comprobar"}

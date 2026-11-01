@@ -5,6 +5,7 @@ independientes de los controladores, conforme al patron modelo-vista-controlador
 adoptado en el apartado 3.1.2 de la tesis.
 """
 
+import secrets
 from datetime import datetime, timezone
 
 from sqlalchemy import delete, func, select, update
@@ -120,6 +121,25 @@ def cambiar_contrasena(sesion: Session, usuario: Usuario, contrasena_nueva: str)
     sesion.commit()
     sesion.refresh(usuario)
     return usuario
+
+
+# Sin letras ni cifras que se confundan al dictarlas o copiarlas: 0/O, 1/l/I.
+_ALFABETO_TEMPORAL = "abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789"
+
+
+def generar_contrasena_temporal(sesion: Session, usuario: Usuario) -> str:
+    """Asigna a la cuenta una contraseña temporal y cierra sus sesiones abiertas.
+
+    Sustituye a la recuperación por correo, que la entrega descartó: la persona
+    pide apoyo, el administrador genera la contraseña y se la entrega por un
+    canal propio. Cumple las reglas del registro y se muestra una sola vez.
+    """
+    while True:
+        temporal = "".join(secrets.choice(_ALFABETO_TEMPORAL) for _ in range(12))
+        if any(c.isalpha() for c in temporal) and any(c.isdigit() for c in temporal):
+            break
+    cambiar_contrasena(sesion, usuario, temporal)
+    return temporal
 
 
 def listar_usuarios(sesion: Session) -> list[Usuario]:

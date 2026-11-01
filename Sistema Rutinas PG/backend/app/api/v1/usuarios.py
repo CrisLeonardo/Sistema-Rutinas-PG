@@ -3,7 +3,7 @@
 from fastapi import APIRouter, HTTPException, status
 
 from app.api.dependencias import Administrador, SesionBD
-from app.esquemas.usuario import CambioEstado, CambioRol, UsuarioPublico
+from app.esquemas.usuario import CambioEstado, CambioRol, ContrasenaTemporal, UsuarioPublico
 from app.modelos.enumeraciones import RolUsuario
 from app.modelos.usuario import Usuario
 from app.servicios import autenticacion
@@ -95,4 +95,37 @@ def cambiar_estado(
 
     return UsuarioPublico.model_validate(
         autenticacion.cambiar_estado(sesion, cuenta, datos.activo)
+    )
+
+
+@enrutador.post(
+    "/{usuario_id}/contrasena-temporal",
+    response_model=ContrasenaTemporal,
+    summary="Generar una contraseña temporal para otra cuenta",
+)
+def generar_contrasena_temporal(
+    usuario_id: int,
+    sesion: SesionBD,
+    administrador: Administrador,
+) -> ContrasenaTemporal:
+    """Restablece el acceso de una persona que olvidó su contraseña.
+
+    La entrega no incluye recuperación por correo. El administrador genera una
+    contraseña temporal, la entrega por un canal propio y la persona la cambia
+    en «Más → Cambiar mi contraseña». Las sesiones abiertas de esa cuenta se
+    cierran. La propia cuenta se cambia con el flujo normal, que pide la vigente.
+    """
+    cuenta = _obtener_cuenta(sesion, usuario_id)
+    if cuenta.id == administrador.id:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Para su propia cuenta use «Cambiar mi contraseña».",
+        )
+    temporal = autenticacion.generar_contrasena_temporal(sesion, cuenta)
+    return ContrasenaTemporal(
+        contrasena_temporal=temporal,
+        mensaje=(
+            f"Entregue esta contraseña a {cuenta.nombre} por un canal privado. Se muestra una sola "
+            "vez; pídale que la cambie en «Más → Cambiar mi contraseña» al entrar."
+        ),
     )

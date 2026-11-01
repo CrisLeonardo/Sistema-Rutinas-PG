@@ -125,3 +125,10 @@ class TokenSesion(BaseModel):
     tipo_token: str = "bearer"
     expira_en_segundos: int
     usuario: UsuarioPublico
+
+
+class ContrasenaTemporal(BaseModel):
+    """Contraseña temporal generada por el administrador; se muestra una sola vez."""
+
+    contrasena_temporal: str
+    mensaje: str

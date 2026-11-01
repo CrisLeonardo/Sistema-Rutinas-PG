@@ -7,8 +7,10 @@ acceso falla con `column "version_sesion" does not exist`. En ese caso no sirven
 `actualizar`: usar `incorporar_base_anterior.py`, que diagnostica sin cambios por omisión, se detiene
 ante cualquier diferencia no prevista o tabla nueva con filas, y con `--confirmar` retira las tablas
 nuevas vacías, registra `0001`, actualiza hasta `0005` y verifica 0 diferencias en una transacción.
-Ensayado en PostgreSQL 16 y SQLite (`tests/test_incorporar_base_anterior.py`). Respaldar y ensayar
-sobre una copia restaurada antes de aplicarlo a producción.
+Ensayado en PostgreSQL 16 y SQLite (`tests/test_incorporar_base_anterior.py`). Desde el cierre de
+la auditoría, el arranque aplica esta misma incorporación por su cuenta cuando reconoce el caso
+(`app/nucleo/incorporacion.py`); `/api/v1/estado` informa `esquema: al_dia` cuando la estructura
+coincide con los modelos. El guion sigue disponible para diagnosticar a mano.
 
 ```powershell
 uv run python incorporar_base_anterior.py
