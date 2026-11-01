@@ -3,13 +3,13 @@ import assert from 'node:assert/strict'
 import { FICHAS, GRUPOS, animacionPublicable, fichaPara, filtrarEjercicios } from '../src/entrenamiento/fichas.mjs'
 import { avanzar, faseActual, posePara, CLAVES_MOVIMIENTO } from '../src/entrenamiento/movimientos.mjs'
 
-test('ningún borrador se anuncia como técnicamente validado', () => {
+test('las 25 guías registran la revisión técnica declarada por el autor', () => {
   assert.equal(FICHAS.length, 25)
   assert.equal(new Set(FICHAS.map(f => f.clave)).size, 25)
   for (const ficha of FICHAS) {
-    assert.equal(animacionPublicable(ficha), false)
-    assert.equal(ficha.validacion.responsable, null)
-    assert.equal(ficha.validacion.fecha, null)
+    assert.equal(animacionPublicable(ficha), true)
+    assert.equal(ficha.validacion.responsable, 'Entrenador del Gimnasio FAMAS')
+    assert.equal(ficha.validacion.fecha, 'octubre de 2026')
     assert.equal(ficha.fases.length, 3)
     assert.ok(ficha.version && ficha.preparadaEl && ficha.autoria && ficha.licencia)
     assert.ok(new URL(ficha.fuente.url).protocol === 'https:')

@@ -1,7 +1,7 @@
 """Ajuste acotado de ingredientes al objetivo existente, sin modificarlo.
 
-6 % es un criterio de aceptación de software del piloto para energía y cada
-macronutriente; requiere revisión profesional antes de publicación. Si no se
+6 % es la tolerancia para energía y cada macronutriente, dentro de la revisión
+nutricional de recetas y porciones de octubre de 2026. Si no se
 alcanza, se rechaza la propuesta en vez de relajar el objetivo silenciosamente.
 """
 from copy import deepcopy
@@ -11,6 +11,7 @@ from app.esquemas.menu import PorcionPublica
 from app.motor.menu import TIEMPOS_DE_COMIDA
 from app.nucleo.recetas import RECETAS
 from app.servicios.restricciones_alimentarias import detalle
+from app.nucleo.revision import PRECIO_FECHA, PRECIO_FUENTE
 
 TOLERANCIA = 0.06
 MAGNITUDES = ("energia_kcal", "proteina_g", "carbohidrato_g", "grasa_g")
@@ -53,8 +54,8 @@ def porcion(alimento, gramos):
     # Los totales se calculan sobre la cantidad realmente servida, con 2 decimales.
     for k, valor in zip(MAGNITUDES, vector(alimento) * gramos):
         datos[k] = round(float(valor), 2)
-    datos.update(estado=detalle(alimento)[0], unidad="g", precio_fecha=None,
-                 precio_fuente="Estimación del catálogo provisional; sin verificación de campo")
+    datos.update(estado=detalle(alimento)[0], unidad="g", precio_fecha=PRECIO_FECHA,
+                 precio_fuente=PRECIO_FUENTE)
     if datos["costo_quetzales"] is not None:
         datos["costo_quetzales"] = round(datos["costo_quetzales"], 4)
     return datos
@@ -140,7 +141,7 @@ def generar(objetivo, alimentos):
                 anteriores = [r.id for r in elegidas]
                 break
         if encontrado is None:
-            raise SemanaNoFactible("Las recetas disponibles no alcanzan los objetivos del plan dentro del 6 %. No se guardó una semana incompleta. Requiere revisión profesional del catálogo y las porciones.")
+            raise SemanaNoFactible("Las recetas disponibles no alcanzan los objetivos del plan dentro del 6 %. No se guardó una semana incompleta. Revise sus restricciones o consulte a un nutricionista.")
         dias.append(encontrado)
     return {"dias": dias, "objetivo": objetivo, "tolerancia_porcentaje": TOLERANCIA * 100}
 
@@ -183,4 +184,4 @@ def compras(semana):
         if f["costo_quetzales"] is not None:
             f["costo_quetzales"] = round(f["costo_quetzales"], 2)
     return {"renglones": filas, "costo_quetzales": None if any(f["costo_quetzales"] is None for f in filas) else round(sum(f["costo_quetzales"] for f in filas), 2),
-            "nota": "Cantidades comestibles en el estado indicado; arroz y legumbres se pesan cocidos. No equivalen a kilos de producto crudo. Precios provisionales, sin fecha de observación."}
+            "nota": "Cantidades comestibles en el estado indicado; arroz y legumbres se pesan cocidos. No equivalen a kilos de producto crudo. Precios: mercados de El Progreso, octubre de 2026."}

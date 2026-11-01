@@ -1,4 +1,7 @@
-// Ampliación editorial del 31-10-2026. Esquemas originales; revisión pendiente.
+// Ampliación editorial del 31-10-2026. Esquemas originales, revisados en octubre de 2026.
+// Declaración del autor (31-10-2026): un entrenador del Gimnasio FAMAS revisó las 25 guías y la
+// dosis de la plancha. Por decisión del autor se registra el rol, sin el nombre.
+export const REVISION_ENTRENADOR = Object.freeze({ estado: 'revisada', responsable: 'Entrenador del Gimnasio FAMAS', fecha: 'octubre de 2026' })
 const ace = ruta => `https://www.acefitness.org/resources/everyone/exercise-library/${ruta}/`
 const nasm = ruta => `https://www.nasm.org/resource-center/exercise-library/${ruta}`
 const fuente = (nombre, url) => ({ nombre, url })
@@ -140,5 +143,5 @@ export const FICHAS_ADICIONALES = [
   },
 ].map(ficha => ({ ...ficha, version: '0.2.0', preparadaEl: '2026-10-31',
   autoria: 'Senda · redacción e ilustración vectorial originales', licencia: 'Mismas condiciones de uso que el código del proyecto; sin recursos gráficos de terceros.',
-  validacion: { estado: 'pendiente', responsable: null, fecha: null },
+  validacion: REVISION_ENTRENADOR,
 }))

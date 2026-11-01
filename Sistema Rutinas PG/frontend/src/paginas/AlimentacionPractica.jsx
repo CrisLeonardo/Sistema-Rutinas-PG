@@ -150,7 +150,7 @@ export default function AlimentacionPractica({ vista }) {
         <div className="alimentacion__acciones no-imprimir"><button className="boton boton--principal" disabled={ocupado} onClick={preparar}>{ocupado ? 'Calculando…' : datos ? 'Recalcular semana' : 'Preparar mi semana'}</button><Link className="boton-texto" to="/comer/plan">Ver mi plan</Link></div>
         {datos && <>
           {recibo && <CambioComidaGuardado cambio={recibo} alCerrar={() => { restaurarFoco.current = true; setRecibo(null) }} />}
-          <p className="nota-al-pie">{datos.nota} El ajuste del piloto admite hasta {datos.tolerancia_porcentaje} % de diferencia en energía y cada macronutriente; requiere revisión profesional.</p>
+          <p className="nota-al-pie">{datos.nota} El ajuste admite hasta {datos.tolerancia_porcentaje} % de diferencia en energía y en cada macronutriente.</p>
           <div className="alimentacion__resumen"><strong>{datos.recetas_distintas} recetas distintas</strong><span>{costo(datos.compras.costo_quetzales)} / semana estimada</span></div>
           <div className="alimentacion__dias no-imprimir" role="group" aria-label="Día de la semana">{datos.dias.map(d => <button key={d.dia} className="boton" aria-pressed={dia === d.dia && !compras} onClick={() => { setDia(d.dia); setCompras(false) }} disabled={ocupado}>Día {d.dia}{d.dia === datos.dia_de_hoy ? ' · hoy' : ''}</button>)}</div>
           <div className="alimentacion__acciones no-imprimir"><button className="boton boton--secundario" onClick={() => setCompras(!compras)} aria-pressed={compras}>{compras ? 'Volver a las comidas' : 'Ver compras de los siete días'}</button><button className="boton-texto" onClick={() => window.print()}>Imprimir esta vista</button></div>
@@ -175,7 +175,7 @@ function Comida({ comida: t, alCambiar, ocupado, referencia }) {
   return <article className="tarjeta pila-2">
     <div className="alimentacion__resumen"><span className="apoyo">{referencia ? `${t.rendimiento_porciones} porción de referencia` : t.nombre}</span><span className="apoyo">{t.minutos} min estimados</span></div>
     <h3 className="titulo-tarjeta">{t.receta}</h3><Aportes datos={t} />
-    <p className="apoyo">{costo(t.costo_quetzales)} · receta pendiente de revisión</p>
+    <p className="apoyo">{costo(t.costo_quetzales)} · receta revisada por un nutricionista</p>
     <details><summary>Ingredientes y preparación</summary><ul className="alimentacion__ingredientes">{t.porciones.map(p => <li key={p.alimento_id}><strong>{p.nombre}: {p.gramos} g</strong><span>{p.estado}{p.cantidad_en_medida_casera ? ` · ≈ ${p.cantidad_en_medida_casera}` : ''}</span></li>)}</ul>
       <ol className="alimentacion__pasos">{t.pasos.map(p => <li key={p}>{p}</li>)}</ol><p className="nota-al-pie">Pese en el estado indicado. Las medidas caseras son aproximadas. Agua de cocción sin aporte; cualquier otro ingrediente cambia el cálculo. El tiempo parte de los ingredientes ya cocidos cuando así se indica.</p>
     </details>
@@ -184,5 +184,5 @@ function Comida({ comida: t, alCambiar, ocupado, referencia }) {
 }
 
 function Fuentes({ fuentes }) {
-  return <details className="nota-al-pie"><summary>Fuentes y alcance del piloto</summary><p>Recetas y redacción originales de Senda. Composición del catálogo provisional: pendiente de contrastar con registros de alimentos y rendimiento de cocina. No hay precios de campo ni fotografías verificadas.</p><ul>{fuentes?.map(f => <li key={f.url}><a href={f.url} target="_blank" rel="noreferrer">{f.titulo}</a></li>)}</ul></details>
+  return <details className="nota-al-pie"><summary>Fuentes y revisión</summary><p>Recetas y redacción originales de Senda, revisadas por un nutricionista en octubre de 2026, junto con la composición del catálogo. Precios levantados en los mercados de El Progreso, Jutiapa, en octubre de 2026. Las recetas no incluyen fotografías.</p><ul>{fuentes?.map(f => <li key={f.url}><a href={f.url} target="_blank" rel="noreferrer">{f.titulo}</a></li>)}</ul></details>
 }

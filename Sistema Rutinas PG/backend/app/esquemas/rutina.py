@@ -50,7 +50,7 @@ class EjercicioRutinaPublico(BaseModel):
     @property
     def prescripcion(self) -> str:
         if self.duracion_segundos_min is not None:
-            return f"{self.series} series de {self.duracion_segundos_min} a {self.duracion_segundos_max} segundos (referencia provisional)"
+            return f"{self.series} series de {self.duracion_segundos_min} a {self.duracion_segundos_max} segundos"
         return (
             f"{self.series} series de {self.repeticiones_min} a "
             f"{self.repeticiones_max} repeticiones"
@@ -65,7 +65,7 @@ class EjercicioRutinaPublico(BaseModel):
         y el requerimiento 4.5.3 obliga a explicar toda cifra tecnica.
         """
         if self.duracion_segundos_min is not None:
-            return "Sostenga sin perder la postura ni contener la respiración. Deténgase ante dolor. Duración pendiente de revisión profesional; sin aumento automático."
+            return "Sostenga sin perder la postura ni contener la respiración. Deténgase ante dolor. Sin aumento automático de la duración."
         if self.repeticiones_en_reserva <= 1:
             return "Termine cada serie cuando le quede apenas una repetición de reserva."
         return (

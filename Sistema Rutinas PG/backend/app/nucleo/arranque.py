@@ -125,8 +125,8 @@ def asegurar_catalogos_iniciales() -> None:
                 bitacora.info("Otro proceso de trabajo cargo el catalogo de ejercicios.")
             else:
                 bitacora.info(
-                    "Se cargaron %s ejercicios iniciales en el catálogo. "
-                    "Verifíquelos contra el equipamiento del Gimnasio FAMAS (historia HU-11).",
+                    "Se cargaron %s ejercicios iniciales en el catálogo, revisados por un "
+                    "entrenador del Gimnasio FAMAS (octubre de 2026).",
                     agregados,
                 )
 
@@ -138,8 +138,8 @@ def asegurar_catalogos_iniciales() -> None:
                 bitacora.info("Otro proceso de trabajo cargo el catalogo de alimentos.")
             else:
                 bitacora.info(
-                    "Se cargaron %s alimentos iniciales en el catálogo. "
-                    "Verifíquelos mediante visita a los mercados del municipio (historia HU-11).",
+                    "Se cargaron %s alimentos iniciales en el catálogo, con precios de los "
+                    "mercados de El Progreso (octubre de 2026).",
                     agregados,
                 )
 

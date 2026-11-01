@@ -144,7 +144,7 @@ export default function ListaDeCompras() {
       />
 
 
-      {lista.procede_de_semana && <p className="apoyo">Suma de los siete días calculados. Cantidades de parte comestible en el estado indicado: los gramos cocidos no equivalen al peso que debe comprar crudo. Consulte recetas y detalles en <Link to="/comer/semana">Semana</Link>. Precios provisionales sin fecha de observación.</p>}
+      {lista.procede_de_semana && <p className="apoyo">Suma de los siete días calculados. Cantidades de parte comestible en el estado indicado: los gramos cocidos no equivalen al peso que debe comprar crudo. Consulte recetas y detalles en <Link to="/comer/semana">Semana</Link>. Precios de los mercados de El Progreso, octubre de 2026.</p>}
 
       <div className="tarjeta tarjeta--protagonista">
         <div className="fila--entre fila--abajo">

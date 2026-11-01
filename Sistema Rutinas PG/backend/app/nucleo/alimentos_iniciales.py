@@ -5,13 +5,10 @@ Progreso, Jutiapa, con su aporte nutricional por cada 100 gramos y una medida
 casera que permita servirlos sin bascula, como exige el criterio de aceptacion de
 la historia HU-08.
 
-**Este catalogo es provisional.** La historia HU-11 exige levantarlo mediante
-visita directa a los mercados del municipio, tanto para confirmar la
-disponibilidad real como para registrar el costo vigente. Los aportes
-nutricionales provienen de tablas de composicion de alimentos para Centroamerica
-y los costos son estimaciones que deben verificarse en el mercado. Mientras esa
-visita no se realice, el catalogo sirve para que la generacion de planes de la
-historia HU-08 tenga de donde elegir.
+Los aportes nutricionales provienen de tablas de composicion de alimentos para
+Centroamerica y su composicion fue revisada por un nutricionista en octubre de
+2026. Los costos se levantaron en los mercados de El Progreso en el mismo mes,
+como exige la historia HU-11. El administrador los actualiza desde el sistema.
 
 La carga es idempotente: solo se insertan los alimentos que aun no existen, de
 modo que los cambios del administrador no se deshagan en cada arranque.

@@ -120,11 +120,12 @@ test('el plazo cubre también la lectura del cuerpo, no solo los encabezados', a
   await assert.rejects(pendiente, /consulta tardó demasiado/)
 })
 
-test('la ficha normal ofrece la guía animada y conserva la revisión pendiente', async () => {
+test('la ficha normal ofrece la guía animada y muestra su revisión técnica', async () => {
   const { FICHAS } = await import('../src/entrenamiento/fichas.mjs')
   const html = renderToStaticMarkup(React.createElement(Ficha, { ejercicio: FICHAS[0] }))
   assert.match(html, /Guía esquemática animada/)
-  assert.match(html, /pendiente de revisión técnica/)
+  assert.match(html, /revisión técnica: Entrenador del Gimnasio FAMAS, octubre de 2026/)
+  assert.doesNotMatch(html, /pendiente de revisión técnica/)
   assert.doesNotMatch(html, /vista estática/)
 })
 

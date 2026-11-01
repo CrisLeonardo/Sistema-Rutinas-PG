@@ -1,10 +1,11 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 
 import { useSesion } from '../contexto/ContextoSesion.jsx'
 import CabeceraCuenta from '../componentes/MarcaProducto.jsx'
 import { useConexion } from '../componentes/EstadoConexion.jsx'
 import { conexion } from '../servicios/conexion.mjs'
+import { servicioAcceso } from '../servicios/api.js'
 
 /**
  * Pantalla de inicio de sesión (historia HU-02).
@@ -26,6 +27,17 @@ export default function Acceso() {
   const [enviando, setEnviando] = useState(false)
   const [visible, setVisible] = useState(false)
   const { fase } = useConexion()
+  // La recuperación por correo solo se ofrece si el servidor tiene un correo
+  // configurado. Sin él (la entrega actual descartó Gmail) el enlace llevaría a
+  // una función que nunca está disponible.
+  const [recuperacion, setRecuperacion] = useState(false)
+  useEffect(() => {
+    // Se consulta cuando la API ya respondió, para no sumar otra espera al arranque en frío.
+    if (fase !== 'disponible') return
+    let vigente = true
+    servicioAcceso.opcionesPublicas().then(datos => { if (vigente) setRecuperacion(Boolean(datos?.recuperacion_habilitada)) }).catch(() => {})
+    return () => { vigente = false }
+  }, [fase])
 
   const actualizar = (evento) => {
     const { name, value } = evento.target
@@ -121,7 +133,7 @@ export default function Acceso() {
         <p className="acceso-conexion" role="status"><span className={`conexion-indicador${fase === 'conectando' ? ' conexion-indicador--espera' : ''}`} aria-hidden="true" />{fase === 'disponible' ? 'Senda está disponible' : fase === 'sin-conexion' ? 'Conexión pendiente · puede volver a intentar' : 'Preparando la conexión mientras escribe'}</p>
       </form>
 
-      <p className="apoyo centrado"><Link to="/recuperar-acceso">Olvidé mi contraseña</Link></p>
+      {recuperacion && <p className="apoyo centrado"><Link to="/recuperar-acceso">Olvidé mi contraseña</Link></p>}
 
       <p className="apoyo centrado">
         ¿Aún no tiene cuenta? <Link to="/registro">Regístrese</Link>

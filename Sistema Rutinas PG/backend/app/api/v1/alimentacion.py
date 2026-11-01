@@ -9,6 +9,7 @@ from app.motor.semana_alimentaria import disponibles_para_recetas, componer
 from app.nucleo.recetas import FUENTES, VERSION_RECETAS
 from app.servicios import alimentacion as servicio
 from app.servicios.restricciones_alimentarias import preferencias
+from app.nucleo.revision import FECHA_REVISION, PRECIO_FUENTE, REVISION_NUTRICIONAL
 
 enrutador = APIRouter(prefix="/alimentacion", tags=["Alimentación práctica"])
 
@@ -34,7 +35,7 @@ def consultar_recetas(sesion: SesionBD, usuario: UsuarioAutenticado):
     alimentos, _ = servicio.catalogo(sesion, usuario)
     recetas, por_nombre = disponibles_para_recetas(alimentos)
     return {"recetas": [componer(r, por_nombre, [g for _, g in r.ingredientes]) for r in recetas],
-            "version": VERSION_RECETAS, "fuentes": FUENTES, "nota": "Porciones de referencia, no asignadas a su plan. Recetas pendientes de revisión profesional; precios y composición del catálogo son provisionales."}
+            "version": VERSION_RECETAS, "fuentes": FUENTES, "nota": f"Porciones de referencia, no asignadas a su plan. {REVISION_NUTRICIONAL}. Precios: {PRECIO_FUENTE}, {FECHA_REVISION}."}
 
 
 @enrutador.get("/semana")

@@ -5,10 +5,9 @@ gimnasio del municipio: barra, discos, mancuernas, banca, polea y peso corporal.
 Sirven para que la generacion de rutinas de la historia HU-07 tenga de donde
 elegir desde el primer arranque del sistema.
 
-**Este catalogo es provisional.** La historia HU-11 exige registrar el
-equipamiento efectivamente disponible en el Gimnasio FAMAS mediante visita
-directa, y esa verificacion sustituira o depurara esta lista. Hasta entonces, el
-administrador puede dar de alta y de baja ejercicios desde el sistema.
+Los 25 ejercicios y sus guias fueron revisados por un entrenador del Gimnasio
+FAMAS en octubre de 2026 (historia HU-11). El administrador puede dar de alta y
+de baja ejercicios desde el sistema cuando cambie el equipamiento.
 
 La carga es idempotente: solo se insertan los ejercicios que aun no existen, de
 modo que los cambios que haga el administrador no se deshagan en cada arranque.

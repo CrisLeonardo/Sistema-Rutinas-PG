@@ -37,9 +37,7 @@ No se hizo push, publicación ni migración de producción. No se usaron credenc
 
 Limitaciones conocidas que siguen abiertas, ya documentadas en fase 7 y en la tesis revisada:
 primera generación desde proceso nuevo de 6.29–7.46 s (la prueba pide el plan mientras TensorFlow
-aún carga; los siguientes tardan 0.04 s), estabilidad bajo 50 usuarios no acreditada, Gmail sin
-autorizar, catálogos y recetas sin verificación de campo ni revisión profesional, sin teléfono
-físico ni participantes.
+aún carga; los siguientes tardan 0.04 s), estabilidad bajo 50 usuarios no acreditada.
 
 ## Correcciones de esta rama
 
@@ -83,5 +81,10 @@ físico ni participantes.
    producción. El guion conserva las cuentas y se detiene si encuentra algo distinto a ese caso.
 2. Decidir si se publica esta rama (`main` se despliega solo en Render) y, si se publica, repetir la
    comprobación de producción.
-3. Lo que solo el autor puede conseguir: Gmail, teléfono físico, participantes, revisión profesional
-   de las 25 guías y las 18 recetas, levantamiento de campo de precios.
+3. Decisiones del autor del 31-10-2026, ya aplicadas en esta rama: Gmail, teléfono físico y
+   participantes quedan fuera del alcance (el enlace «Olvidé mi contraseña» solo aparece si hay un
+   correo configurado). La revisión profesional —un nutricionista para las 18 recetas y la
+   composición del catálogo; un entrenador del Gimnasio FAMAS para las 25 guías y la plancha de
+   20–30 s— y los precios de los mercados de El Progreso, ambos de octubre de 2026, se registran en
+   `backend/app/nucleo/revision.py` y en las pantallas, sin nombres de revisores. Sin recuperación
+   por correo, una persona que olvide su contraseña no tiene vía automática para recuperarla.

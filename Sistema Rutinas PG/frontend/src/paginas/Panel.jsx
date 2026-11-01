@@ -359,7 +359,7 @@ function TarjetaEntrenar({ sesion, rutina, entrenamiento, fallo }) {
               <div key={ejercicio.ejercicio_id} className="lista__fila">
                 <span className="cuerpo crece">{ejercicio.nombre}</span>
                 <span className="lista__valor lista__valor--pequeno">
-                  {ejercicio.duracion_segundos_min != null ? <>{ejercicio.series}×{ejercicio.duracion_segundos_min}–{ejercicio.duracion_segundos_max} s<small className="panel-dosis-provisional">Referencia provisional</small></> : <>{ejercicio.series}×{ejercicio.repeticiones_min}–{ejercicio.repeticiones_max} reps</>}
+                  {ejercicio.duracion_segundos_min != null ? <>{ejercicio.series}×{ejercicio.duracion_segundos_min}–{ejercicio.duracion_segundos_max} s</> : <>{ejercicio.series}×{ejercicio.repeticiones_min}–{ejercicio.repeticiones_max} reps</>}
                 </span>
               </div>
             ))}

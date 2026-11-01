@@ -10,7 +10,7 @@ export const PAGINAS_PUBLICAS = {
   '/sobre-el-proyecto': { titulo: 'Sobre el proyecto · Senda', descripcion: 'Senda es un proyecto académico de planes de alimentación y rutinas de entrenamiento para El Progreso, Jutiapa.' },
   '/privacidad': { titulo: 'Privacidad · Senda', descripcion: 'Conoce qué datos utiliza Senda, para qué los necesita y cómo se protege el acceso a tu cuenta.' },
   '/terminos': { titulo: 'Condiciones de uso · Senda', descripcion: 'Alcance, gratuidad y condiciones de uso del proyecto Senda.' },
-  '/ayuda': { titulo: 'Ayuda · Senda', descripcion: 'Encuentra orientación para acceder a Senda, recuperar tu cuenta y consultar los canales de contacto disponibles.' },
+  '/ayuda': { titulo: 'Ayuda · Senda', descripcion: 'Encuentra orientación para acceder a Senda y consultar los canales de contacto disponibles.' },
 }
 
 export const PREGUNTAS = [
@@ -19,6 +19,6 @@ export const PREGUNTAS = [
   ['¿Qué necesito para empezar?', 'Un correo al que tengas acceso, una contraseña y tus datos de perfil: edad, medidas, actividad, objetivo y antecedentes relevantes. No necesitas saber de nutrición para recorrer el formulario.'],
   ['¿El ejemplo es un plan para mí?', 'No. Los ejemplos públicos son ficticios. Tu plan se genera dentro de tu cuenta a partir de tu perfil y de las reglas del sistema.'],
   ['¿Puedo usarlo sin conexión?', 'Puedes instalar la aplicación, pero consultar o guardar planes y actividad requiere conexión. La instalación no proporciona acceso completo sin internet.'],
-  ['¿Los precios de las comidas son exactos?', 'Los costos son estimaciones del catálogo y pueden diferir del precio en tu mercado. Comprueba cantidades, disponibilidad y precio antes de comprar.'],
+  ['¿Los precios de las comidas son exactos?', 'Los costos se levantaron en los mercados de El Progreso en octubre de 2026. Pueden variar con la temporada y entre puestos; compruébalos antes de comprar.'],
   ['¿Ya hay retos con amigos?', 'Actualmente el seguimiento y los logros son personales. Los retos privados y la participación social todavía no están disponibles.'],
 ]

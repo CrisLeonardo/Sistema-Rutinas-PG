@@ -56,7 +56,6 @@ details[open] > :not(summary) { animation: senda-entrar 220ms var(--ease-entry) 
 .accesos-hoy .accesos-hoy__flecha { position: absolute; top: 14px; right: 12px; font-size: 16px; color: var(--brand-accent-ink); }
 .panel-senda .panel-siguiente { position: relative; overflow: hidden; padding: 26px; border: 1px solid var(--u-hair-2); border-left: 3px solid var(--brand-accent); background: radial-gradient(ellipse at 100% 0%, color-mix(in srgb, var(--brand-accent) 13%, transparent), transparent 70%), var(--adm-card); }
 .panel-siguiente .titulo-grupo { max-width: 24ch; margin-block: 12px; font-size: clamp(23px, 4vw, 31px); }
-.panel-dosis-provisional { display: block; max-width: 14ch; white-space: normal; font: 10px/1.5 var(--ui-font-sans); color: var(--u-text-3); text-align: right; }
 .guia-escenario { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; padding: 18px 20px 0; color: var(--u-text-3); font: 500 10px/1.5 var(--ui-font-mono); letter-spacing: .08em; }
 .guia-escenario__estado { color: var(--brand-accent-ink); letter-spacing: 0; }
 .guia-lienzo { min-width: 0; align-self: center; }

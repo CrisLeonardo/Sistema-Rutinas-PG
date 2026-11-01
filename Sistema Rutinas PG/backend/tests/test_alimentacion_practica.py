@@ -115,7 +115,7 @@ def test_recetas_editoriales_tienen_ingredientes_y_estado_sin_revision_inventada
     assert len({r.id for r in RECETAS}) == 18
     recetas, _ = motor.disponibles_para_recetas(catalogo())
     assert len(recetas) == 18
-    assert all(r.estado_revision == "pendiente" and r.rendimiento_porciones == 1 and r.pasos for r in recetas)
+    assert all(r.estado_revision == "revisada" and r.rendimiento_porciones == 1 and r.pasos for r in recetas)
 
 
 @pytest.mark.parametrize("ruta", ["/preferencias", "/recetas", "/semana", "/alternativas?dia=1&tiempo=0"])

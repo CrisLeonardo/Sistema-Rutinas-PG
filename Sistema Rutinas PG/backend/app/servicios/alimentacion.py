@@ -15,6 +15,7 @@ from app.nucleo.recetas import FUENTES, VERSION_RECETAS
 from app.nucleo.tiempo import hoy_local
 from app.servicios import plan as planes
 from app.servicios.restricciones_alimentarias import preferencias, filtrar
+from app.nucleo.revision import ESTADO_REVISADO, REVISION_NUTRICIONAL
 
 
 def bloquear_cuenta(sesion, usuario):
@@ -72,7 +73,7 @@ def publicar(semana):
     datos["dia_de_hoy"] = dia_de_hoy(semana.datos)
     datos.update(plan_id=semana.plan_id, revision=semana.revision, compras=motor.compras(datos),
                  version_recetas=VERSION_RECETAS, fuentes=FUENTES,
-                 estado_revision="pendiente", nota="Piloto pendiente de revisión profesional. Revise etiquetas y preparación: el filtro de ingredientes no certifica ausencia de trazas ni contacto cruzado.")
+                 estado_revision=ESTADO_REVISADO, nota=f"{REVISION_NUTRICIONAL}. Revise etiquetas y preparación: el filtro de ingredientes no certifica ausencia de trazas ni contacto cruzado.")
     datos["recetas_distintas"] = len({t["receta_id"] for d in datos["dias"] for t in d["tiempos"]})
     return datos
 

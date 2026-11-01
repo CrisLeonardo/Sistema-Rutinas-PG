@@ -199,7 +199,7 @@ class EjercicioParaEntrenar(BaseModel):
     @property
     def prescripcion(self) -> str:
         if self.duracion_segundos_min is not None:
-            return f"{self.series} series de {self.duracion_segundos_min} a {self.duracion_segundos_max} segundos (referencia provisional)"
+            return f"{self.series} series de {self.duracion_segundos_min} a {self.duracion_segundos_max} segundos"
         return (
             f"{self.series} series de {self.repeticiones_min} a "
             f"{self.repeticiones_max} repeticiones"

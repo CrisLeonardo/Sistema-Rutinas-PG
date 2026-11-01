@@ -1,8 +1,9 @@
-"""Piloto editorial v1: 18 recetas originales, pendientes de revisión profesional.
+"""Recetario v1: 18 recetas originales, revisadas por un nutricionista (octubre de 2026).
 
 Los gramos son de parte comestible en el estado indicado. El rendimiento es una
 porción de referencia; el motor calcula las cantidades para el plan por separado.
-No hay precios observados, fotografías ni disponibilidad de campo acreditada.
+Los precios provienen del catálogo, levantado en los mercados de El Progreso en
+octubre de 2026. Las recetas no incluyen fotografías.
 """
 from dataclasses import dataclass
 
@@ -63,7 +64,7 @@ class Receta:
     ingredientes: tuple[tuple[str, float], ...]
     pasos: tuple[str, ...]
     rendimiento_porciones: int = 1
-    estado_revision: str = "pendiente"
+    estado_revision: str = "revisada"
 
 
 RECETAS = (

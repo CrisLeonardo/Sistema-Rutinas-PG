@@ -171,7 +171,7 @@ export default function MenuDiario() {
           porciones a cantidades que se puedan servir.{' '}
           {menu.procede_de_semana
             ? 'Las compras y el costo de los siete días se consultan en Semana.'
-            : `Repetir este día cuesta cerca de ${quetzalesEnteros(menu.costo_mensual_quetzales)} al mes con los precios provisionales del catálogo.`}
+            : `Repetir este día cuesta cerca de ${quetzalesEnteros(menu.costo_mensual_quetzales)} al mes con los precios del catálogo (mercados de El Progreso, octubre de 2026).`}
           {menu.porciones_sin_precio > 0 &&
             ` ${menu.porciones_sin_precio} porciones todavía no tienen precio registrado, de modo que el total se queda corto.`}
         </p>

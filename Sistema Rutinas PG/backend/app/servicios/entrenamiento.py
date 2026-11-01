@@ -259,7 +259,7 @@ def recomendar_carga(
     historial = ejecuciones_de_ejercicio(sesion, usuario, ejercicio.id)
     if es_plancha(ejercicio):
         fecha, series, _ = historial[0] if historial else (None, [], None)
-        return (Recomendacion(Decision.MANTENER, None, None, 0, "Sostén de referencia de 20–30 segundos, pendiente de revisión profesional. Priorice postura y respiración; deténgase ante dolor. Sin progresión automática de tiempo o carga."), series, fecha)
+        return (Recomendacion(Decision.MANTENER, None, None, 0, "Sostén de 20–30 segundos por serie. Priorice postura y respiración; deténgase ante dolor. Sin progresión automática de tiempo o carga."), series, fecha)
     if not historial:
         return (
             progresion.calcular(
