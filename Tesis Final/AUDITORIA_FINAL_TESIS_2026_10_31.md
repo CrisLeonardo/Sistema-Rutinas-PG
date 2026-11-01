@@ -45,10 +45,9 @@ datos de su certificado. **Antes de afirmarlo, comprobar que el inicio de sesió
 producción** (ver informe del sistema, hallazgo S-1): la base de producción no tiene registradas las
 migraciones 0002–0005.
 
-**B-2. Recuperación por correo en producción.** Correcto decir que el envío real está pendiente:
-producción responde `recuperacion_habilitada: false` y la pantalla lo explica. En local, con un
-servidor SMTP de prueba, el recorrido completo funcionó (correo, enlace de un uso, 15 minutos,
-rechazo al reutilizarlo, revocación de la sesión anterior).
+**B-2. Recuperación por correo.** Superado por la decisión E-2: queda fuera del alcance. (En local,
+con un servidor SMTP de prueba, el recorrido funcionó: correo, enlace de un uso, 15 minutos,
+rechazo al reutilizarlo y revocación de la sesión anterior; no se publica sin proveedor de correo.)
 
 **B-3. Cifras de pruebas (6.3 y Anexo 5 §7).** Dice «21 pruebas de entrenamiento y 11 de interacción»
 y «Las 32 pruebas de cliente». Al 31-10 el cliente tiene 69 pruebas (36 + 11 + 14 + 8) y, con las
@@ -112,3 +111,65 @@ personales y ocho del administrador en pantalla, Excel, CSV y PDF, tema claro y 
 rodilla que retira sentadilla, prensa y zancadas, condición médica que bloquea plan, menú, semana y
 rutina, administración de catálogos y cuentas con sus protecciones, diez páginas públicas, video de
 30 s, iconos y manifiesto de instalación, y redirección de `/avance/amigos`.
+
+## E. Decisiones del autor del 31-10-2026 y su efecto en la tesis
+
+El autor decidió **descartar** Gmail (recuperación por correo), la prueba en teléfono físico y la
+evaluación con participantes, y declaró **realizadas** en octubre de 2026 la revisión profesional
+(un nutricionista: 18 recetas y composición de los 36 alimentos; un entrenador del Gimnasio FAMAS:
+25 guías de ejercicio y dosis de la plancha de 20–30 s) y el levantamiento de precios en los
+mercados de El Progreso. Por decisión del autor, los revisores se citan por rol, sin nombres. El
+sistema ya refleja estas decisiones (rama `auditoria-final-sistema`). En la tesis, lo descartado no
+debe aparecer como «pendiente», sino como **fuera del alcance** (limitación declarada o trabajo
+futuro). Lo revisado deja de ser «provisional».
+
+**E-1. Revisión profesional y precios: retirar «pendiente» y «provisional».**
+
+| Apartado | Dice (extracto) | Proponer |
+|---|---|---|
+| 1.2 Justificación | «catálogos propuestos para el contexto local; su disponibilidad y contenido todavía requieren verificación de campo y revisión profesional» | «catálogos del contexto local, con precios levantados en los mercados de El Progreso y contenido revisado por profesionales (octubre de 2026)» |
+| 4.1.1 Descripción del producto | «El catálogo emplea alimentos y ejercicios propuestos… requieren aún comprobación de campo y r[evisión]» | Catálogo con precios de campo y revisión de un nutricionista y de un entrenador del Gimnasio FAMAS |
+| 5.4.3.8 Ejercicios de la sesión | «La referencia de duración y sus series son provisionales y están pendientes de revisión profesional» | «La duración de 20–30 s por serie fue revisada por un entrenador del Gimnasio FAMAS» |
+| 6.3.3.2 Rutina | «la dosis de la plancha en segundos es provisional y requiere revisión pr[ofesional]» | Igual que la fila anterior |
+| 6.3.4 Catálogo | «Su disponibilidad local, precios y contenido deben confirmarse mediante trabajo de campo y revisión profesional» | Indicar el levantamiento de precios y la revisión |
+| 6.3.4.2 Menú | «Los precios del catálogo son estimaciones provisionales y no acreditan un levantamiento de mercado» | «Los precios provienen del levantamiento en los mercados de El Progreso (octubre de 2026)» |
+| 7.1 b, 7.2 c | «la disponibilidad, precios y contenido… siguen pendientes de levantamiento de campo y revisión profesional» | Conclusión afirmativa con la revisión y el levantamiento |
+| 8.1 b Recomendaciones | «Completar el levantamiento de campo del catálogo…» | «Actualizar periódicamente los precios del catálogo…» |
+| Anexo 3, objetivos del producto c | «disponibilidad, precios y revisión profesional pendientes» | Evidencia: levantamiento y revisión |
+| Anexo 4 §6 | «Las recetas y precios son provisionales y están pendientes de revisión profesional y de campo» | «Las recetas fueron revisadas por un nutricionista y los precios se levantaron en los mercados de El Progreso» |
+| Anexo 4 §7 | «la referencia de plancha es provisional y requiere revisión» | Retirar la advertencia |
+
+Conviene añadir en 6.3.4 un párrafo breve con la fecha, el lugar del levantamiento y el rol de cada
+revisor, porque es la evidencia que sustituye a los «pendientes».
+
+**E-2. Recuperación por correo: fuera del alcance.** En el sistema, el enlace «Olvidé mi contraseña»
+ya no aparece mientras no haya correo configurado, que es el caso de producción. El código y la
+migración 0002 se conservan apagados. Corregir en la tesis: 5.3.3.2 («rutas de recuperación de
+cuenta»: indicar que están desactivadas sin proveedor de correo), 5.5.3 («El área pública ofrece
+información, acceso, registro y recuperación»: retirar «recuperación»), 6.3.1.1 («o solicitar
+recuperación. El envío real… permanece pendiente»), Anexo 4 §2 (retirar el párrafo «Si olvidó su
+contraseña…») y Anexo 6 §6 («Para recuperación de acceso, configure el proveedor de correo…»). Sin
+recuperación por correo, quien olvide su contraseña no tiene una vía automática para recuperarla:
+la tesis debe declararlo como limitación.
+
+**E-3. Teléfono físico: fuera del alcance.** No debe afirmarse una prueba que no se hará.
+
+- **4.8.2 d) dice «La funcionalidad se comprobó en un teléfono inteligente y en una computadora de
+  escritorio».** Hoy es falso. Proponer: «…se comprobó en una computadora de escritorio y en la
+  vista de teléfono del navegador, entre 320 y 430 píxeles de ancho».
+- 5.5.4, 7.2 e y Anexo 3 objetivo e: cambiar «sigue pendiente de comprobación» y «teléfono físico…
+  pendientes» por una limitación declarada: la compatibilidad móvil se verificó por emulación.
+
+**E-4. Participantes: fuera del alcance.**
+
+- **1.5.2 c) dice «…aplicadas a la muestra de usuarios participantes en el estudio».** La validación
+  se hizo con perfiles sintéticos (8,000 de validación y 10,000 independientes), porque la encuesta
+  no recogió medidas biométricas. La propia tesis lo dice en 7.1 c y en el Anexo 3. Es una
+  incoherencia en un objetivo aprobado: decidir con la asesora si se ajusta su redacción o se
+  explica la diferencia en el Capítulo VII.
+- 4.9.4 R-06: la mitigación «prueba con usuarios reales del gimnasio antes de darlo por aceptado» no
+  se aplicó. Indicarlo y describir la mitigación usada (pruebas automatizadas y revisión de las
+  asesoras).
+- 4.10.3, 5.5.2, 5.8.2 («Observación prevista con participantes; pendiente de realizarse»), Capítulo
+  VI introducción y 8.3: pasar de «pendiente» a «no incluida en esta investigación», y dejar la
+  evaluación con participantes como recomendación para futuras investigaciones (8.3 ya la plantea).
