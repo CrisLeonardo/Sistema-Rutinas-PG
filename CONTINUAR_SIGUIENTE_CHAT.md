@@ -1,5 +1,13 @@
 # Continuar fase 7 con alcance individual
 
+**Auditoría final del 31-10-2026 (rama `auditoria-final-sistema`, sin push):** leer primero
+`Sistema Rutinas PG/operaciones/AUDITORIA_FINAL_2026_10_31.md`. Producción ya sirve `a87f1fe` en
+`senda-gt.onrender.com`; si su base es la de septiembre, el acceso falla (`version_sesion`):
+ensayado en PostgreSQL 16, con salida en `backend/incorporar_base_anterior.py`. Se corrigieron zona
+horaria, menú de hoy, mensajes de validación, composición del catálogo y plurales. La tesis más
+reciente está en Descargas («verificada PostgreSQL»); sus correcciones están en la rama
+`auditoria-final-tesis`, `Tesis Final/AUDITORIA_FINAL_TESIS_2026_10_31.md`.
+
 **Autorización posterior del autor, 31-10-2026:** solicita enviar estos cambios
 a `main` del remoto GitHub. Esa petición sustituye la restricción de mantener
 local este incremento para el envío solicitado. No autoriza migraciones manuales

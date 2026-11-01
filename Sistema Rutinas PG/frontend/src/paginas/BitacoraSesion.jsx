@@ -136,6 +136,25 @@ function filasIniciales(sesion) {
   return filas
 }
 
+/**
+ * Revisa una serie antes de marcarla como hecha, con los mismos límites que el
+ * servidor. Sin esto, una cifra mal escrita —1212 repeticiones— se marcaba,
+ * inflaba el volumen de la sesión y solo se rechazaba al guardar.
+ */
+function problemaDeSerie(ejercicio, fila) {
+  const sostenido = ejercicio.duracion_segundos_min != null
+  const valor = Number(sostenido ? fila.duracion_segundos : fila.repeticiones)
+  const maximo = sostenido ? 3600 : 100
+  if (!Number.isInteger(valor) || valor < (sostenido ? 1 : 0) || valor > maximo) {
+    return sostenido ? `escriba entre 1 y ${maximo} segundos.` : `escriba entre 0 y ${maximo} repeticiones.`
+  }
+  if (!sostenido && fila.peso_kg !== '' && fila.peso_kg != null) {
+    const peso = Number(fila.peso_kg)
+    if (!Number.isFinite(peso) || peso < 0 || peso > 500) return 'el peso adicional debe estar entre 0 y 500 kg.'
+  }
+  return null
+}
+
 export default function BitacoraSesion() {
   const { sesionId } = useParams()
   const { token } = useSesion()
@@ -201,6 +220,12 @@ export default function BitacoraSesion() {
     (ejercicio, indice) => {
       const fila = filas[ejercicio.ejercicio_id][indice]
       const seMarca = !fila.hecha
+      const problema = seMarca ? problemaDeSerie(ejercicio, fila) : null
+      if (problema) {
+        setError(`Serie ${indice + 1} de ${ejercicio.nombre}: ${problema}`)
+        return
+      }
+      setError(null)
       actualizarFila(ejercicio.ejercicio_id, indice, 'hecha', seMarca)
       setConfirmacion(textoConfirmacionSerie(ejercicio.nombre, indice + 1, seMarca))
       // El descanso arranca al confirmar, no al desmarcar, y no en la última

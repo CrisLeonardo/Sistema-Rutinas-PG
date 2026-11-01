@@ -39,16 +39,31 @@ export function quetzalesEnteros(valor) {
   return `Q${entero(valor)}`
 }
 
+/**
+ * Convierte lo que envía el servidor en una fecha del navegador.
+ *
+ * Una fecha sola («2026-09-04») se lee como ese día en la hora local:
+ * `new Date('2026-09-04')` la toma como medianoche UTC, que en Guatemala todavía
+ * es el día anterior. Las marcas de tiempo llegan con su zona y se convierten
+ * solas.
+ */
+export function aFecha(valor) {
+  if (valor instanceof Date) return valor
+  const soloFecha = typeof valor === 'string' && /^(\d{4})-(\d{2})-(\d{2})$/.exec(valor)
+  if (soloFecha) return new Date(Number(soloFecha[1]), Number(soloFecha[2]) - 1, Number(soloFecha[3]))
+  return new Date(valor)
+}
+
 /** Fecha larga: 4 de septiembre de 2026. */
 export function fechaLarga(valor) {
   if (!valor) return '—'
-  return new Date(valor).toLocaleDateString('es-GT', { dateStyle: 'long' })
+  return aFecha(valor).toLocaleDateString('es-GT', { dateStyle: 'long' })
 }
 
 /** Fecha y hora largas, para los registros con marca de tiempo. */
 export function fechaYHora(valor) {
   if (!valor) return '—'
-  return new Date(valor).toLocaleString('es-GT', { dateStyle: 'long', timeStyle: 'short' })
+  return aFecha(valor).toLocaleString('es-GT', { dateStyle: 'long', timeStyle: 'short' })
 }
 
 /**
@@ -59,7 +74,7 @@ export function fechaYHora(valor) {
  * debajo del saludo.
  */
 export function fechaConDia(valor = new Date()) {
-  const fecha = new Date(valor)
+  const fecha = aFecha(valor)
   const dia = fecha.toLocaleDateString('es-GT', { weekday: 'long' })
   const numero = fecha.getDate()
   const mes = fecha.toLocaleDateString('es-GT', { month: 'long' })
@@ -69,13 +84,13 @@ export function fechaConDia(valor = new Date()) {
 /** Fecha breve para las filas de una lista: 4 sep. */
 export function fechaBreve(valor) {
   if (!valor) return '—'
-  return new Date(valor).toLocaleDateString('es-GT', { day: 'numeric', month: 'short' })
+  return aFecha(valor).toLocaleDateString('es-GT', { day: 'numeric', month: 'short' })
 }
 
 /** Días transcurridos desde una fecha, redondeados hacia abajo. */
 export function diasDesde(valor) {
   if (!valor) return null
-  const transcurrido = Date.now() - new Date(valor).getTime()
+  const transcurrido = Date.now() - aFecha(valor).getTime()
   return Math.max(0, Math.floor(transcurrido / 86_400_000))
 }
 

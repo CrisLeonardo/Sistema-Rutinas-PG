@@ -284,7 +284,7 @@ function Marcas({ marcas, abierto, evolucion, alAbrir, fallo }) {
                     descripcion={`Evolución de la carga en ${evolucion.nombre}`}
                   />
                   <p className="nota-al-pie">
-                    {evolucion.sesiones_registradas} sesiones registradas
+                    {evolucion.sesiones_registradas} {evolucion.sesiones_registradas === 1 ? 'sesión registrada' : 'sesiones registradas'}
                     {evolucion.cambio_carga_kg !== null &&
                       ` · ${conSigno(evolucion.cambio_carga_kg, 1)} kg desde la primera`}
                   </p>

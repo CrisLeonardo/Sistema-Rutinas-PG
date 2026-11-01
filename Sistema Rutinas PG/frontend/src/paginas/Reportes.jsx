@@ -142,7 +142,7 @@ export default function Reportes() {
       <div className="cifras">
         <div className="cifras__columna">
           <span className="cifras__valor">{reporte.sesiones_totales}</span>
-          <span className="cifras__rotulo">sesiones</span>
+          <span className="cifras__rotulo">{reporte.sesiones_totales === 1 ? 'sesión' : 'sesiones'}</span>
         </div>
         <div className="cifras__columna">
           <span className="cifras__valor">
@@ -166,8 +166,8 @@ export default function Reportes() {
           descripcion="Sesiones de entrenamiento cumplidas por semana"
         />
         <p className="nota-al-pie">
-          {reporte.sesiones_totales} sesiones en total · {reporte.semanas_registradas} semanas
-          registradas
+          {reporte.sesiones_totales} {reporte.sesiones_totales === 1 ? 'sesión' : 'sesiones'} en total
+          · {reporte.semanas_registradas} {reporte.semanas_registradas === 1 ? 'semana registrada' : 'semanas registradas'}
         </p>
       </div>
 

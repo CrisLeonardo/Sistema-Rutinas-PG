@@ -43,6 +43,7 @@ from app.modelos.usuario import Usuario
 from app.servicios import perfil as servicio_perfil
 from app.servicios import plan as servicio_plan
 from app.servicios import progreso as servicio_progreso
+from app.nucleo.tiempo import a_hora_local, ahora_local
 
 NOMBRES_OBJETIVO = {
     Objetivo.PERDIDA_GRASA: "Perder grasa",
@@ -125,7 +126,7 @@ class Informe:
     filas: list[dict]
     resumen: list[Indicador] = field(default_factory=list)
     nota: str | None = None
-    generado: datetime = field(default_factory=datetime.now)
+    generado: datetime = field(default_factory=lambda: ahora_local().replace(tzinfo=None))
 
 
 @dataclass(frozen=True)
@@ -238,7 +239,7 @@ def informe_medidas(sesion: Session, usuario: Usuario) -> Informe:
 
     filas = [
         {
-            "fecha": perfil.fecha_registro.date(),
+            "fecha": a_hora_local(perfil.fecha_registro).date(),
             "peso_kg": float(perfil.peso_kg),
             "estatura_cm": float(perfil.estatura_cm),
             "indice_masa_corporal": perfil.indice_masa_corporal,
@@ -321,7 +322,7 @@ def informe_plan(sesion: Session, usuario: Usuario) -> Informe:
                 "Origen del cálculo",
                 ORIGENES_DEL_CALCULO.get(plan.origen_calculo, plan.origen_calculo),
             ),
-            Indicador("Generado el", _fecha(plan.fecha_generacion)),
+            Indicador("Generado el", _fecha(a_hora_local(plan.fecha_generacion))),
         ]
 
     return Informe(
@@ -423,8 +424,8 @@ def informe_cuentas(sesion: Session, usuario: Usuario) -> Informe:
             "correo": cuenta.correo,
             "rol": NOMBRES_ROL[cuenta.rol],
             "estado": "Activa" if cuenta.activo else "Desactivada",
-            "fecha_registro": cuenta.fecha_registro.date(),
-            "ultimo_acceso": cuenta.ultimo_acceso.date() if cuenta.ultimo_acceso else None,
+            "fecha_registro": a_hora_local(cuenta.fecha_registro).date(),
+            "ultimo_acceso": a_hora_local(cuenta.ultimo_acceso).date() if cuenta.ultimo_acceso else None,
         }
         for cuenta in cuentas
     ]

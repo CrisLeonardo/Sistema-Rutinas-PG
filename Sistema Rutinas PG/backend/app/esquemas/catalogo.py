@@ -5,7 +5,7 @@ abierta a cualquier cuenta autenticada, porque el usuario deportista necesita ve
 los alimentos y ejercicios que su plan le propone.
 """
 
-from pydantic import BaseModel, ConfigDict, Field, computed_field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, computed_field, field_validator, model_validator
 
 from app.modelos.enumeraciones import CategoriaAlimento, GrupoMuscular, NivelExperiencia
 
@@ -15,6 +15,10 @@ GRAMOS_EN_CIEN = 100.0
 # macronutrientes. Las tablas de composicion redondean sus cifras, de modo que
 # una coincidencia exacta seria una exigencia irreal.
 TOLERANCIA_ENERGIA_KCAL = 25.0
+# La fibra y los redondeos separan la energía declarada de la de Atwater: en el
+# catálogo inicial el maní tostado difiere 43 kcal, un 7 %. Se admite hasta un
+# 20 % para no rechazar datos reales y sí una composición imposible.
+TOLERANCIA_ENERGIA_RELATIVA = 0.20
 
 
 class AlimentoEntrada(BaseModel):
@@ -72,6 +76,31 @@ class AlimentoEntrada(BaseModel):
         return (
             self.proteina_g_100g * 4 + self.carbohidrato_g_100g * 4 + self.grasa_g_100g * 9
         )
+
+    @model_validator(mode="after")
+    def validar_composicion(self) -> "AlimentoEntrada":
+        """Rechaza composiciones imposibles antes de que lleguen a los menús.
+
+        Cada macronutriente ya está entre 0 y 100 g, pero juntos tampoco pueden
+        pasar de los 100 g del alimento, y la energía declarada debe concordar
+        con la que aportan. Un dato mal escrito en el catálogo se propagaría a
+        todos los planes que usen ese alimento.
+        """
+        suma = self.proteina_g_100g + self.carbohidrato_g_100g + self.grasa_g_100g
+        if suma > GRAMOS_EN_CIEN:
+            raise ValueError(
+                "La proteína, el carbohidrato y la grasa suman más de 100 gramos por cada "
+                "100 gramos de alimento. Revise los valores."
+            )
+        esperada = self.energia_de_los_macronutrientes()
+        tolerancia = max(TOLERANCIA_ENERGIA_KCAL, esperada * TOLERANCIA_ENERGIA_RELATIVA)
+        if abs(self.energia_kcal_100g - esperada) > tolerancia:
+            raise ValueError(
+                f"La energía declarada ({self.energia_kcal_100g:.0f} kcal) no concuerda con la "
+                f"que aportan sus macronutrientes (cerca de {esperada:.0f} kcal por cada 100 g). "
+                "Revise los valores."
+            )
+        return self
 
 
 class AlimentoPublico(BaseModel):

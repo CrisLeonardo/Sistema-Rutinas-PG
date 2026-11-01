@@ -10,6 +10,7 @@ from datetime import datetime
 from pydantic import BaseModel, ConfigDict, Field, computed_field
 
 from app.motor.juego import TipoEvento
+from app.nucleo.tiempo import MarcaUTC
 
 
 class PuntoGanadoPublico(BaseModel):
@@ -55,7 +56,7 @@ class LogroPublico(BaseModel):
     puntos: int
     categoria: str
     obtenido: bool
-    fecha: datetime | None = None
+    fecha: MarcaUTC | None = None
 
 
 class HitoPublico(BaseModel):
@@ -66,7 +67,7 @@ class HitoPublico(BaseModel):
     tipo: str = Field(description="«inicio», «nivel» o «logro»")
     titulo: str
     detalle: str
-    fecha: datetime
+    fecha: MarcaUTC
     puntos: int = 0
 
 

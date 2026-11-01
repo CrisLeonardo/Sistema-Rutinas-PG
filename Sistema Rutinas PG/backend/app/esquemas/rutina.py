@@ -5,6 +5,7 @@ from datetime import datetime
 from pydantic import BaseModel, ConfigDict, Field, computed_field
 
 from app.modelos.enumeraciones import GrupoMuscular
+from app.nucleo.tiempo import MarcaUTC
 
 # Regla del negocio RN-05 del apartado 4.3.4. La rutina lleva su propio aviso
 # porque puede consultarse sin pasar por la pantalla del plan nutricional.
@@ -119,7 +120,7 @@ class RutinaPublica(BaseModel):
     """Rutina semanal asociada al plan vigente (historia HU-07)."""
 
     plan_id: int
-    fecha_generacion: datetime
+    fecha_generacion: MarcaUTC
     activo: bool
     dias_entrenamiento_semana: int
     series_objetivo_por_grupo: float

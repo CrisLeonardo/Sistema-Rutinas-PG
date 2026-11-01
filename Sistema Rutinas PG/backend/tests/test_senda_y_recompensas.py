@@ -7,6 +7,7 @@ medir el esfuerzo y empieza a medir la insistencia.
 """
 
 from datetime import date, timedelta
+from app.nucleo.tiempo import hoy_local
 
 import pytest
 
@@ -275,7 +276,7 @@ def test_repetir_la_misma_carga_no_vuelve_a_pagar_la_marca(
     cliente, token_usuario, ejercicio_id
 ):
     """Una marca personal se paga la primera vez que se alcanza, no cada vez."""
-    ayer = date.today() - timedelta(days=1)
+    ayer = hoy_local() - timedelta(days=1)
     cliente.post(
         "/api/v1/entrenamiento/sesiones",
         json=_sesion(ejercicio_id, 50.0, ayer),
@@ -296,7 +297,7 @@ def test_repetir_la_misma_carga_no_vuelve_a_pagar_la_marca(
 
 
 def test_subir_la_carga_paga_una_marca_nueva(cliente, token_usuario, ejercicio_id):
-    ayer = date.today() - timedelta(days=1)
+    ayer = hoy_local() - timedelta(days=1)
     cliente.post(
         "/api/v1/entrenamiento/sesiones",
         json=_sesion(ejercicio_id, 50.0, ayer),

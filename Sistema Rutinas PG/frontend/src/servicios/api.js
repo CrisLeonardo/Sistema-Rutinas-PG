@@ -6,6 +6,7 @@
  */
 
 import { conexion, URL_API } from './conexion.mjs'
+import { describirValidacion } from './validacion.mjs'
 
 /**
  * Tiempo que se espera una respuesta antes de darla por perdida.
@@ -29,53 +30,6 @@ export class ErrorApi extends Error {
     this.name = 'ErrorApi'
     this.codigo = codigo
   }
-}
-
-/** Nombres legibles de los campos, para no mostrar al usuario los identificadores técnicos. */
-const ETIQUETAS_CAMPO = {
-  correo: 'Correo electrónico',
-  nombre: 'Nombre',
-  contrasena: 'Contraseña',
-  peso_kg: 'Peso',
-  estatura_cm: 'Estatura',
-  edad: 'Edad',
-  sexo: 'Sexo',
-  nivel_actividad: 'Nivel de actividad',
-  objetivo: 'Objetivo',
-  nivel_experiencia: 'Nivel de experiencia',
-  dias_entrenamiento_semana: 'Días de entrenamiento por semana',
-  contrasena_actual: 'Contraseña actual',
-  contrasena_nueva: 'Contraseña nueva',
-  peso_kg: 'Peso',
-  perimetro_cintura_cm: 'Perímetro de cintura',
-  sesiones_cumplidas: 'Sesiones cumplidas',
-  adherencia_nutricional: 'Cumplimiento del plan',
-  fecha_registro: 'Fecha',
-  series: 'Series',
-  repeticiones: 'Repeticiones',
-  percepcion_esfuerzo: 'Esfuerzo de la sesión',
-  duracion_minutos: 'Duración',
-}
-
-/** Convierte el detalle de un error de validación en un texto legible. */
-function describirValidacion(detalle) {
-  if (!Array.isArray(detalle)) return null
-  const mensajes = detalle.map((problema) => {
-    // Pydantic antepone «Value error, » al mensaje que escribe el validador;
-    // se retira para que el usuario lea únicamente el texto en español.
-    const texto = String(problema.msg ?? '').replace(/^Value error,\s*/, '')
-    const campo = problema.loc?.filter((parte) => parte !== 'body').join('.') ?? ''
-    const etiqueta = ETIQUETAS_CAMPO[campo]
-
-    if (problema.type === 'missing') {
-      return `${etiqueta ?? campo}: este dato es obligatorio.`
-    }
-    // Los validadores del servidor ya redactan un mensaje completo en español,
-    // de modo que anteponer el nombre del campo solo añadiría ruido.
-    if (/^[A-ZÁÉÍÓÚÑ]/.test(texto)) return texto
-    return etiqueta || campo ? `${etiqueta ?? campo}: ${texto}` : texto
-  })
-  return mensajes.join(' ')
 }
 
 async function interpretarError(respuesta) {

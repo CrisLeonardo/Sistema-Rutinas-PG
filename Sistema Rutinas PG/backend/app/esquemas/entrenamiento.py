@@ -13,6 +13,7 @@ from pydantic import BaseModel, ConfigDict, Field, computed_field, field_validat
 
 from app.esquemas.juego import RecompensaPublica
 from app.motor.progresion import Decision
+from app.nucleo.tiempo import hoy_local
 
 PESO_MAXIMO_KG = 500.0
 REPETICIONES_MAXIMAS = 100
@@ -70,7 +71,7 @@ class SesionEjecutadaEntrada(BaseModel):
     @classmethod
     def validar_fecha(cls, valor: date | None) -> date | None:
         """Misma regla que el registro de progreso: no se entrena en el futuro."""
-        if valor is not None and valor > date.today():
+        if valor is not None and valor > hoy_local():
             raise ValueError("La fecha del entrenamiento no puede ser posterior a hoy.")
         return valor
 

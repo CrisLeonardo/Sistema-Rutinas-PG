@@ -1,5 +1,20 @@
 # Migraciones del esquema de Senda
 
+**Auditoría final (31-10-2026): base anterior ya arrancada con el código nuevo.** Si una base
+creada con `create_all` en septiembre (quince tablas, sin `alembic_version`) recibió el arranque de
+esta versión, `create_all` le añadió las tablas nuevas vacías pero no las columnas nuevas, y el
+acceso falla con `column "version_sesion" does not exist`. En ese caso no sirven `adoptar` ni
+`actualizar`: usar `incorporar_base_anterior.py`, que diagnostica sin cambios por omisión, se detiene
+ante cualquier diferencia no prevista o tabla nueva con filas, y con `--confirmar` retira las tablas
+nuevas vacías, registra `0001`, actualiza hasta `0005` y verifica 0 diferencias en una transacción.
+Ensayado en PostgreSQL 16 y SQLite (`tests/test_incorporar_base_anterior.py`). Respaldar y ensayar
+sobre una copia restaurada antes de aplicarlo a producción.
+
+```powershell
+uv run python incorporar_base_anterior.py
+uv run python incorporar_base_anterior.py --confirmar
+```
+
 **Fase 7 individual:** no requiere otra migración. Comunidad está desactivada por defecto; conservar la revisión 0005 y sus datos. No ejecutar un descenso de esquema para ocultar grupos. Véase [fase 7](FASE_7_VALIDACION_INDIVIDUAL.md).
 
 **Revisión actual: `0005_comunidad_privada`.** La revisión 0004 añade duración de

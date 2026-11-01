@@ -5,6 +5,7 @@ from datetime import datetime
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
 from app.modelos.enumeraciones import RolUsuario
+from app.nucleo.tiempo import MarcaUTC
 
 LONGITUD_MINIMA_CONTRASENA = 8
 
@@ -113,8 +114,8 @@ class UsuarioPublico(BaseModel):
     nombre: str
     rol: RolUsuario
     activo: bool
-    fecha_registro: datetime
-    ultimo_acceso: datetime | None = None
+    fecha_registro: MarcaUTC
+    ultimo_acceso: MarcaUTC | None = None
 
 
 class TokenSesion(BaseModel):

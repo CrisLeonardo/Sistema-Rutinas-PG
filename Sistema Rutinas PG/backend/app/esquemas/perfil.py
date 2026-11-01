@@ -17,6 +17,7 @@ from app.modelos.enumeraciones import (
     Sexo,
     ZonaLesion,
 )
+from app.nucleo.tiempo import MarcaUTC
 
 PESO_MINIMO_KG = 30.0
 PESO_MAXIMO_KG = 250.0
@@ -121,7 +122,7 @@ class PerfilBiometricoPublico(BaseModel):
     dias_entrenamiento_semana: int
     lesiones: list[ZonaLesion] = []
     condiciones: list[CondicionMedica] = []
-    fecha_registro: datetime
+    fecha_registro: MarcaUTC
 
     @computed_field(
         description="Indica si el sistema remite a un profesional en lugar de generar el plan"

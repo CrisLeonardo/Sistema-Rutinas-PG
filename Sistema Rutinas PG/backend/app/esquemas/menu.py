@@ -6,6 +6,7 @@ from pydantic import BaseModel, computed_field
 
 from app.esquemas.catalogo import NOMBRES_CATEGORIA
 from app.modelos.enumeraciones import CategoriaAlimento
+from app.nucleo.tiempo import MarcaUTC
 
 
 class SustitutoPublico(BaseModel):
@@ -114,7 +115,7 @@ class MenuPublico(BaseModel):
     """Menu diario asociado al plan vigente (historia HU-08)."""
 
     plan_id: int
-    fecha_generacion: datetime
+    fecha_generacion: MarcaUTC
     activo: bool
     energia_objetivo_kcal: float
     proteina_objetivo_g: float

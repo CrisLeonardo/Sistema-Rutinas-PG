@@ -12,6 +12,8 @@ from pydantic import BaseModel, ConfigDict, Field, computed_field, field_validat
 
 from app.esquemas.juego import RecompensaPublica
 from app.esquemas.perfil import PESO_MAXIMO_KG, PESO_MINIMO_KG
+from app.nucleo.tiempo import hoy_local
+from app.nucleo.tiempo import MarcaUTC
 
 PERIMETRO_MINIMO_CM = 40.0
 PERIMETRO_MAXIMO_CM = 200.0
@@ -82,7 +84,7 @@ class RegistroProgresoEntrada(BaseModel):
         """Apartado 4.8.3: la fecha de registro no puede ser posterior a la actual."""
         if valor is None:
             return None
-        if valor > date.today():
+        if valor > hoy_local():
             raise ValueError("La fecha del registro no puede ser posterior a la fecha de hoy.")
         return valor
 
@@ -150,8 +152,8 @@ class ComparacionPlanes(BaseModel):
     carbohidrato_vigente: float
     grasa_inicial: float
     grasa_vigente: float
-    fecha_inicial: datetime
-    fecha_vigente: datetime
+    fecha_inicial: MarcaUTC
+    fecha_vigente: MarcaUTC
 
     @computed_field(description="Diferencia de energía entre el plan inicial y el vigente")
     @property

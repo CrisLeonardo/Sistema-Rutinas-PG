@@ -55,7 +55,11 @@ export default function AlimentacionPractica({ vista }) {
         if (resultado.fallos.preferencias) throw resultado.fallos.preferencias
         setDatos(resultado.preferencias); setAlimentos(resultado.alimentos ?? [])
         setAvisoAlimentos(resultado.fallos.alimentos ? 'No pudimos consultar los alimentos para evitar. Sus exclusiones guardadas se conservan.' : '')
-      } else setDatos(await api[vista](token))
+      } else {
+        const resultado = await api[vista](token)
+        setDatos(resultado)
+        if (vista === 'semana') setDia(resultado?.dia_de_hoy ?? 1)
+      }
     } catch (fallo) {
       setDatos(null)
       if (vista !== 'semana' || fallo.codigo !== 404) { setError(fallo.message); setCargaFallida(true) }
@@ -70,7 +74,7 @@ export default function AlimentacionPractica({ vista }) {
 
   async function preparar() {
     setOcupado(true); setError(''); setMensaje('')
-    try { setDatos(await api.preparar(token)); setRecibo(null); setDia(1); setMensaje('Semana preparada. Las compras suman sus siete días.') }
+    try { const semana = await api.preparar(token); setDatos(semana); setRecibo(null); setDia(semana?.dia_de_hoy ?? 1); setMensaje('Semana preparada. Las compras suman sus siete días.') }
     catch (fallo) { setError(fallo.message); if ([403, 409].includes(fallo.codigo)) setDatos(null) }
     finally { setOcupado(false) }
   }
@@ -148,7 +152,7 @@ export default function AlimentacionPractica({ vista }) {
           {recibo && <CambioComidaGuardado cambio={recibo} alCerrar={() => { restaurarFoco.current = true; setRecibo(null) }} />}
           <p className="nota-al-pie">{datos.nota} El ajuste del piloto admite hasta {datos.tolerancia_porcentaje} % de diferencia en energía y cada macronutriente; requiere revisión profesional.</p>
           <div className="alimentacion__resumen"><strong>{datos.recetas_distintas} recetas distintas</strong><span>{costo(datos.compras.costo_quetzales)} / semana estimada</span></div>
-          <div className="alimentacion__dias no-imprimir" role="group" aria-label="Día de la semana">{datos.dias.map(d => <button key={d.dia} className="boton" aria-pressed={dia === d.dia && !compras} onClick={() => { setDia(d.dia); setCompras(false) }} disabled={ocupado}>Día {d.dia}</button>)}</div>
+          <div className="alimentacion__dias no-imprimir" role="group" aria-label="Día de la semana">{datos.dias.map(d => <button key={d.dia} className="boton" aria-pressed={dia === d.dia && !compras} onClick={() => { setDia(d.dia); setCompras(false) }} disabled={ocupado}>Día {d.dia}{d.dia === datos.dia_de_hoy ? ' · hoy' : ''}</button>)}</div>
           <div className="alimentacion__acciones no-imprimir"><button className="boton boton--secundario" onClick={() => setCompras(!compras)} aria-pressed={compras}>{compras ? 'Volver a las comidas' : 'Ver compras de los siete días'}</button><button className="boton-texto" onClick={() => window.print()}>Imprimir esta vista</button></div>
           {compras ? <div className="pila"><h2 className="titulo-tarjeta">Compras para esta semana</h2><p className="apoyo">{datos.compras.nota}</p><div className="lista">{datos.compras.renglones.map(r => <div className="lista__fila" key={r.alimento_id}><div className="pila-2 crece"><strong>{r.nombre}</strong><span className="lista__detalle">{r.estado} · {r.gramos_semana} g</span><span className="nota-al-pie">{r.precio_fuente}</span></div><span>{costo(r.costo_quetzales)}</span></div>)}</div><p>Total estimado: <strong>{costo(datos.compras.costo_quetzales)}</strong></p></div>
           : actual && <section className="pila" aria-label={`Comidas del día ${dia}`}><h2 className="titulo-tarjeta">Día {dia}</h2><Aportes datos={actual} />{actual.tiempos.map((t, i) => <Comida key={`${dia}-${i}`} comida={t} ocupado={ocupado} alCambiar={evento => verAlternativas(i, evento.currentTarget)} />)}</section>}

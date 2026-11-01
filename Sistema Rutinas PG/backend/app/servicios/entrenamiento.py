@@ -25,6 +25,7 @@ from app.modelos.plan import EjercicioSesion, SesionEntrenamiento
 from app.modelos.usuario import Usuario
 from app.motor import progresion
 from app.motor.progresion import Decision, EjecucionPrevia, Recomendacion, SerieEjecutada
+from app.nucleo.tiempo import hoy_local
 
 bitacora = logging.getLogger(__name__)
 
@@ -83,7 +84,7 @@ def registrar_sesion(
         fecha_registro=datetime.now(timezone.utc).replace(tzinfo=None),
         sesion_id=prescrita.id if prescrita is not None else None,
         plan_id=prescrita.plan_id if prescrita is not None else None,
-        fecha=datos.fecha or date.today(),
+        fecha=datos.fecha or hoy_local(),
         duracion_minutos=datos.duracion_minutos,
         percepcion_esfuerzo=datos.percepcion_esfuerzo,
         notas=datos.notas,
@@ -165,7 +166,7 @@ def hay_sesion_registrada(
     sentencia = select(SesionRealizada.id).where(
         SesionRealizada.usuario_id == usuario.id,
         SesionRealizada.sesion_id == sesion_id,
-        SesionRealizada.fecha == (dia or date.today()),
+        SesionRealizada.fecha == (dia or hoy_local()),
     )
     return sesion.execute(sentencia).first() is not None
 
@@ -351,7 +352,7 @@ def resumen(sesion: Session, usuario: Usuario) -> dict:
     """Cifras de la bitacora para el panel y los reportes."""
     todas = listar_sesiones(sesion, usuario, limite=200)
 
-    hoy = date.today()
+    hoy = hoy_local()
     esta_semana = _inicio_de_semana(hoy)
     semana_pasada = esta_semana - timedelta(days=DIAS_POR_SEMANA)
 
@@ -399,7 +400,7 @@ def sesiones_cumplidas_en_la_semana(sesion: Session, usuario: Usuario) -> int:
     La usa el registro de progreso semanal para proponer el dato en lugar de
     pedirle al usuario que lo recuerde.
     """
-    esta_semana = _inicio_de_semana(date.today())
+    esta_semana = _inicio_de_semana(hoy_local())
     sentencia = select(SesionRealizada.id).where(
         SesionRealizada.usuario_id == usuario.id,
         SesionRealizada.fecha >= esta_semana,

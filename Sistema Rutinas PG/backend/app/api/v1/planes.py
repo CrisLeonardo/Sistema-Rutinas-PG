@@ -155,7 +155,8 @@ def consultar_menu(sesion: SesionBD, usuario: UsuarioAutenticado) -> MenuPublico
 
     semana = alimentacion_practica.consultar(sesion, usuario, requerido=False)
     if semana is not None:
-        # Compatibilidad para panel y clientes antiguos: primer día de la semana.
+        # El menú de hoy es el día de la semana preparada que corresponde a la fecha.
+        hoy = semana.datos["dias"][alimentacion_practica.dia_de_hoy(semana.datos) - 1]
         return MenuPublico(
             plan_id=plan.id, fecha_generacion=plan.fecha_generacion, activo=plan.activo,
             energia_objetivo_kcal=float(plan.calorias_objetivo), proteina_objetivo_g=float(plan.proteina_g),
@@ -163,7 +164,7 @@ def consultar_menu(sesion: SesionBD, usuario: UsuarioAutenticado) -> MenuPublico
             costo_semana_calculado=alimentacion_practica.publicar(semana)["compras"]["costo_quetzales"],
             tiempos=[TiempoComidaPublico(nombre=t["nombre"], porciones=[
                 PorcionPublica(**{**p, **{k: round(p[k]) for k in ("energia_kcal", "proteina_g", "carbohidrato_g", "grasa_g")}})
-                for p in t["porciones"]]) for t in semana.datos["dias"][0]["tiempos"]],
+                for p in t["porciones"]]) for t in hoy["tiempos"]],
         )
 
     porciones_guardadas = list(

@@ -12,6 +12,7 @@ import io
 import re
 import zipfile
 from datetime import date, timedelta
+from app.nucleo.tiempo import hoy_local
 
 import pytest
 from openpyxl import load_workbook
@@ -46,7 +47,7 @@ def fixture_con_avance(cliente, token_usuario):
     assert cliente.post("/api/v1/perfil-biometrico", json=PERFIL, headers=cabecera).status_code == 201
     assert cliente.post("/api/v1/plan-nutricional", headers=cabecera).status_code == 201
     for semanas_atras, avance in zip((2, 1), AVANCES, strict=True):
-        fecha = (date.today() - timedelta(weeks=semanas_atras)).isoformat()
+        fecha = (hoy_local() - timedelta(weeks=semanas_atras)).isoformat()
         respuesta = cliente.post(
             "/api/v1/progreso", json={**avance, "fecha_registro": fecha}, headers=cabecera
         )
@@ -361,6 +362,6 @@ def test_el_archivo_se_descarga_con_nombre_fechado_y_sin_cache(cliente, con_avan
 
     disposicion = respuesta.headers["content-disposition"]
     assert disposicion == (
-        f'attachment; filename="informe-evolucion-{date.today().isoformat()}.pdf"'
+        f'attachment; filename="informe-evolucion-{hoy_local().isoformat()}.pdf"'
     )
     assert respuesta.headers["cache-control"] == "no-store"

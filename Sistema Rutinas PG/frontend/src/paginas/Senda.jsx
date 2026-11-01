@@ -146,9 +146,9 @@ function Cifras({ estado }) {
       valor: estado.racha_semanas,
       rotulo: estado.racha_semanas === 1 ? 'semana seguida' : 'semanas seguidas',
     },
-    { valor: estado.sesiones_totales, rotulo: 'sesiones' },
+    { valor: estado.sesiones_totales, rotulo: estado.sesiones_totales === 1 ? 'sesión' : 'sesiones' },
     { valor: entero(estado.volumen_acumulado_kg), rotulo: 'kg movidos' },
-    { valor: estado.marcas_personales, rotulo: 'marcas' },
+    { valor: estado.marcas_personales, rotulo: estado.marcas_personales === 1 ? 'marca' : 'marcas' },
   ]
 
   return (

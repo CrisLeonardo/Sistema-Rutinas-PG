@@ -8,6 +8,7 @@ negocio RN-06 aplicada a un dato personal nuevo.
 """
 
 from datetime import date, timedelta
+from app.nucleo.tiempo import hoy_local
 
 import pytest
 
@@ -66,7 +67,7 @@ def registrar(cliente, token, abierta, repeticiones, peso, dias_atras=0, esfuerz
         RUTA_SESIONES,
         json={
             "sesion_id": abierta["sesion_id"],
-            "fecha": str(date.today() - timedelta(days=dias_atras)),
+            "fecha": str(hoy_local() - timedelta(days=dias_atras)),
             "duracion_minutos": 55,
             "percepcion_esfuerzo": esfuerzo,
             "series": series,
@@ -309,7 +310,7 @@ def test_la_sesion_muestra_lo_que_se_hizo_la_ultima_vez(cliente, con_rutina):
 
     ejercicio = siguiente["ejercicios"][0]
     assert ejercicio["ultima_vez"]
-    assert ejercicio["fecha_ultima_vez"] == str(date.today() - timedelta(days=7))
+    assert ejercicio["fecha_ultima_vez"] == str(hoy_local() - timedelta(days=7))
     assert all(serie["peso_kg"] == 45.0 for serie in ejercicio["ultima_vez"])
 
 
@@ -408,7 +409,7 @@ def test_el_resumen_cuenta_la_constancia(cliente, con_rutina):
     assert resumen["sesiones_totales"] == 1
     assert resumen["sesiones_esta_semana"] >= 1
     assert resumen["racha_semanas"] >= 1
-    assert resumen["ultima_sesion"] == str(date.today())
+    assert resumen["ultima_sesion"] == str(hoy_local())
     assert resumen["marcas"]
 
 

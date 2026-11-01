@@ -6,6 +6,7 @@ los datos con que se dibujan los reportes graficos.
 """
 
 from datetime import date, timedelta
+from app.nucleo.tiempo import hoy_local
 
 import pytest
 
@@ -106,7 +107,7 @@ def test_el_perimetro_y_la_adherencia_son_opcionales(cliente, con_plan):
 
 def test_la_fecha_no_puede_ser_posterior_a_la_actual(cliente, con_plan):
     """Apartado 4.8.3: la fecha de registro no puede ser posterior a hoy."""
-    manana = (date.today() + timedelta(days=1)).isoformat()
+    manana = (hoy_local() + timedelta(days=1)).isoformat()
 
     respuesta = registrar(cliente, con_plan, fecha_registro=manana)
 
@@ -116,14 +117,14 @@ def test_la_fecha_no_puede_ser_posterior_a_la_actual(cliente, con_plan):
 
 def test_la_fecha_de_hoy_si_se_acepta(cliente, con_plan):
     """El límite es inclusivo: hoy es una fecha válida."""
-    respuesta = registrar(cliente, con_plan, fecha_registro=date.today().isoformat())
+    respuesta = registrar(cliente, con_plan, fecha_registro=hoy_local().isoformat())
 
     assert respuesta.status_code == 201
 
 
 def test_se_aceptan_fechas_pasadas(cliente, con_plan):
     """El usuario puede registrar el avance de una semana que ya pasó."""
-    hace_una_semana = (date.today() - timedelta(days=7)).isoformat()
+    hace_una_semana = (hoy_local() - timedelta(days=7)).isoformat()
 
     respuesta = registrar(cliente, con_plan, fecha_registro=hace_una_semana)
 
@@ -229,7 +230,7 @@ def test_el_sistema_explica_siempre_que_hizo_con_el_plan(cliente, con_plan):
 
 def test_el_reajuste_calcula_el_ritmo_semanal(cliente, con_plan):
     """El ritmo permite comparar el avance con lo esperado para el objetivo."""
-    hace_una_semana = (date.today() - timedelta(days=7)).isoformat()
+    hace_una_semana = (hoy_local() - timedelta(days=7)).isoformat()
     registrar(cliente, con_plan, peso_kg=85.0, fecha_registro=hace_una_semana)
 
     reajuste = registrar(cliente, con_plan, peso_kg=84.0).json()["reajuste"]
@@ -267,7 +268,7 @@ def test_el_historial_de_progreso_se_devuelve_del_mas_antiguo_al_mas_reciente(
             cliente,
             con_plan,
             peso_kg=peso,
-            fecha_registro=(date.today() - timedelta(days=dias)).isoformat(),
+            fecha_registro=(hoy_local() - timedelta(days=dias)).isoformat(),
         )
 
     historial = cliente.get(RUTA_PROGRESO, headers=encabezado(con_plan)).json()
@@ -296,7 +297,7 @@ def test_el_reporte_entrega_los_puntos_de_la_grafica_de_peso(cliente, con_plan):
             cliente,
             con_plan,
             peso_kg=peso,
-            fecha_registro=(date.today() - timedelta(days=dias)).isoformat(),
+            fecha_registro=(hoy_local() - timedelta(days=dias)).isoformat(),
         )
 
     reporte = cliente.get(RUTA_REPORTE, headers=encabezado(con_plan)).json()
@@ -328,7 +329,7 @@ def test_las_semanas_registradas_cuentan_semanas_y_no_registros(cliente, con_pla
     El reporte de la historia HU-10 sirve para que el usuario vea su constancia;
     contar registros en lugar de semanas la declaraba mayor de lo que era.
     """
-    hoy = date.today()
+    hoy = hoy_local()
     registrar(cliente, con_plan, fecha_registro=str(hoy - timedelta(days=21)))
     registrar(
         cliente, con_plan, peso_kg=81.0, fecha_registro=str(hoy - timedelta(days=14))
@@ -351,7 +352,7 @@ def test_no_se_admite_un_avance_anterior_al_ultimo_registrado(cliente, con_plan)
     del anterior: el ritmo semanal se calcularia sobre un intervalo negativo y
     las graficas de la historia HU-10 se leerian al reves.
     """
-    hoy = date.today()
+    hoy = hoy_local()
     registrar(cliente, con_plan, fecha_registro=str(hoy - timedelta(days=7)))
 
     respuesta = cliente.post(
@@ -366,7 +367,7 @@ def test_no_se_admite_un_avance_anterior_al_ultimo_registrado(cliente, con_plan)
 
 def test_se_admite_un_avance_del_mismo_dia_que_el_anterior(cliente, con_plan):
     """Corregir un dato recien capturado es legitimo; retroceder en el tiempo, no."""
-    hoy = date.today()
+    hoy = hoy_local()
     registrar(cliente, con_plan, fecha_registro=str(hoy))
 
     respuesta = cliente.post(

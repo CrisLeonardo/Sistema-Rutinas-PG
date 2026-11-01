@@ -1,5 +1,6 @@
 """Semana privada, validación vigente y control de cambios concurrentes."""
 from copy import deepcopy
+from datetime import date
 import hashlib
 import json
 
@@ -11,6 +12,7 @@ from app.modelos.perfil import PerfilBiometrico
 from app.modelos.usuario import Usuario
 from app.motor import semana_alimentaria as motor
 from app.nucleo.recetas import FUENTES, VERSION_RECETAS
+from app.nucleo.tiempo import hoy_local
 from app.servicios import plan as planes
 from app.servicios.restricciones_alimentarias import preferencias, filtrar
 
@@ -53,8 +55,21 @@ def consultar(sesion, usuario, requerido=True):
     return semana
 
 
+def dia_de_hoy(datos) -> int:
+    """Día de la semana preparada que corresponde a hoy.
+
+    El día en que se prepara la semana es el día 1 y la semana se repite en
+    ciclo. Las semanas preparadas antes de guardar la fecha empiezan en el día 1.
+    """
+    preparada = datos.get("preparada_el")
+    if not preparada:
+        return 1
+    return (hoy_local() - date.fromisoformat(preparada)).days % len(datos["dias"]) + 1
+
+
 def publicar(semana):
     datos = deepcopy(semana.datos)
+    datos["dia_de_hoy"] = dia_de_hoy(semana.datos)
     datos.update(plan_id=semana.plan_id, revision=semana.revision, compras=motor.compras(datos),
                  version_recetas=VERSION_RECETAS, fuentes=FUENTES,
                  estado_revision="pendiente", nota="Piloto pendiente de revisión profesional. Revise etiquetas y preparación: el filtro de ingredientes no certifica ausencia de trazas ni contacto cruzado.")
@@ -88,6 +103,7 @@ def generar(sesion, usuario):
         datos = motor.generar(objetivo, alimentos)
     except motor.SemanaNoFactible as error:
         raise HTTPException(409, str(error)) from None
+    datos["preparada_el"] = hoy_local().isoformat()
     semana = sesion.get(SemanaAlimentaria, usuario.id)
     if semana is None:
         semana = SemanaAlimentaria(usuario_id=usuario.id, revision=0)

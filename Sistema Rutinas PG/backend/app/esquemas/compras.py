@@ -17,6 +17,7 @@ from pydantic import BaseModel, computed_field
 
 from app.esquemas.catalogo import NOMBRES_CATEGORIA
 from app.modelos.enumeraciones import CategoriaAlimento
+from app.nucleo.tiempo import MarcaUTC
 
 DIAS_DE_LA_SEMANA = 7
 
@@ -88,7 +89,7 @@ class ListaDeCompras(BaseModel):
     """Todo lo que el plan de la semana requiere comprar."""
 
     plan_id: int
-    fecha_generacion: datetime
+    fecha_generacion: MarcaUTC
     dias: int = DIAS_DE_LA_SEMANA
     grupos: list[GrupoDeCompra]
     procede_de_semana: bool = False

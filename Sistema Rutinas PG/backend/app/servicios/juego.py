@@ -34,6 +34,7 @@ from app.modelos.plan import SesionEntrenamiento
 from app.modelos.usuario import Usuario
 from app.motor import juego as motor
 from app.motor.juego import TipoEvento
+from app.nucleo.tiempo import a_hora_local, hoy_local
 
 bitacora = logging.getLogger(__name__)
 
@@ -265,7 +266,7 @@ def registrar_entrenamiento(
     detalle.extend(_puntos_por_marcas(sesion, usuario, realizada))
 
     historial = _historial(sesion, usuario)
-    racha = _racha_de_semanas(historial.semanas_con_sesion, _inicio_de_semana(date.today()))
+    racha = _racha_de_semanas(historial.semanas_con_sesion, _inicio_de_semana(hoy_local()))
     ganados = _otorgar(
         sesion,
         usuario,
@@ -619,7 +620,7 @@ def _trayectoria(
     # Semanas seguidas, hasta la ultima cerrada, en que el usuario no se paso de
     # los dias que su plan prescribe. La semana en curso no cuenta: todavia puede
     # excederse en ella.
-    esta_semana = _inicio_de_semana(date.today())
+    esta_semana = _inicio_de_semana(hoy_local())
     sin_exceso = 0
     cursor = esta_semana - timedelta(days=DIAS_POR_SEMANA)
     while cursor in por_semana:
@@ -654,7 +655,7 @@ def _trayectoria(
         sesiones_de_madrugada=sum(
             1
             for s in sesiones
-            if s.fecha_registro is not None and s.fecha_registro.hour < 7
+            if s.fecha_registro is not None and a_hora_local(s.fecha_registro).hour < 7
         ),
         semanas_sin_exceso=sin_exceso,
     )

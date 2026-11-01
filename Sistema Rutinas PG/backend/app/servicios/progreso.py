@@ -25,6 +25,7 @@ from app.modelos.plan import Plan
 from app.modelos.usuario import Usuario
 from app.servicios import perfil as servicio_perfil
 from app.servicios import plan as servicio_plan
+from app.nucleo.tiempo import hoy_local
 
 bitacora = logging.getLogger(__name__)
 
@@ -162,7 +163,7 @@ def registrar_progreso(
     perfil = servicio_perfil.obtener_perfil_vigente(sesion, usuario)
     anterior = obtener_ultimo_registro(sesion, usuario)
 
-    fecha = datos.fecha_registro or date.today()
+    fecha = datos.fecha_registro or hoy_local()
     if anterior is not None and fecha < anterior.fecha_registro.date():
         raise FechaAnteriorAlUltimoRegistro(anterior.fecha_registro.date())
 

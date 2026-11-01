@@ -3,6 +3,7 @@
 from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, computed_field
+from app.nucleo.tiempo import MarcaUTC
 
 # Regla del negocio RN-05 del apartado 4.3.4: el sistema no emite diagnosticos
 # medicos y muestra este aviso en todos los planes.
@@ -36,7 +37,7 @@ class PlanNutricionalPublico(BaseModel):
     id: int
     usuario_id: int
     perfil_id: int
-    fecha_generacion: datetime
+    fecha_generacion: MarcaUTC
     activo: bool
 
     tasa_metabolica_basal: float

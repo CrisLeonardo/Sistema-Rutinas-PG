@@ -36,7 +36,7 @@ ENV PATH="/aplicacion/.venv/bin:$PATH" \
 
 COPY --chown=rutinas:rutinas app ./app
 COPY --chown=rutinas:rutinas migraciones ./migraciones
-COPY --chown=rutinas:rutinas entrenar_modelo.py gestionar_esquema.py alembic.ini entrada.sh ./
+COPY --chown=rutinas:rutinas entrenar_modelo.py gestionar_esquema.py incorporar_base_anterior.py alembic.ini entrada.sh ./
 RUN chmod +x /aplicacion/entrada.sh
 
 # El modelo entrenado viaja en la imagen, pero en un directorio aparte del que
